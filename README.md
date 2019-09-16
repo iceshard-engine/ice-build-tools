@@ -1,4 +1,4 @@
-# IceShard build tools 
+# IceShard build tools
 
 This repository holds the source files which are used to build the command line tools for other projects.
 
@@ -6,7 +6,7 @@ This repository holds the source files which are used to build the command line 
 
 This repository defines a conan package script and is uploaded on the `conan.iceshard.net` remote.
 
-### Installation 
+### Installation
 
 Just add the below conan repositories
 

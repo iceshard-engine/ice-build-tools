@@ -1,13 +1,13 @@
 
 name: Deploy
 
-on: 
+on:
   push:
-    tags: 
+    tags:
     - v*
 
 jobs:
-  validation-build:
+  deploy-build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
