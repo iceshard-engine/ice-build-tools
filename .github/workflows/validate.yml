@@ -8,6 +8,7 @@ on:
 
 jobs:
   validation-build:
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
     - name: Setup repository
