@@ -21,4 +21,4 @@ class Command
     execute: =>
 
 
-{ :Command, option, flag }
+{ :Command, :option, :flag }
