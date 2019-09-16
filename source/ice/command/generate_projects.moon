@@ -1,5 +1,5 @@
-import Command, option, flag from require "iceshard.application"
-import detect_compiler from require "iceshard.util.detect_compiler"
+import Command, option, flag from require "ice.command"
+import detect_compiler from require "ice.util.detect_compiler"
 
 lfs = require 'lfs'
 

@@ -1,5 +1,5 @@
-import Command, option, flag from require "iceshard.application"
-import GenerateProjectsCommand from require "iceshard.command.generate_projects"
+import Command, option, flag from require "ice.command"
+import GenerateProjectsCommand from require "ice.command.generate_projects"
 
 class BuildCommand extends GenerateProjectsCommand
     @description: "Builds the engine in the Release configuration."
