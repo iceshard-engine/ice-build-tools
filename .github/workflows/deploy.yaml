@@ -21,5 +21,5 @@ jobs:
         conan create . ice-build-tools/0.0.1@iceshard/stable
     - name: Deploy
       run: |
-        conan user ${{ secrets.CONAN_USER }} -r conan-upstream -p ${{ secrets.CONAN_PASSWORD }}
+        conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
         conan upload -r conan-iceshard ice-build-tools/0.0.1@iceshard/stable --all
