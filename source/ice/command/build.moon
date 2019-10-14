@@ -24,6 +24,8 @@ class BuildCommand extends GenerateProjectsCommand
 
     -- Build command call
     execute: (args) =>
+        result = false
+    
         -- Generate projects first
         super args, true
 
@@ -35,9 +37,13 @@ class BuildCommand extends GenerateProjectsCommand
 
 
             -- Run fastbuild with the right target
-            os.execute "fbuild -config ../source/fbuild.bff #{args.target} #{additonal_arguments}"
-
+            build_result = os.execute "fbuild -config ../source/fbuild.bff #{args.target} #{additonal_arguments}"
             lfs.chdir current_dir
+            
+            result = build_result == 0
+        
+        -- Return the command result
+        result
 
 
 
