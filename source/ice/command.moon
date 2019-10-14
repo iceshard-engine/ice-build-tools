@@ -18,7 +18,7 @@ class Command
             add_class_arguments current_clazz
             current_clazz = current_clazz.__parent
 
-    execute: =>
+    execute: => true
 
 
 { :Command, :option, :flag }
