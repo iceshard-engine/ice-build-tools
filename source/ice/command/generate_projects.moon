@@ -20,7 +20,7 @@ class GenerateProjectsCommand extends Command
     }
 
     -- Build command call
-    execute: (args, skip_fastbuild_target) =>
+    execute: (args, skip_fastbuild_target) =>    
         if compiler = detect_compiler os.host!, os.host! then with compiler
             compiler_attributes = [{ name:k, value:v } for k, v in pairs compiler]
             table.sort compiler_attributes, (a, b) -> a.name < b.name
@@ -38,12 +38,15 @@ class GenerateProjectsCommand extends Command
 
                 if args.rebuild or not os.isfile 'conan.bff'
                     os.execute "conan install ../source --build=missing"
-
+                    
                 -- Run fastbuilds 'solution' target
                 unless skip_fastbuild_target
                     os.execute "fbuild -config ../source/fbuild.bff solution"
 
                 lfs.chdir current_dir
+                
+        -- For now always return true
+        true
 
 
 
