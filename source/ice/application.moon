@@ -21,11 +21,16 @@ class Application
             @commands[name] = command
 
     run: =>
+        result = true
+    
         args = @parser\parse arg
         if args.command
-            @commands[args.command]\execute args
+            result = @commands[args.command]\execute args
         else
-            @execute args
+            result = @execute args
+            
+        -- Fail the application if the command returned false
+        os.exit -1 if not result
 
     execute: =>
 
