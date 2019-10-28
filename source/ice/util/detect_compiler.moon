@@ -53,7 +53,10 @@ get_universal_crt = ->
 
 
 -- Functions used to detect the right compiler on the right host
-detect_visual_studio_compiler = ->
+detect_visual_studio_compiler = (options) ->
+    version = options.version or "[15.9,17.0)"
+    products = options.products or "*"
+
     visual_studio_installer = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer'
 
     -- Check for the vswhere executable
@@ -63,8 +66,8 @@ detect_visual_studio_compiler = ->
     vs_installation_path = nil
 
     -- Get the visual studio installation
-    vs_installation_path = read_line io.popen "\"#{visual_studio_installer}\\vswhere.exe\" -format value -property installationPath -version [15.9,17.0)"
-    vs_product_version = read_line io.popen "\"#{visual_studio_installer}\\vswhere.exe\" -format value -property catalog_productLineVersion -version [15.9,17.0)"
+    vs_installation_path = read_line io.popen "\"#{visual_studio_installer}\\vswhere.exe\" -products #{products} -format value -property installationPath -version #{version} -latest"
+    vs_product_version = read_line io.popen "\"#{visual_studio_installer}\\vswhere.exe\" -products #{products} -format value -property catalog_productLineVersion -version #{version} -latest"
 
     return false unless os.isfile "#{vs_installation_path}\\VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt"
     return false unless os.isfile "#{vs_installation_path}\\VC\\Auxiliary\\Build\\Microsoft.VCRedistVersion.default.txt"
@@ -94,9 +97,9 @@ detect_visual_studio_compiler = ->
 
 
 -- Detects a compiler for the given target at the given host
-detect_compiler = (host, target) ->
-    if host == 'windows'
-        detect_visual_studio_compiler! if target == 'windows'
+detect_compiler = (options) ->
+    if options.host == 'windows'
+        (detect_visual_studio_compiler options.vstudio or { }) if options.target == 'windows'
 
 
 
