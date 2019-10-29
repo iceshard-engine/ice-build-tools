@@ -35,10 +35,11 @@ class GenerateProjectsCommand extends Command
     -- Build command call
     execute: (args, skip_fastbuild_target) =>
         compiler = detect_compiler {
-            host:os.host!
-            target:os.host!
+            host: os.host!
+            target: os.host!
             vstudio: { version:args.vs_ver, products:args.vs_products }
         }
+
         unless compiler
             print "No compiler was detected!"
             return false

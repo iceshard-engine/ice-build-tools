@@ -32,3 +32,15 @@ os.mkdirs = (path) ->
         unless os.isdir partial
             result and= (os.mkdir partial) ~= nil
     result
+
+os.rmdir = (path) ->
+    return true unless os.isdir path
+    lfs.rmdir path
+
+os.listdir = (path, part) ->
+    unless os.isdir path then ->
+
+    iter, dir_obj = lfs.dir path
+    return ->
+        if result = iter dir_obj
+            return result, lfs.attributes "#{path}/#{result}", part
