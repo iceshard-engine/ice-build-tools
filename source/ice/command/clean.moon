@@ -4,14 +4,11 @@ import GenerateProjectsCommand from require "ice.command.generate_projects"
 lfs = require 'lfs'
 
 class CleanCommand extends GenerateProjectsCommand
-    @description: "Generates project files for the selected IDE"
-    @arguments: {
-    }
+    @description: "Cleans the 'build' directory from temporary build files."
+    @arguments: { }
 
     -- Helper method for recursive cleaning
     clean_directory: (path) =>
-        print "Removing: #{path}"
-
         for name, mode in os.listdir path, 'mode'
             if name == '.' or name == '..'
                 continue
@@ -24,8 +21,10 @@ class CleanCommand extends GenerateProjectsCommand
 
     -- Build command call
     execute: (args) =>
-        if lfs.chdir 'build'
-            for name, mode in os.listdir '.', 'mode'
+        print "Cleaning the 'build' directory..."
+        os.indir "build", (path) ->
+
+            for name, mode in os.listdir path, 'mode'
                 if name == '.' or name == '..'
                     continue
 
@@ -34,5 +33,6 @@ class CleanCommand extends GenerateProjectsCommand
                 if mode == 'directory' and name ~= 'tools'
                     @\clean_directory name
                     os.rmdir name
+        print "Clean finished."
 
 { :CleanCommand }
