@@ -19,7 +19,7 @@ class UpdateCommand extends Command
         -- Run conan in the build directory
         os.indir "build", ->
 
-            if args.force or not os.isfile 'tools/conaninfo.txt'
+            if args.force or not os.isfile 'tools/conanbuildinfo.txt'
                 os.execute "conan install ../tools --build=missing"
 
             if args.force or not os.isfile 'conaninfo.txt'
