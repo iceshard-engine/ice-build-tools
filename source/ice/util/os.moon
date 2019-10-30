@@ -44,3 +44,19 @@ os.listdir = (path, part) ->
     return ->
         if result = iter dir_obj
             return result, lfs.attributes "#{path}/#{result}", part
+
+os.indir = (path, fn) ->
+    result = false
+
+    -- Save the current directory
+    current_dir = lfs.currentdir!
+    if result = lfs.chdir path
+
+        -- Call the function method
+        assert (type fn) == "function", "Expected callback at #2 argument!"
+        fn lfs.currentdir!
+
+        -- Get out of the directory
+        lfs.chdir current_dir
+
+    result
