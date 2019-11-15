@@ -25,23 +25,23 @@ class BuildCommand extends GenerateProjectsCommand
     -- Build command call
     execute: (args) =>
         result = false
-    
+
         -- Generate projects first
-        super args, true
+        super { rebuild:args.clean }, true
 
         current_dir = lfs.currentdir!
         if lfs.chdir "build"
             additonal_arguments = ""
             additonal_arguments ..= " -verbose" if args.verbose
-            additonal_arguments ..= " -clean" if args.rebuild or args.clean
+            additonal_arguments ..= " -clean" if args.clean
 
 
             -- Run fastbuild with the right target
             build_result = os.execute "fbuild -config ../source/fbuild.bff #{args.target} #{additonal_arguments}"
             lfs.chdir current_dir
-            
+
             result = build_result == 0
-        
+
         -- Return the command result
         result
 

@@ -1,9 +1,6 @@
 import Command, option, flag from require "ice.command"
-import GenerateProjectsCommand from require "ice.command.generate_projects"
 
-lfs = require 'lfs'
-
-class CleanCommand extends GenerateProjectsCommand
+class CleanCommand extends Command
     @description: "Cleans the 'build' directory from temporary build files."
     @arguments: { }
 
@@ -33,6 +30,9 @@ class CleanCommand extends GenerateProjectsCommand
                 if mode == 'directory' and name ~= 'tools'
                     @\clean_directory name
                     os.rmdir name
+
         print "Clean finished."
+
+
 
 { :CleanCommand }

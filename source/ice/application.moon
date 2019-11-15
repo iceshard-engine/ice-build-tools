@@ -22,13 +22,13 @@ class Application
 
     run: =>
         result = true
-    
+
         args = @parser\parse arg
         if args.command
             result = @commands[args.command]\execute args
         else
             result = @execute args
-            
+
         -- Fail the application if the command returned false
         os.exit -1 if not result
 
