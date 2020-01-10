@@ -4,7 +4,7 @@ import os
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "0.0.5"
+    version = "0.0.6"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
