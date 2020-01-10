@@ -7,6 +7,11 @@ class UpdateCommand extends Command
     @description: "Updates all dependencies in the project."
     @arguments: {
         flag {
+            name:'--tools'
+            description:'Force update on tool dependnecies'
+            default:false
+        }
+        flag {
             name:'-f --force'
             description:'Force updates all dependencies.'
             default:false
@@ -17,14 +22,15 @@ class UpdateCommand extends Command
     execute: (args, skip_fastbuild_target) =>
 
         -- Run conan in the build directory
-        os.indir "build", ->
+        unless os.isdir "build/tools"
+            assert (os.mkdirs "build/tools"), "Couldn't create required directories"
 
-            if args.force or not os.isfile 'tools/conanbuildinfo.txt'
-                os.execute "conan install ../tools --build=missing"
+        os.indir "build/tools", ->
+
+            if args.force or args.tools or not (os.isfile 'conanbuildinfo.txt')
+                os.execute "conan install ../../tools --build=missing --update"
 
             if args.force or not os.isfile 'conaninfo.txt'
-                os.execute "conan install ../source --build=missing"
-
-
+                os.execute "conan install ../../source --build=missing --update"
 
 { :UpdateCommand }
