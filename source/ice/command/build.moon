@@ -23,7 +23,22 @@ class BuildCommand extends GenerateProjectsCommand
         }
         flag {
             name:'-v --verbose'
-            description:'Runs the build commands in verbose mode'
+            description:'Runs the build commands in verbose mode.'
+            default:false
+        }
+        flag {
+            name:'--monitor'
+            description:'Runs fastbuild with support for monitoring apps.'
+            default:true
+        }
+        flag {
+            name:'-d,--distributed'
+            description:'Runs fastbuild with work distribution to remote workers.'
+            default:true
+        }
+        flag {
+            name:'--cache'
+            description:'Runs fastbuild with caching enabled.'
             default:false
         }
     }
@@ -40,6 +55,10 @@ class BuildCommand extends GenerateProjectsCommand
             additonal_arguments = ""
             additonal_arguments ..= " -verbose" if args.verbose
             additonal_arguments ..= " -clean" if args.clean
+            additonal_arguments ..= " -monitor" if args.monitor
+            additonal_arguments ..= " -dist" if args.distributed
+            additonal_arguments ..= " -cache" if args.cache
+
 
 
             -- Run fastbuild with the right target
