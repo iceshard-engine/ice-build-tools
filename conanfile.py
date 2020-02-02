@@ -4,13 +4,13 @@ import os
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "0.0.6"
+    version = "0.0.7"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
 
     settings = "os"
-    requires = "moonscript-installer/0.5.0@iceshard/stable"
+    requires = "moonscript-installer/1.0.0@iceshard/stable"
 
     # Additional exports
     exports_sources = [ "source/*", "LICENSE" ]
