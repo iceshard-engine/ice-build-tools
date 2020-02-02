@@ -8,6 +8,7 @@ class BuildCommand extends GenerateProjectsCommand
             name:'-s --build-system'
             description:'The build system for which projects will be generated. Currently only \'fastbuild\' is supported.'
             default:'fastbuild'
+            choices: { 'fastbuild', 'msbuild' }
             args:1
         }
         option {
