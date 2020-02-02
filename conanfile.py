@@ -10,7 +10,7 @@ class IceBuildToolsConan(ConanFile):
     url = "https://github.com/iceshard-engine/ice-build-tools"
 
     settings = "os"
-    requires = "moonscript-installer/1.0.0@iceshard/stable"
+    requires = "moonscript-installer/1.0.1@iceshard/stable"
 
     # Additional exports
     exports_sources = [ "source/*", "LICENSE" ]
