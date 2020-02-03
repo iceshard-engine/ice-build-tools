@@ -21,18 +21,27 @@ class Application
             @commands[name] = command
 
     run: =>
-        result = true
+        result = nil
 
+        -- Execute the given command or the main handler
         args = @parser\parse arg
         if args.command
             result = @commands[args.command]\execute args
         else
             result = @execute args
 
-        -- Fail the application if the command returned false
-        os.exit -1 if not result
+        -- Translate return values to return codes
+        if (type result) == "boolean"
+            result = return_code:(result and 0 or -1)
+        elseif (type result) == "nil"
+            result = return_code:0
 
-    execute: =>
+        -- Handle errors
+        if result.return_code ~= 0
+            print string.format "ERROR: %s", (result.message or "Unknown error occured!")
+            os.exit result.return_code
+
+    execute: => true
 
 
 { :Application }

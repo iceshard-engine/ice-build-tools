@@ -1,22 +1,19 @@
 
-option = (tab) -> func:'option', args:tab
-flag = (tab) -> func:'flag', args:tab
+option = (name, tab) -> func:'option', name:name, opts:tab
+flag = (name, tab) -> func:'flag', name:name, opts:tab
 
 class Command
+    @arguments = (defined_args) =>
+        @.args = { }
+        for { :func, :name, :opts } in *defined_args
+            opts.name = opts.name or "--#{name}"
+            @.args[name] = { :func, :name, :opts }
+
     new: (@parser) =>
 
-        -- Add all defined arguments from the given class
-        add_class_arguments = (clazz) ->
-            return unless clazz.arguments
-
-            for { :func, :args } in *clazz.arguments
-                @parser[func] @parser, args
-
-        -- Iterate over the whole command inheritance
-        current_clazz = @@
-        while current_clazz ~= nil
-            add_class_arguments current_clazz
-            current_clazz = current_clazz.__parent
+        if @@.args
+            for _, { :func, :opts } in pairs @@.args
+                @parser[func] @parser, opts
 
     execute: => true
 
