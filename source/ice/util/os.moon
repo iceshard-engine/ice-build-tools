@@ -33,10 +33,6 @@ os.mkdirs = (path) ->
             result and= (os.mkdir partial) ~= nil
     result
 
-os.rmdir = (path) ->
-    return true unless os.isdir path
-    lfs.rmdir path
-
 os.listdir = (path, part) ->
     unless os.isdir path then ->
 
@@ -45,7 +41,28 @@ os.listdir = (path, part) ->
         if result = iter dir_obj
             return result, lfs.attributes "#{path}/#{result}", part
 
-os.indir = (path, fn) ->
+os.rmdir = (path) ->
+    return true unless os.isdir path
+    lfs.rmdir path
+
+os.rmdir_with_files = (path) ->
+    return true unless os.isdir path
+
+    for name, mode in os.listdir path, 'mode'
+        -- Skip 'meta' names
+        if name == '.' or name == '..'
+            continue
+
+        entry_path = "#{path}/#{name}"
+
+        -- Delete file nodes
+        os.remove entry_path if mode == 'file'
+        os.rmdir_with_files entry_path if mode == 'directory'
+
+    -- Delete this path
+    lfs.rmdir path
+
+os.chdir = (path, fn) ->
     result = false
 
     -- Save the current directory
@@ -60,3 +77,6 @@ os.indir = (path, fn) ->
         lfs.chdir current_dir
 
     result
+
+-- Create an alias for the deprecated name
+os.indir = os.chdir
