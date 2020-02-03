@@ -1,6 +1,6 @@
 
-option = (tab) -> func:'option', args:{ tab.name, tab.description, tab.default, tab.convert, tab.args, nil }
-flag = (tab) -> func:'flag', args:{ tab.name, tab.description, tab.default, tab.convert, nil, tab.count }
+option = (tab) -> func:'option', args:tab
+flag = (tab) -> func:'flag', args:tab
 
 class Command
     new: (@parser) =>
@@ -10,7 +10,7 @@ class Command
             return unless clazz.arguments
 
             for { :func, :args } in *clazz.arguments
-                @parser[func] @parser, unpack args
+                @parser[func] @parser, args
 
         -- Iterate over the whole command inheritance
         current_clazz = @@
