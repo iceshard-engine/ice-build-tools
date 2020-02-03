@@ -33,6 +33,8 @@ class Application
         -- Translate return values to return codes
         if (type result) == "boolean"
             result = return_code:(result and 0 or -1)
+        if (type result) == "number"
+            result = return_code:result
         elseif (type result) == "nil"
             result = return_code:0
 
