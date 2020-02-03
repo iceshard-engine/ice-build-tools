@@ -5,20 +5,20 @@ class VSWhere extends Exec
 
     help: => @\run "/?"
 
-    find: (options = {}) =>
+    find: (args = {}) =>
         cmd = ""
-        cmd ..= " -version #{options.version}" if options.version
-        cmd ..= " -requires #{requirement}" for requirement in *(options.requires or {})
-        cmd ..= " -products #{options.products}" if options.products
-        cmd ..= " -latest" if options.latest
+        cmd ..= " -version #{args.version}" if args.version
+        cmd ..= " -requires #{requirement}" for requirement in *(args.requires or {})
+        cmd ..= " -products #{args.products}" if args.products
+        cmd ..= " -latest" if args.latest
 
         results = { }
 
-        unless options.properties and #options.properties > 0
+        unless args.properties and #args.properties > 0
             @\run cmd
 
         else
-            for property in *options.properties
+            for property in *args.properties
                 lines = @\capture cmd .. " -format value -property #{property}"
                 error "ERROR: No results for query: '#{cmd}'!" unless #lines > 0
 
