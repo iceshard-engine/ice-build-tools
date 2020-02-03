@@ -1,5 +1,6 @@
 require "ice.util.os"
 
+
 class Exec
     new: (@exec) =>
         print "WARNING: #{@exec} does not exist!" unless os.isfile @exec
@@ -15,4 +16,12 @@ class Exec
             proc\close!
         result
 
-{ :Exec }
+
+class Where extends Exec
+    @exec = 'where.exe'
+    @path: (name) => (Where!\capture name)[1] or name
+
+    new: => @exec = @@exec
+
+
+{ :Exec, :Where }
