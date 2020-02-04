@@ -12,6 +12,10 @@ class FastBuildGenerator
 
     variables: (...) =>
         @file\write ".#{name} = #{serialize_value value}\n" for { [1]:name, [2]:value } in *{...}
+        @file\write "\n"
+
+    include: (path) =>
+        @file\write "#include \"#{path}\"\n"
 
     close: => @file\close!
 

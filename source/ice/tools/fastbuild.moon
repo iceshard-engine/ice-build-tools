@@ -27,7 +27,7 @@ class FastBuild extends Exec
         cmd = string.format " %s", (args and args.target) or "all"
         cmd ..= " -config #{args.config}" if args.config
         cmd ..= " -fastcancel"
-        cmd ..= " -nosummaryonerror" unless args.summary
+        cmd ..= " -nosummaryonerror" unless args.summary ~= nil
         cmd ..= " -summary" if args.summary
         cmd ..= " -report" if args.report
         cmd ..= " -monitor" if args.monitor
