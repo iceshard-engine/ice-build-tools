@@ -10,6 +10,7 @@ class Command
             @.args[name] = { :func, :name, :opts }
 
     new: (@parser) =>
+        @init! if @init
 
         if @@.args
             for _, { :func, :opts } in pairs @@.args

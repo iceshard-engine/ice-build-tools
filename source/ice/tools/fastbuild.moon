@@ -10,7 +10,7 @@ class FastBuild extends Exec
         error "ERROR: Unknown cache action '#{args.action}'" unless args.action == 'info' or args.action == 'trim'
 
         cmd = ""
-        cmd ..= " -script #{args.script}" if args.script
+        cmd ..= " -config #{args.config}" if args.config
         cmd ..= " -cache#{args.action}"
         cmd ..= " 5000" unless args.trim_size
         cmd ..= " #{args.trim_size}" if args.trim_size
@@ -18,14 +18,14 @@ class FastBuild extends Exec
         @\run cmd
 
     cache_info: (args) =>
-        @\cache action:'info', script:args.script
+        @\cache action:'info', config:args.config
 
     cache_trim: (args) =>
-        @\cache action:'trim', script:args.script, trim_size:args.trim_size
+        @\cache action:'trim', config:args.config, trim_size:args.trim_size
 
     build: (args) =>
         cmd = string.format " %s", (args and args.target) or "all"
-        cmd ..= " -script #{args.script}" if args.script
+        cmd ..= " -config #{args.config}" if args.config
         cmd ..= " -fastcancel"
         cmd ..= " -nosummaryonerror" unless args.summary
         cmd ..= " -summary" if args.summary

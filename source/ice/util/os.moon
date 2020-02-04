@@ -9,6 +9,8 @@ module_extension = string.match package.cpath, '?%.(%w+)'
 -- Save the host system value
 host_system = extension_to_system[module_extension] or 'unknown'
 
+os.cwd = -> lfs.currentdir!
+
 -- We use the lua build configuration to get the host system, this works in most cases but some issues may arise on MacOS.
 os.host = -> host_system
 

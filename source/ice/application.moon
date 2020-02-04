@@ -1,16 +1,24 @@
 require "ice.util.os"
 argparse = require "argparse"
 
+package.moonpath ..= ";?.moon;?/init.moon"
+
 class Application
+    @arguments = (defined_args) =>
+        @.args = { }
+        for { :func, :name, :opts } in *defined_args
+            opts.name = opts.name or "--#{name}"
+            @.args[name] = { :func, :name, :opts }
+
     new: =>
         @script_file = arg[1]
         @parser = argparse @@name, @@description, @@epilog
         @parser\require_command false
         @parser\command_target "command"
 
-        -- Add all defined arguments
-        for { :func, :args } in *@@arguments or { }
-            @parser[func] @parser, unpack args
+        if @@.args
+            for _, { :func, :opts } in pairs @@.args
+                @parser[func] @parser, opts
 
         -- Go through all defined actions (table values)
         @commands = { }
