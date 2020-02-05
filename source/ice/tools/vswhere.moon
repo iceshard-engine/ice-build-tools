@@ -11,6 +11,7 @@ class VSWhere extends Exec
         cmd ..= " -requires #{requirement}" for requirement in *(args.requires or {})
         cmd ..= " -products #{args.products}" if args.products
         cmd ..= " -latest" if args.latest
+        cmd ..= " -all" if args.all
 
         results = { }
 
