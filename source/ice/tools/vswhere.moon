@@ -1,4 +1,5 @@
 import Exec from require "ice.tools.exec"
+import Json from require "ice.util.json"
 
 class VSWhere extends Exec
     new: => super "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe"
@@ -13,17 +14,25 @@ class VSWhere extends Exec
         cmd ..= " -latest" if args.latest
         cmd ..= " -all" if args.all
 
-        results = { }
+        if args.properties and #args.properties > 0
 
-        unless args.properties and #args.properties > 0
-            @\run cmd
-
-        else
+            results = { }
             for property in *args.properties
-                lines = @\capture cmd .. " -format value -property #{property}"
+                lines = @\lines cmd .. " -format value -property #{property}"
                 error "ERROR: No results for query: '#{cmd}'!" unless #lines > 0
 
                 results[property] = lines[1]
-        results
+            return results
+
+        elseif args.format == 'json'
+            return Json\decode @\capture cmd .. " -format json"
+
+        else
+            @\run cmd
+
+        true
+
+
+
 
 { :VSWhere }

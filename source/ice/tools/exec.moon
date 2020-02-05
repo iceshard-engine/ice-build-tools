@@ -9,6 +9,13 @@ class Exec
         os.execute "\"#{@exec}\" #{arguments or ''}"
 
     capture: (arguments) =>
+        result = ""
+        if proc = io.popen "\"#{@exec}\" #{arguments or ''}"
+            result = proc\read '*a'
+            proc\close!
+        result
+
+    lines: (arguments) =>
         result = { }
         if proc = io.popen "\"#{@exec}\" #{arguments or ''}"
             for line in proc\lines!
