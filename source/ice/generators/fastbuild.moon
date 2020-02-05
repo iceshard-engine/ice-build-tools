@@ -6,16 +6,28 @@ serialize_value = (value) ->
     error "ERROR: Value of type #{value_type} is not supported!"
 
 class FastBuildGenerator
-    new: (@output) =>
-        @file = io.open @output, 'w+'
-        @file\write "// This file is generated!\n// Do not modify on your own!\n"
+    new: (@output, @parent, @indent = "") =>
+        unless @parent
+            @file = io.open @output, 'w+'
+            @file\write "// This file is generated!\n// Do not modify on your own!\n"
 
-    variables: (...) =>
-        @file\write ".#{name} = #{serialize_value value}\n" for { [1]:name, [2]:value } in *{...}
-        @file\write "\n"
+        else
+            @file = @parent.file
+
+    variables: (vars) =>
+        @\line "#{@indent}.#{name} = #{serialize_value value}" for { [1]:name, [2]:value } in *vars
+
+    structure: (name, fn) =>
+        @\line "#{@indent}.#{name} ="
+        @\line "#{@indent}["
+        fn FastBuildGenerator nil, @, "#{@indent}    " if (type fn) == "function"
+        @\line "#{@indent}]"
 
     include: (path) =>
-        @file\write "#include \"#{path}\"\n"
+        @\line "#include \"#{path}\""
+
+    line: (value) =>
+        @file\write "#{value or ''}\n"
 
     close: => @file\close!
 
