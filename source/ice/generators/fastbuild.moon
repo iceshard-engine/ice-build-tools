@@ -14,19 +14,50 @@ class FastBuildGenerator
         else
             @file = @parent.file
 
+    indented: (fn) =>
+        fn FastBuildGenerator nil, @, "#{@indent}    " if (type fn) == "function"
+
     variables: (vars) =>
-        @\line "#{@indent}.#{name} = #{serialize_value value}" for { [1]:name, [2]:value } in *vars
+        for { [1]:name, [2]:value } in *vars
+            if (type value) ~= "table"
+                @\line ".#{name} = #{serialize_value value}"
+            else
+                @\line ".#{name} = {"
+                @\indented =>
+                    @line "#{serialize_value entry}" for entry in *value
+                @\line "}"
 
     structure: (name, fn) =>
-        @\line "#{@indent}.#{name} ="
-        @\line "#{@indent}["
-        fn FastBuildGenerator nil, @, "#{@indent}    " if (type fn) == "function"
-        @\line "#{@indent}]"
+        @\line ".#{name} ="
+        @\line "["
+        @\indented fn
+        @\line "]"
+
+    compiler: (info) =>
+        @\line "Compiler( '#{info.name}' )"
+        @\line '{'
+        @\indented =>
+            vars = { { 'Executable', info.executable } }
+            if info.light_cache
+                table.insert vars, { 'UseLightCache_Experimental', true }
+
+            @\variables vars
+
+            if info.extra_files and #info.extra_files > 0
+                @\line ".ExtraFiles = {"
+                @\indented =>
+                    @\line "'#{value}'" for value in *info.extra_files
+                @\line "}"
+
+        @\line '}'
 
     include: (path) =>
-        @\line "#include \"#{path}\""
+        @\line_raw "#include \"#{path}\""
 
     line: (value) =>
+        @file\write "#{@indent}#{value or ''}\n"
+
+    line_raw: (value) =>
         @file\write "#{value or ''}\n"
 
     close: => @file\close!
