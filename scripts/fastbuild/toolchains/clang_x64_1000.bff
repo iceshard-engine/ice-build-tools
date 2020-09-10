@@ -1,0 +1,5 @@
+
+.ToolchainProperties_clang_x64_1000 =
+[
+    Using( .ToolchainProperties_clang_x64_900 )
+]

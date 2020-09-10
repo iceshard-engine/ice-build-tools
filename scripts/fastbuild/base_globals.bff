@@ -1,0 +1,42 @@
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Predefined variables with various values to be used as 'constant' values.
+// Changeing these values at any point may and probly will cause a lot of problems
+
+.EmptyString = ''
+.EmptyList = { }
+.EmptyStruct = [ ]
+
+.Kind_None = '<none>'
+.Kind_StaticLib = 'StaticLib'
+.Kind_SharedLib = 'SharedLib'
+.Kind_ConsoleApp = 'ConsoleApp'
+.Kind_WindowedApp = 'WindowedApp'
+.Kind_Applications = { .Kind_ConsoleApp, .Kind_WindowedApp }
+
+.Kind_AllowedList = {
+    .Kind_StaticLib
+    .Kind_SharedLib
+    .Kind_ConsoleApp
+    .Kind_WindowedApp
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following structures provide basic definitions of empty variables which may be updated by
+// different toolchains, platforms, configurations
+.ToolchainProperties_Base = [ ]
+
+.PlatformProperties_Base =
+[
+    .ToolchainProperties = { }
+]
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following variables are defined to provide proper building behaviour of final command line options
+// More on this later
+
+.CompilerOptions = ''
+.CompilerPCHOptions = ''
+.LibrarianOptions = ''
+.LinkerOptions = ''

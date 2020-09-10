@@ -1,0 +1,8 @@
+
+.Configuration_Profile =
+[
+    .ConfigurationName = 'Profile'
+    .ConanConfiguration = 'Release'
+]
+
+.ToolchainProperties_MSVC_x64_v142_Profile = .ToolchainProperties_MSVC_x64_v142_Develop

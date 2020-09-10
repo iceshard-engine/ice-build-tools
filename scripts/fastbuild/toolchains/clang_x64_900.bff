@@ -1,0 +1,9 @@
+
+.ToolchainProperties_clang_x64_900 =
+[
+    Using( .ToolchainProperties_Base )
+
+    .CompilerOptions + ' -c "%1"'
+    .LinkerOptions + ' -o "%2" "%1"'
+    .LibrarianOptions + ' -o "%2" "%1"'
+]

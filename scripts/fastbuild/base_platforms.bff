@@ -1,0 +1,5 @@
+#include "platforms/platform_windows_x64.bff"
+
+.PlatformList = {
+    .Platform_Windows_x64
+}

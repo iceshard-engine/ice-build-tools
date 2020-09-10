@@ -1,0 +1,24 @@
+
+.Configuration_Develop =
+[
+    .ConfigurationName = 'Develop'
+    .ConanConfiguration = 'Release'
+]
+
+.ToolchainProperties_MSVC_x64_v142_Develop =
+[
+    .CompilerOptions
+        + ' /permissive-'
+        + ' /await'
+        + ' /wd4127' // conditional expression is constant'
+
+        + ' /DISC_DEVELOP'
+        + ' /std:c++latest'
+        + ' /O2'
+        + ' /Z7'
+        + ' /MD'
+        + ' /EHsc'
+
+    .LinkerOptions
+        + ' /DEBUG'
+]

@@ -1,0 +1,11 @@
+#include "configurations/configuration_debug.bff"
+#include "configurations/configuration_develop.bff"
+#include "configurations/configuration_profile.bff"
+#include "configurations/configuration_release.bff"
+
+.ConfigurationList = {
+    .Configuration_Debug
+    .Configuration_Develop
+    .Configuration_Profile
+    .Configuration_Release
+}

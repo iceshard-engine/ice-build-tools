@@ -1,0 +1,25 @@
+
+.Configuration_Debug =
+[
+    .ConfigurationName = 'Debug'
+    .ConanConfiguration = 'Debug'
+]
+
+.ToolchainProperties_MSVC_x64_v142_Debug =
+[
+    .CompilerOptions
+        + ' /permissive-'
+        + ' /await'
+        + ' /wd4127' // conditional expression is constant'
+
+        + ' /std:c++latest'
+        + ' /D_DEBUG'
+        + ' /DISC_DEBUG'
+        + ' /Od'
+        + ' /Z7'
+        + ' /MDd'
+        + ' /EHsc'
+
+    .LinkerOptions
+        + ' /DEBUG'
+]
