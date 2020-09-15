@@ -4,7 +4,7 @@ import os
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "0.0.10"
+    version = "0.1.0"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
@@ -13,7 +13,7 @@ class IceBuildToolsConan(ConanFile):
     requires = "moonscript-installer/1.0.2@iceshard/stable"
 
     # Additional exports
-    exports_sources = [ "source/*", "LICENSE" ]
+    exports_sources = [ "source/*", "scripts/*", "LICENSE" ]
 
     def build(self):
         self.run("moonc source/ice -t build")
@@ -21,7 +21,7 @@ class IceBuildToolsConan(ConanFile):
     def package(self):
         self.copy("LICENSE", src=".", dst=".", keep_path=False)
         self.copy("*.lua", src="build/", dst="scripts/lua/", keep_path=True)
-        self.copy("*.*", src="source/scripts/", dst="scripts/shell/", keep_path=False)
+        self.copy("*.*", src="scripts/shell/", dst="scripts/shell/", keep_path=False)
 
     def package_info(self):
         self.env_info.LUA_PATH.append(os.path.join(self.package_folder, "scripts/lua/?.lua"))

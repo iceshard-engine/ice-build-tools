@@ -1,18 +1,22 @@
 lfs = require 'lfs'
 
 -- Get the host system value on first run
-extension_to_system = dll:'windows', dylib:'macos', so:'linux'
+extension_to_system = dll:'windows', dylib:'macos', so:'unix'
 
 -- Get the binary module extension this lua build is using
 module_extension = string.match package.cpath, '?%.(%w+)'
 
 -- Save the host system value
-host_system = extension_to_system[module_extension] or 'unknown'
+detected_host_system = extension_to_system[module_extension] or 'unknown'
 
 os.cwd = -> lfs.currentdir!
 
 -- We use the lua build configuration to get the host system, this works in most cases but some issues may arise on MacOS.
-os.host = -> host_system
+os.host = -> detected_host_system
+
+os.iswindows = detected_host_system == 'windows'
+os.isunix = detected_host_system == 'unix'
+os.ismacos = detected_host_system == 'macos'
 
 -- Returns true if the path is a directory
 os.isfile = (path) -> (lfs.attributes path, 'mode') == 'file'

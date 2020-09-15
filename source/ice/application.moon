@@ -41,8 +41,10 @@ class Application
         -- Translate return values to return codes
         if (type result) == "boolean"
             result = return_code:(result and 0 or -1)
-        if (type result) == "number"
+        elseif (type result) == "number"
             result = return_code:result
+        elseif (type result) == "table"
+            result = return_code:0, value:result
         elseif (type result) == "nil"
             result = return_code:0
 
@@ -50,6 +52,8 @@ class Application
         if result.return_code ~= 0
             print string.format "ERROR: %s", (result.message or "Unknown error occured!")
             os.exit result.return_code
+
+        result.value or { }
 
     execute: => true
 
