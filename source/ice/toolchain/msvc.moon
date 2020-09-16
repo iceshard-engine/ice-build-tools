@@ -7,7 +7,7 @@ toolchain_definitions = {
         struct_name: 'Toolchain_MSVC_x64_v142'
         compiler_name: 'compiler-msvc-x64-v142'
 
-        generate_structure: (gen, toolchain_bin_dir, toolchain_dir) ->
+        generate_structure: (gen, toolchain_bin_dir, toolchain_dir, tools_version) ->
             struct_name = 'Toolchain_MSVC_x64_v142'
             compiler_name = 'compiler-msvc-x64-v142'
 
@@ -124,7 +124,7 @@ class MSVC
                         name: toolchain_definition.name
                         struct_name: toolchain_definition.struct_name
                         compiler_name: toolchain_definition.compiler_name
-                        generate: (gen) -> toolchain_definition.generate_structure gen, toolchain_path, current_dir
+                        generate: (gen) -> toolchain_definition.generate_structure gen, toolchain_path, current_dir, tools_version
                         path:toolchain_path
                     }
 

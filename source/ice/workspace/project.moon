@@ -34,8 +34,7 @@ class Project
         @application_class = ProjectApplication
         @generator_class = FastBuildGenerator
 
-    application: (application_class) =>
-        -- @application_object = application_class!
+    fastbuild_script: (@script_location) =>
 
     sources: (@source_directory) =>
     output: (@output_directory) =>
@@ -50,8 +49,10 @@ class Project
 
         @_detect_platform_fastbuild_variables command_result
         @_detect_conan_fastbuild_variables command_result
+        @_build_fastbuild_workspace_script command_result
 
-        command_result.execute! if command_result.execute
+        os.chdir @[command_result.execute_location] or '.', ->
+            command_result.execute! if command_result.execute
 
     _detect_platform_fastbuild_variables: (args) =>
         toolchains = nil
@@ -62,7 +63,7 @@ class Project
 
         additional_sdks = SDKS\detect!
 
-        force_detect = args.force_detect
+        force_detect = args.force_detect or args.fbuild_detect_variables
 
         error "No supported toolchain detected!" unless toolchains and #toolchains > 0
         error "No supported toolchain detected!" unless platform_sdks and #platform_sdks > 0
@@ -168,6 +169,30 @@ class Project
         if os.isfile 'source\\conanfile.txt'
             if args.conan_source_update or (not os.isfile "build/conaninfo.txt")
                 @conan\install conanfile:'source', update:args.conan_source_update, install_folder:'build'
+
+    _build_fastbuild_workspace_script: (args) =>
+        assert (os.isdir @output_directory), "Directory '#{@output_directory}' does not exist!"
+
+        workspace_root = os.cwd!\gsub '\\', '/'
+
+        os.chdir @output_directory, (dir) ->
+            if args.fbuild_workspace_script or (not os.isfile "fbuild.bff")
+                gen = @.generator_class "fbuild.bff"
+
+                gen\variables { { 'WorkspaceRoot', workspace_root } }
+                gen\line!
+                gen\include "conan.bff"
+                gen\include "detected_toolchains.bff"
+                gen\include "detected_platforms.bff"
+                gen\include "detected_sdks.bff"
+
+                gen\line!
+                gen\line '.SDKList + .PlatformSDKList'
+                gen\line '.SDKNames + .PlatformSDKNames'
+
+                gen\line!
+                gen\include "#{workspace_root}/#{@script_location}"
+                gen\close!
 
 
 { :Project }
