@@ -32,7 +32,12 @@ class VSWhere extends Exec
 
         true
 
+class VStudio extends Exec
+    new: => super (VSWhere!\find latest:true, properties:{ 'productPath' }).productPath
 
+    start: (args = {}) =>
+        cmd = ""
+        cmd ..= " #{args.open}" if (os.isfile args.open) or (os.isdir  args.open)
+        @\run cmd
 
-
-{ :VSWhere }
+{ :VSWhere, :VStudio }
