@@ -1,4 +1,3 @@
-#once
 
 .KindOutDir_StaticLib = 'lib'
 .KindOutDir_SharedLib = 'bin'

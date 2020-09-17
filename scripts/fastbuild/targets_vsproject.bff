@@ -1,4 +1,3 @@
-#once
 
 {
     .PlatformVSEnabled = false
@@ -181,6 +180,6 @@
 
     VSSolution( 'solution' )
     {
-        .SolutionOutput = '$WorkspaceRoot$/IceShard.sln'
+        .SolutionOutput = '$WorkspaceRoot$/$UserSolutionName$'
     }
 }
