@@ -56,7 +56,7 @@ class Project
         @_build_fastbuild_workspace_script command_result
 
         os.chdir @[command_result.execute_location] or '.', ->
-            command_result.execute! if command_result.execute
+            command_result.execute @ if command_result.execute
 
     _detect_platform_fastbuild_variables: (args) =>
         toolchains = nil

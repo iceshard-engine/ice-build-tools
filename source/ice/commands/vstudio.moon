@@ -14,13 +14,13 @@ class VStudioCommand extends BaseCommand
     execute: (args) =>
         result = super args
         result.execute_location = 'output_directory'
-        result.execute = ->
+        result.execute = (prj) ->
             FastBuild!\build
                 config:'fbuild.bff'
                 target:'solution'
                 clean:args.clean
 
-            VStudio!\start open:'../IceShard.sln' if args.start
+            VStudio!\start open:"../#{prj.solution_name}" if args.start
 
         result
 
