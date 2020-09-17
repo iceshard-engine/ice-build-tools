@@ -17,7 +17,7 @@ jobs:
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build
       run: |
-        conan create . ice-build-tools/0.0.10@iceshard/stable
+        conan create . ice-build-tools/0.1.0@iceshard/stable
     - name: Verify
       run: |
         echo Nothing to verify yet
