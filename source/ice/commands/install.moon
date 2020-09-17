@@ -2,14 +2,14 @@ import Command, option, flag from require "ice.command"
 
 class InstallCommand extends Command
     @arguments {
-        flag 'force_all',
-            name: '-f --force'
+        flag 'update',
+            name: '-u --update'
     }
 
     execute: (args) =>
         {
-            conan_tools_update: args.force or args.force_tools
-            conan_source_update: args.force or args.force_sources
+            conan_tools_update: args.update
+            conan_source_update: args.update
         }
 
 { :InstallCommand }

@@ -1,15 +1,14 @@
 import BaseCommand, option, flag from require "ice.commands.base"
 import FastBuild from require "ice.tools.fastbuild"
 
-class BuildCommand extends BaseCommand
+import VStudio from require "ice.tools.vswhere"
+
+class VStudioCommand extends BaseCommand
     @arguments {
         BaseCommand.args.clean
         BaseCommand.args.update_deps
-        option 'target',
-            name: '-t --target'
-            default: 'all-x64-Develop'
-        flag 'verbose',
-            name: '-v --verbose'
+        flag 'start',
+            name: '--start'
     }
 
     execute: (args) =>
@@ -18,13 +17,11 @@ class BuildCommand extends BaseCommand
         result.execute = ->
             FastBuild!\build
                 config:'fbuild.bff'
-                target:args.target
+                target:'solution'
                 clean:args.clean
-                monitor:true
-                distributed:true
-                summary:false
-                verbose:args.verbose
+
+            VStudio!\start open:'../IceShard.sln' if args.start
 
         result
 
-{ :BuildCommand }
+{ :VStudioCommand }

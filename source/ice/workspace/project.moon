@@ -8,7 +8,7 @@ import FastBuildGenerator from require 'ice.generators.fastbuild'
 import Application from require 'ice.application'
 import InstallCommand from require 'ice.commands.install'
 import BuildCommand from require 'ice.commands.build'
-
+import VStudioCommand from require 'ice.commands.vstudio'
 
 class ProjectApplication extends Application
     @name: ''
@@ -16,7 +16,7 @@ class ProjectApplication extends Application
     @commands: {
         'build': BuildCommand
         'install': InstallCommand
-        -- 'clean': CleanCommand
+        'vstudio': VStudioCommand
         -- 'generate': GenerateCommand
     }
 
@@ -34,7 +34,11 @@ class Project
         @application_class = ProjectApplication
         @generator_class = FastBuildGenerator
 
+        @solution_name = "#{@name}.sln"
+
     fastbuild_script: (@script_location) =>
+    fastbuild_vstudio_solution: (name) =>
+        @solution_name = "#{name}.sln"
 
     sources: (@source_directory) =>
     output: (@output_directory) =>
@@ -178,8 +182,13 @@ class Project
         os.chdir @output_directory, (dir) ->
             if args.fbuild_workspace_script or (not os.isfile "fbuild.bff")
                 gen = @.generator_class "fbuild.bff"
+                fbscripts = os.getenv 'ICE_FBUILD_SCRIPTS'
 
-                gen\variables { { 'WorkspaceRoot', workspace_root } }
+                gen\variables {
+                    { 'WorkspaceRoot', workspace_root }
+                    { 'WorkspaceBuildDir', "#{workspace_root}/#{@output_directory}" }
+                    { 'WorkspaceCodeDir', "#{workspace_root}/#{@source_directory}" }
+                }
                 gen\line!
                 gen\include "conan.bff"
                 gen\include "detected_toolchains.bff"
@@ -191,8 +200,50 @@ class Project
                 gen\line '.SDKNames + .PlatformSDKNames'
 
                 gen\line!
+                gen\line ".UserSolutionName = '#{@solution_name}'"
+
+                gen\line!
+                gen\include "#{fbscripts}/base_globals.bff"
+                gen\include "#{fbscripts}/base_toolchains.bff"
+                gen\include "#{fbscripts}/base_platforms.bff"
+                gen\include "#{fbscripts}/base_configurations.bff"
+
+                gen\line!
+                gen\line '.ProjectsResolved = { }'
+                gen\line '{'
+                gen\line '.Projects = { }'
                 gen\include "#{workspace_root}/#{@script_location}"
+                gen\include "#{fbscripts}/definition_project.bff"
+                gen\line '}'
+
+                gen\line!
+                gen\include "#{fbscripts}/definition_configurations.bff"
+                gen\include "#{fbscripts}/definition_alias.bff"
+
+                gen\line!
+                gen\include "#{fbscripts}/targets_build.bff"
+                gen\include "#{fbscripts}/targets_vsproject.bff"
                 gen\close!
+
+
+
+                -- ; Include the generated compiler definitions
+                -- #include "scripts/target_configurations.bff"
+                -- #include "scripts/aliases.bff"
+
+                -- ; Workspace properties
+                -- .WorkspaceBuildDir = '$WorkspaceRoot$/build'
+                -- .WorkspaceCodeDir = '$WorkspaceRoot$/source/code'
+
+                -- .ProjectsResolved = { }
+                -- {
+                --     .DefaultGroup = 'Unspecified'
+                --     #include "code/projects.bff"
+                --     #include "scripts/project_definition.bff"
+                -- }
+
+                -- #include "scripts/project_targets.bff"
+                -- #include "scripts/project_vsprojects.bff"
 
 
 { :Project }
