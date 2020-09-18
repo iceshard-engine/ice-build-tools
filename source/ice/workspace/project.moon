@@ -36,6 +36,8 @@ class Project
 
         @solution_name = "#{@name}.sln"
 
+    script: (@project_script) =>
+
     fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
         @solution_name = "#{name}.sln"
@@ -48,6 +50,7 @@ class Project
         assert @output_directory ~= nil and @output_directory ~= "", "Invalid value for `output` => '#{@output_directory}'"
         assert @source_directory ~= nil and @source_directory ~= "", "Invalid value for `sources` => '#{@source_directory}'"
         assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
+        assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
         command_result = @application_class!\run!
 
@@ -201,6 +204,7 @@ class Project
 
                 gen\line!
                 gen\line ".UserSolutionName = '#{@solution_name}'"
+                gen\line ".UserScriptFile = '#{@project_script}'"
 
                 gen\line!
                 gen\include "#{fbscripts}/base_globals.bff"

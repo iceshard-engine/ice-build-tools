@@ -18,6 +18,12 @@
         .FlagPrefix = '/I"'
         .FlagSuffix = '"'
     ]
+    .ToolchainFlag_BuildOptions =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
     .ToolchainFlag_Libs =
     [
         .FlagVariable = 'LinkerOptions'

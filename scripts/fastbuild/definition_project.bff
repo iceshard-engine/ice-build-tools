@@ -9,6 +9,7 @@
     // Compiler properties
     .Defines = { }
     .IncludeDirs = { }
+    .BuildOptions = { }
 
     // Linker properties
     .Libs = { }
@@ -32,6 +33,16 @@ ForEach( .Project in .Projects )
 
     .Group = .DefaultGroup
 
+    .InputPaths = {
+        'private'
+    }
+    .VStudioPaths = {
+        'natvis'
+        'public'
+    } + .InputPaths
+
+    .DebugDir = '$WorkspaceBuildDir$'
+
     Using( .Project )
 
     .ResolvedProject =
@@ -41,6 +52,19 @@ ForEach( .Project in .Projects )
         .ProjectBaseDir = .BaseDir
         .ProjectRequires = .Requires
         .ProjectGroup = ^Group
+        .ProjectDebugDir = .DebugDir
+
+        .ProjectSourcePaths = { }
+        ForEach( .Path in .InputPaths )
+        {
+            ^ProjectSourcePaths + "$ProjectBaseDir$/$Path$"
+        }
+
+        .ProjectVStudioInputPaths = { }
+        ForEach( .Path in .VStudioPaths )
+        {
+            ^ProjectVStudioInputPaths + "$ProjectBaseDir$/$Path$"
+        }
 
         // Public properties
         .ProjectProperties_Public =

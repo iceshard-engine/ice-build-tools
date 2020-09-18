@@ -130,6 +130,7 @@ ForEach( .TargetConfig in .TargetConfigList )
                 .Variables = {
                     'IncludeDirs'
                     'Defines'
+                    'BuildOptions'
                     // 'CompilerFlags'
                     'Libs'
                     'LibDirs'
@@ -192,8 +193,8 @@ ForEach( .TargetConfig in .TargetConfigList )
                     .Compiler = .ToolchainCompiler
                     .CompilerOutputPath = .TargetIntermediateDirectory
                     .CompilerInputUnity = { }
-                    .CompilerInputPath = { '$ProjectBaseDir$/private' }
-                    .CompilerInputPattern = '*.cxx'
+                    .CompilerInputPath = .ProjectSourcePaths
+                    .CompilerInputPattern = { '*.c', '*.cpp', '*.cxx' }
 
                     // Unity files
                     //--------------------------------------------------------------------------
@@ -201,8 +202,8 @@ ForEach( .TargetConfig in .TargetConfigList )
                     {
                         Unity( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-unity' )
                         {
-                            .UnityInputPath = '$ProjectBaseDir$/private'
-                            .UnityInputPattern = { '*.cxx' }
+                            .UnityInputPath = .ProjectSourcePaths
+                            .UnityInputPattern = { '*.c', '*.cpp', '*.cxx' }
                             .UnityOutputPath = .TargetIntermediateDirectory
                             .UnityOutputPattern = 'unity_$ProjectName$_*.cxx'
                         }

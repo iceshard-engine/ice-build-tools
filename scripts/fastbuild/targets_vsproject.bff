@@ -30,8 +30,8 @@
                 .SolutionConfig = '$ConfigName$'
                 .SolutionPlatform = .SolutionPlatform
 
-                .ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t all-^$(Platform)-^$(Configuration)'
-                .ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t all-^$(Platform)-^$(Configuration) -c'
+                .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-^$(Platform)-^$(Configuration)'
+                .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-^$(Platform)-^$(Configuration) -c'
             ]
             ^SolutionConfigs + .SolutionConfig
         }
@@ -64,16 +64,15 @@
         .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
         .ProjectConfigs = { }
         .ProjectBasePath = .ProjectBaseDir
-        .ProjectInputPaths = {
-            '$ProjectBaseDir$/natvis'
-            '$ProjectBaseDir$/public'
-            '$ProjectBaseDir$/private'
-        }
+        .ProjectInputPaths = .ProjectVStudioInputPaths
         .ProjectFiles = {
             '$ProjectBaseDir$/$ProjectName$.bff'
         }
         .ProjectAllowedFileExtensions = {
-            '*.cxx', '*.hxx', '*.inl', '*.bff', '*.rc', '*.resx', '*.mm', '*.natvis'
+            '*.h', '*.c', '*.hpp', '*.cpp', '*.cxx', '*.hxx', '*.inl',
+            '*.m', '*.mm',
+            '*.rc', '*.resx',
+            '*.bff', '*.natvis'
         }
 
         ForEach( .TargetConfig in .TargetConfigList )
@@ -112,12 +111,12 @@
                 {
                     ^Target = '$TargetAlias$-objects'
 
-                    ^ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$'
-                    ^ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$ -c'
+                    ^ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $TargetAlias$'
+                    ^ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $TargetAlias$ -c'
                 }
 
                 .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
-                .LocalDebuggerWorkingDirectory = '$WorkspaceBuildDir$'
+                .LocalDebuggerWorkingDirectory = .ProjectDebugDir
             ]
 
             ^ProjectConfigs + .ProjectConfig
