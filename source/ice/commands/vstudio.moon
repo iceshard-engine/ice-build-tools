@@ -14,7 +14,7 @@ class VStudioCommand extends BaseCommand
     prepare: (args, project) =>
         super args, project
 
-        os.chdir project.output_directory
+        os.chdir project.output_dir
 
     execute: (args) =>
         FastBuild!\build
