@@ -11,17 +11,18 @@ class VStudioCommand extends BaseCommand
             name: '--start'
     }
 
+    prepare: (args, project) =>
+        super args, project
+
+        os.chdir project.output_directory
+
     execute: (args) =>
-        result = super args
-        result.execute_location = 'output_directory'
-        result.execute = (prj) ->
-            FastBuild!\build
-                config:'fbuild.bff'
-                target:'solution'
-                clean:args.clean
+        FastBuild!\build
+            config:'fbuild.bff'
+            target:'solution'
+            clean:args.clean
 
-            VStudio!\start open:"../#{prj.solution_name}" if args.start
-
-        result
+        VStudio!\start open:"../#{prj.solution_name}" if args.start
+        true
 
 { :VStudioCommand }

@@ -71,16 +71,20 @@ os.rmdir_with_files = (path) ->
 os.chdir = (path, fn) ->
     result = false
 
-    -- Save the current directory
-    current_dir = lfs.currentdir!
-    if result = lfs.chdir path
+    if fn == nil
+        result = lfs.chdir path
 
-        -- Call the function method
-        assert (type fn) == "function", "Expected callback at #2 argument!"
-        fn lfs.currentdir!
+    else
+        -- Save the current directory
+        current_dir = lfs.currentdir!
+        if result = lfs.chdir path
 
-        -- Get out of the directory
-        lfs.chdir current_dir
+            -- Call the function method
+            assert (type fn) == "function", "Expected callback at #2 argument!"
+            fn lfs.currentdir!
+
+            -- Get out of the directory
+            lfs.chdir current_dir
 
     result
 

@@ -16,6 +16,7 @@ class Command
             for _, { :func, :opts } in pairs @@.args
                 @parser[func] @parser, opts
 
+    prepare: => nil
     execute: => true
 
 

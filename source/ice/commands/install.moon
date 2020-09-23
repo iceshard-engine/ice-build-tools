@@ -6,10 +6,8 @@ class InstallCommand extends Command
             name: '-u --update'
     }
 
-    execute: (args) =>
-        {
-            conan_tools_update: args.update
-            conan_source_update: args.update
-        }
+    execute: (args, project) =>
+        project.generate.conan_tools_files! if args.update
+        project.generate.conan_source_files! if args.update
 
 { :InstallCommand }

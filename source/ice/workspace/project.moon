@@ -4,27 +4,7 @@ import SDKS from require 'ice.sdks.sdks'
 
 import Conan from require 'ice.tools.conan'
 import FastBuildGenerator from require 'ice.generators.fastbuild'
-
-import Application from require 'ice.application'
-import InstallCommand from require 'ice.commands.install'
-import BuildCommand from require 'ice.commands.build'
-import VStudioCommand from require 'ice.commands.vstudio'
-
-class ProjectApplication extends Application
-    @name: ''
-    @description: 'Project command tool.'
-    @commands: {
-        'build': BuildCommand
-        'install': InstallCommand
-        'vstudio': VStudioCommand
-        -- 'generate': GenerateCommand
-    }
-
-    -- Plain call to the application
-    execute: (args) =>
-        print "#{@@name} - v0.1-alpha"
-        print ''
-        print '> For more options see the -h,--help output.'
+import ProjectApplication from require 'ice.workspace.application'
 
 
 class Project
@@ -37,6 +17,7 @@ class Project
         @solution_name = "#{@name}.sln"
 
     script: (@project_script) =>
+    application: (@application_class) =>
 
     fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
@@ -52,14 +33,19 @@ class Project
         assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
         assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
-        command_result = @application_class!\run!
-
         @_detect_platform_fastbuild_variables command_result
         @_detect_conan_fastbuild_variables command_result
         @_build_fastbuild_workspace_script command_result
 
-        os.chdir @[command_result.execute_location] or '.', ->
-            command_result.execute @ if command_result.execute
+        command_result = @application_class!\run
+            source_dir: @source_directory
+            output_dir: @output_directory
+            fastbuild_solution_name: @solution_name
+            generate:
+                fbuild_platform_files: -> @_detect_platform_fastbuild_variables fbuild_detect_variables:true
+                fbuild_workspace_files: -> @_build_fastbuild_workspace_script fbuild_workspace_script:true
+                conan_source_files: -> @_detect_conan_fastbuild_variables conan_source_update:true
+                conan_tools_files: -> @_detect_conan_fastbuild_variables conan_tools_update:true
 
     _detect_platform_fastbuild_variables: (args) =>
         toolchains = nil
@@ -228,26 +214,5 @@ class Project
                 gen\include "#{fbscripts}/targets_build.bff"
                 gen\include "#{fbscripts}/targets_vsproject.bff"
                 gen\close!
-
-
-
-                -- ; Include the generated compiler definitions
-                -- #include "scripts/target_configurations.bff"
-                -- #include "scripts/aliases.bff"
-
-                -- ; Workspace properties
-                -- .WorkspaceBuildDir = '$WorkspaceRoot$/build'
-                -- .WorkspaceCodeDir = '$WorkspaceRoot$/source/code'
-
-                -- .ProjectsResolved = { }
-                -- {
-                --     .DefaultGroup = 'Unspecified'
-                --     #include "code/projects.bff"
-                --     #include "scripts/project_definition.bff"
-                -- }
-
-                -- #include "scripts/project_targets.bff"
-                -- #include "scripts/project_vsprojects.bff"
-
 
 { :Project }

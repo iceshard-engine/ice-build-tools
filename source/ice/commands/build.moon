@@ -12,19 +12,21 @@ class BuildCommand extends BaseCommand
             name: '-v --verbose'
     }
 
-    execute: (args) =>
-        result = super args
-        result.execute_location = 'output_directory'
-        result.execute = ->
-            FastBuild!\build
-                config:'fbuild.bff'
-                target:args.target
-                clean:args.clean
-                monitor:true
-                distributed:true
-                summary:false
-                verbose:args.verbose
+    prepare: (args, project) =>
+        super args, project
 
-        result
+        os.chdir project.output_directory
+
+    execute: (args) =>
+        FastBuild!\build
+            config:'fbuild.bff'
+            target:args.target
+            clean:args.clean
+            monitor:true
+            distributed:true
+            summary:false
+            verbose:args.verbose
+
+        true
 
 { :BuildCommand }

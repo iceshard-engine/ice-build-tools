@@ -8,11 +8,11 @@ class BaseCommand extends Command
             name: '-u --update-deps'
     }
 
+    prepare: (args, project) =>
+        project.generate.conan_source_files! if args.clean
+        project.generate.fbuild_platform_files! if args.clean
+        project.generate.fbuild_workspace_files! if args.clean
+
     execute: (args) =>
-        {
-            conan_source_update: args.update_deps
-            fbuild_detect_variables: args.clean
-            fbuild_workspace_script: args.clean
-        }
 
 { :BaseCommand, :option, :flag }

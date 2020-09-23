@@ -28,13 +28,17 @@ class Application
             -- Save the object
             @commands[name] = command
 
-    run: =>
+    run: (project) =>
         result = nil
 
         -- Execute the given command or the main handler
         args = @parser\parse arg
         if args.command
-            result = @commands[args.command]\execute args
+            old_dir = os.cwd!
+
+            @commands[args.command]\prepare args, project
+            result = @commands[args.command]\execute args, project
+            os.chdir old_dir
         else
             result = @execute args
 
