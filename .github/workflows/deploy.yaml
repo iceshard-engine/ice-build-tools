@@ -18,8 +18,8 @@ jobs:
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build
       run: |
-        conan create . ice-build-tools/0.1.2@iceshard/stable
+        conan create . ice-build-tools/0.1.3@iceshard/stable
     - name: Deploy
       run: |
         conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
-        conan upload -r conan-iceshard ice-build-tools/0.1.2@iceshard/stable --all
+        conan upload -r conan-iceshard ice-build-tools/0.1.3@iceshard/stable --all

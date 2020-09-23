@@ -33,9 +33,9 @@ class Project
         assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
         assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
-        @_detect_platform_fastbuild_variables command_result
-        @_detect_conan_fastbuild_variables command_result
-        @_build_fastbuild_workspace_script command_result
+        @_detect_platform_fastbuild_variables { }
+        @_detect_conan_fastbuild_variables { }
+        @_build_fastbuild_workspace_script { }
 
         command_result = @application_class!\run
             source_dir: @source_directory
