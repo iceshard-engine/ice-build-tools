@@ -16,13 +16,13 @@ class VStudioCommand extends BaseCommand
 
         os.chdir project.output_dir
 
-    execute: (args) =>
+    execute: (args, project) =>
         FastBuild!\build
             config:'fbuild.bff'
             target:'solution'
             clean:args.clean
 
-        VStudio!\start open:"../#{prj.solution_name}" if args.start
+        VStudio!\start open:"../#{project.fastbuild_solution_name}" if args.start
         true
 
 { :VStudioCommand }
