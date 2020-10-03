@@ -83,7 +83,7 @@ detect_compilers = (version, requirements) ->
     vswhere = VSWhere!
     vswhere\find products:'*', all:true, format:'json', version:version, requires:requirements
 
-class MSVC
+class VsMSVC
     @detect: (version, requirements) =>
         toolchain_list = { }
 
@@ -130,4 +130,4 @@ class MSVC
 
         toolchain_list
 
-{ :MSVC }
+{ :VsMSVC }

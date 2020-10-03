@@ -297,7 +297,16 @@ ForEach( .TargetConfig in .TargetConfigList )
     {
         Using( .AliasInfo )
 
-        If ( .AliasTags in .ConfigTags )
+        .HasAllTags = true
+        ForEach( .Tag in .AliasTags )
+        {
+            If ( .Tag not in .ConfigTags )
+            {
+                ^HasAllTags = false
+            }
+        }
+
+        If ( .HasAllTags )
         {
             Alias( "$AliasName$-$ConfigName$" )
             {

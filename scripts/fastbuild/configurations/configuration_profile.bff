@@ -6,3 +6,5 @@
 ]
 
 .ToolchainProperties_MSVC_x64_v142_Profile = .ToolchainProperties_MSVC_x64_v142_Develop
+
+.ToolchainProperties_clang_x64_1000_Profile = .ToolchainProperties_clang_x64_1000_Develop

@@ -23,3 +23,12 @@
     .LinkerOptions
         + ' /DEBUG'
 ]
+
+.ToolchainProperties_clang_x64_1000_Debug = 
+[
+    .CompilerOptions
+        + ' -std=c++20'
+        + ' -D_DEBUG'
+        + ' -O0'
+        + ' -Wno-#pragma-messages'
+]

@@ -1,4 +1,5 @@
-import MSVC from require 'ice.toolchain.msvc'
+import VsMSVC from require 'ice.toolchain.vs_msvc'
+import VsClang from require 'ice.toolchain.vs_clang'
 import Windows from require 'ice.platform.windows'
 import SDKS from require 'ice.sdks.sdks'
 
@@ -49,7 +50,14 @@ class Project
 
     _detect_platform_fastbuild_variables: (args) =>
         toolchains = nil
-        toolchains = MSVC\detect '[16.0,17.0)' if os.iswindows
+
+        if os.iswindows
+            toolchains = { }
+            msvc_toolchains = VsMSVC\detect '[16.0,17.0)' 
+            clang_toolchains = VsClang\detect '[16.0,17.0)' 
+
+            table.insert toolchains, toolchain for toolchain in *msvc_toolchains or { }
+            table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
 
         platform_sdks = nil
         platform_sdks = Windows\detect! if os.iswindows
