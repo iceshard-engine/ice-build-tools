@@ -8,18 +8,18 @@ on:
 
 jobs:
   deploy-build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Setup repository
       run: |
         pip install conan
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Build
+    - name: Create package
       run: |
-        conan create . ice-build-tools/0.1.5@iceshard/stable
+        conan create . ice-build-tools/0.3.0@iceshard/stable
     - name: Deploy
       run: |
         conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
-        conan upload -r conan-iceshard ice-build-tools/0.1.5@iceshard/stable --all
+        conan upload -r conan-iceshard ice-build-tools/0.3.0@iceshard/stable --all

@@ -15,9 +15,9 @@ conan remote add conan-iceshard https://conan.iceshard.net/
 conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 ```
 
-And add `ice-build-tools/0.1.0@iceshard/stable` to your conanfile.txt
+And add `ice-build-tools/0.3.0@iceshard/stable` to your conanfile.txt
 
 ```ini
 [requires]
-ice-build-tools/0.1.0@iceshard/stable
+ice-build-tools/0.3.0@iceshard/stable
 ```
