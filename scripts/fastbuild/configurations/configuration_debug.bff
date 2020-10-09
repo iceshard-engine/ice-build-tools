@@ -24,6 +24,16 @@
         + ' /DEBUG'
 ]
 
+.ToolchainProperties_clang_x64_900_Debug =
+[
+    .CompilerOptions
+        + ' -std=c++2a'
+        + ' -D_DEBUG'
+        + ' -ISC_DEBUG'
+        + ' -O0'
+        + ' -Wno-#pragma-messages'
+]
+
 .ToolchainProperties_clang_x64_1000_Debug =
 [
     .CompilerOptions

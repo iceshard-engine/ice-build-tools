@@ -1,0 +1,40 @@
+
+.ToolchainProperties_clang_x64_900 =
+[
+    Using( .ToolchainProperties_Base )
+
+    .CompilerOptions + ' -c "%1" -o "%2"'
+    .LinkerOptions + ' -o "%2" "%1"'
+    .LibrarianOptions + 'rcs "%2" %1'
+
+    .ToolchainFlag_Defines =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '-D"'
+        .FlagSuffix = '"'
+    ]
+    .ToolchainFlag_IncludeDirs =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '-isystem '
+        .FlagSuffix = ''
+    ]
+    .ToolchainFlag_BuildOptions =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .ToolchainFlag_Libs =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = '-l'
+        .FlagSuffix = ''
+    ]
+    .ToolchainFlag_LibDirs =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = '-L"'
+        .FlagSuffix = '"'
+    ]
+]

@@ -23,6 +23,15 @@
         + ' /DEBUG'
 ]
 
+.ToolchainProperties_clang_x64_900_Develop =
+[
+    .CompilerOptions
+        + ' -std=c++2a'
+        + ' -DISC_DEVELOP'
+        + ' -O2'
+        + ' -Wno-#pragma-messages'
+]
+
 .ToolchainProperties_clang_x64_1000_Develop =
 [
     .CompilerOptions

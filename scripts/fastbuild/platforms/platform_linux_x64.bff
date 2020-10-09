@@ -8,6 +8,7 @@
         'SDK-Linux'
     }
     .PlatformSupportedToolchains = {
+        'clang-9.0.0'
         'clang-10.0.0'
     }
 
@@ -40,6 +41,14 @@
 ]
 
 // Platform options depending on the given toolchain
+.ToolchainProperties_clang_x64_900_Linux_x64 =
+[
+    .LinkerOptions
+        + ''
+    .LibrarianOptions
+        + ''
+]
+
 .ToolchainProperties_clang_x64_1000_Linux_x64 =
 [
     .LinkerOptions

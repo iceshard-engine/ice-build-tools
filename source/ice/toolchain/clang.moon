@@ -1,6 +1,35 @@
 import Where, Exec from require "ice.tools.exec"
 
 toolchain_definitions = {
+    '9.0.0': {
+        name: 'clang-9.0.0'
+        struct_name: 'Toolchain_Clang_x64_900'
+        compiler_name: 'compiler-clang-x64-900'
+
+        generate_structure: (gen, clang_path, ar_path) ->
+            struct_name = 'Toolchain_Clang_x64_900'
+            compiler_name = 'compiler-clang-x64-900'
+
+            gen\structure struct_name, (gen) ->
+                gen\line!
+                gen\compiler
+                    name: compiler_name
+                    executable: clang_path
+                    extra_files: { }
+
+                gen\line!
+                gen\variables {
+                    { 'ToolchainCompilerFamily', 'clang' }
+                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainToolset', '900' }
+                    { 'ToolchainCompiler', compiler_name }
+                    { 'ToolchainLibrarian', ar_path }
+                    { 'ToolchainLinker', clang_path }
+                    { 'ToolchainIncludeDirs', { } }
+                    { 'ToolchainLibDirs', { } }
+                    { 'ToolchainLibs', { } }
+                }
+    }
     '10.0.0': {
         name: 'clang-10.0.0'
         struct_name: 'Toolchain_Clang_x64_1000'
@@ -39,8 +68,6 @@ detect_compilers = ->
             ar_path: Where\path 'ar'
         }
     }
-    -- vswhere = VSWhere!
-    -- vswhere\find products:'*', all:true, format:'json', version:version, requires:requirements
 
 class Clang
     @detect: (version) =>
