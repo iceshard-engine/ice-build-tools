@@ -13,13 +13,14 @@ jobs:
     - uses: actions/checkout@v2
     - name: Setup repository
       run: |
-        pip install conan
-        conan remote add conan-iceshard https://conan.iceshard.net/
-        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+        pip3 install setuptools
+        pip3 install conan
+        ~/.local/bin/conan remote add conan-iceshard https://conan.iceshard.net/
+        ~/.local/bin/conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Create package
       run: |
-        conan create . ice-build-tools/0.3.0@iceshard/stable
+        ~/.local/bin/conan create . ice-build-tools/0.3.0@iceshard/stable
     - name: Deploy
       run: |
-        conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
-        conan upload -r conan-iceshard ice-build-tools/0.3.0@iceshard/stable --all
+        ~/.local/bin/conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
+        ~/.local/bin/conan upload -r conan-iceshard ice-build-tools/0.3.0@iceshard/stable --all
