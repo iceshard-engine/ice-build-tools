@@ -1,6 +1,9 @@
 import VsMSVC from require 'ice.toolchain.vs_msvc'
 import VsClang from require 'ice.toolchain.vs_clang'
+import Clang from require 'ice.toolchain.clang'
+
 import Windows from require 'ice.platform.windows'
+import Linux from require 'ice.platform.linux'
 import SDKS from require 'ice.sdks.sdks'
 
 import Conan from require 'ice.tools.conan'
@@ -53,21 +56,32 @@ class Project
 
         if os.iswindows
             toolchains = { }
-            msvc_toolchains = VsMSVC\detect '[16.0,17.0)' 
-            clang_toolchains = VsClang\detect '[16.0,17.0)' 
+            msvc_toolchains = VsMSVC\detect '[16.0,17.0)'
+            clang_toolchains = VsClang\detect '[16.0,17.0)'
 
             table.insert toolchains, toolchain for toolchain in *msvc_toolchains or { }
             table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
 
+        if os.isunix
+            toolchains = { }
+            clang_toolchains = Clang\detect!
+
+            table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
+
         platform_sdks = nil
         platform_sdks = Windows\detect! if os.iswindows
+        platform_sdks = Linux\detect! if os.isunix
 
         additional_sdks = SDKS\detect!
 
         force_detect = args.force_detect or args.fbuild_detect_variables
 
         error "No supported toolchain detected!" unless toolchains and #toolchains > 0
-        error "No supported toolchain detected!" unless platform_sdks and #platform_sdks > 0
+
+        if os.iswindows or os.isunix
+            error "No supported platforms detected!" unless platform_sdks and #platform_sdks > 0
+        else
+            platform_sdks = { }
 
         os.mkdir @output_directory unless os.isdir @output_directory
         os.chdir @output_directory, (dir) ->
@@ -82,8 +96,8 @@ class Project
 
                     table.insert toolchain_names, toolchain.name
                     table.insert toolchain_list, toolchain.struct_name
+                    gen\line!
 
-                gen\line!
                 gen\line '.ToolchainList = {'
                 gen\indented (gen) ->
                     gen\line ".#{value}" for value in *toolchain_list
@@ -163,11 +177,11 @@ class Project
     _detect_conan_fastbuild_variables: (args) =>
         @conan = Conan!
 
-        if os.isfile 'tools\\conanfile.txt'
+        if os.isfile 'tools/conanfile.txt'
             if args.conan_tools_update or (not os.isfile "build/tools/conaninfo.txt")
                 @conan\install conanfile:'tools', update:args.conan_tools_update, install_folder:'build/tools'
 
-        if os.isfile 'source\\conanfile.txt'
+        if os.isfile 'source/conanfile.txt'
             if args.conan_source_update or (not os.isfile "build/conaninfo.txt")
                 @conan\install conanfile:'source', update:args.conan_source_update, install_folder:'build'
 
@@ -220,7 +234,8 @@ class Project
 
                 gen\line!
                 gen\include "#{fbscripts}/targets_build.bff"
-                gen\include "#{fbscripts}/targets_vsproject.bff"
+                if os.iswindows
+                    gen\include "#{fbscripts}/targets_vsproject.bff"
                 gen\close!
 
 { :Project }

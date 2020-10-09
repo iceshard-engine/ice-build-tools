@@ -28,7 +28,9 @@ toolchain_definitions = {
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', "$ToolchainPath$\\llvm-ar.exe" }
                     { 'ToolchainLinker', "$ToolchainPath$\\clang.exe" }
-                    { 'ToolchainIncludeDirs', { } }
+                    { 'ToolchainIncludeDirs', { 
+                        "#{toolchain_dir}\\lib\\clang\\10.0.0\\include"
+                    } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
                 }

@@ -16,8 +16,8 @@
     .ToolchainFlag_IncludeDirs =
     [
         .FlagVariable = 'CompilerOptions'
-        .FlagPrefix = '-I"'
-        .FlagSuffix = '"'
+        .FlagPrefix = '-isystem '
+        .FlagSuffix = ''
     ]
     .ToolchainFlag_BuildOptions =
     [

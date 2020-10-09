@@ -25,7 +25,7 @@ class Exec
 
 
 class Where extends Exec
-    @exec = 'where.exe'
+    @exec = os.iswindows and 'where.exe' or 'which'
     @path: (name) => (Where!\lines name)[1] or name
 
     new: => @exec = @@exec

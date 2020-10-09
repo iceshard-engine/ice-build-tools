@@ -4,19 +4,19 @@ import os
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "0.2.0"
+    version = "0.3.0"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
 
     settings = "os"
-    requires = "moonscript-installer/1.0.2@iceshard/stable"
+    requires = "moonscript-installer/0.5.0@iceshard/stable"
 
     # Additional exports
     exports_sources = [ "source/*", "scripts/*", "LICENSE" ]
 
     def build(self):
-        self.run("moonc source/ice -t build")
+        self.run("lua $MOONC_SCRIPT source/ice -t build")
 
     def package(self):
         self.copy("LICENSE", src=".", dst=".", keep_path=False)

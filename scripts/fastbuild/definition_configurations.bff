@@ -14,7 +14,16 @@ ForEach( .Platform in .PlatformList )
 
         .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSDKs
 
-        If( .TargetPlatformRequiredComponents in .PlatformSupportedComponents )
+        .HasAllTags = true
+        ForEach( .Tag in .TargetPlatformRequiredComponents )
+        {
+            If ( .Tag not in .PlatformSupportedComponents )
+            {
+                ^HasAllTags = false
+            }
+        }
+
+        If( .HasAllTags )
         {
             // Iterate over all configurations and create final target configurations
             ForEach( .Configuration in .ConfigurationList )

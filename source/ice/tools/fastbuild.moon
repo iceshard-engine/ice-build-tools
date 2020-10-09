@@ -1,7 +1,7 @@
 import Exec, Where from require "ice.tools.exec"
 
 class FastBuild extends Exec
-    new: (path) => super path or Where\path "fbuild.exe"
+    new: (path) => super path or (os.iswindows and Where\path "fbuild.exe") or Where\path "fbuild"
 
     help: => @\run '-help'
 

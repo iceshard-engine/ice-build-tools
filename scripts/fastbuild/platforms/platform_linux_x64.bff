@@ -1,0 +1,49 @@
+
+.Platform_Linux_x64 =
+[
+    .PlatformSystem = 'Linux'
+    .PlatformArchitecture = 'x64'
+
+    .PlatformRequiredSDKs = {
+        'SDK-Linux'
+    }
+    .PlatformSupportedToolchains = {
+        'clang-10.0.0'
+    }
+
+    .PlatformExtensions =
+    [
+        .OutputExtension_StaticLib = '.a'
+        .OutputExtension_SharedLib = '.so'
+        .OutputExtension_ConsoleApp = ''
+        .OutputExtension_WindowedApp = ''
+    ]
+
+    .PlatformOptions =
+    [
+        .LinkerOptions_StaticLib = ''
+        .LinkerOptions_SharedLib = ' -shared'
+        .LinkerOptions_ConsoleApp = ' '
+        .LinkerOptions_WindowedApp = ' '
+    ]
+
+    .PlatformVSEnabled = true
+    .PlatformVSProperties =
+    [
+        .ProjectPlatform = 'x64'
+        .ProjectConfigSuffix = ''
+
+        .PlatformToolset = 'latest'
+
+        .SolutionPlatform = 'Linux-x64'
+    ]
+]
+
+// Platform options depending on the given toolchain
+.ToolchainProperties_clang_x64_1000_Linux_x64 =
+[
+    .LinkerOptions
+        + ''
+    .LibrarianOptions
+        + ''
+]
