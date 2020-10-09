@@ -6,4 +6,4 @@ class IceBuildToolsTestsConan(ConanFile):
         pass
 
     def test(self):
-        self.run("{} {}/test_app.moon hello".format(tools.get_env("ICE_SCRIPT"), self.source_folder))
+        self.run("lua {} {}/test_app.moon hello".format(tools.get_env("MOON_SCRIPT"), self.source_folder))
