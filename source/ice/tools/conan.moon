@@ -1,7 +1,7 @@
 import Exec, Where from require "ice.tools.exec"
 
 class Conan extends Exec
-    new: (path) => super path or Where\path "conan.exe"
+    new: (path) => super path or (os.iswindows and Where\path "conan.exe") or Where\path "conan"
 
     install: (args) =>
         cmd = "install"
