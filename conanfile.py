@@ -16,7 +16,10 @@ class IceBuildToolsConan(ConanFile):
     exports_sources = [ "source/*", "scripts/*", "LICENSE" ]
 
     def build(self):
-        self.run("lua $MOONC_SCRIPT source/ice -t build")
+        if self.settings.os == "Windows":
+            self.run("%MOONC_SCRIPT% source/ice -t build")
+        if self.settings.os == "Linux":
+            self.run("lua $MOONC_SCRIPT source/ice -t build")
 
     def package(self):
         self.copy("LICENSE", src=".", dst=".", keep_path=False)
