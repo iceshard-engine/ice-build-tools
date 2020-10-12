@@ -27,6 +27,4 @@ class BuildCommand extends BaseCommand
             summary:false
             verbose:args.verbose
 
-        true
-
 { :BuildCommand }

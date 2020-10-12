@@ -19,5 +19,4 @@ class Command
     prepare: => nil
     execute: => true
 
-
 { :Command, :option, :flag }

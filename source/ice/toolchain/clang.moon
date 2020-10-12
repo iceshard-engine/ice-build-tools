@@ -22,6 +22,7 @@ toolchain_definitions = {
                     { 'ToolchainCompilerFamily', 'clang' }
                     { 'ToolchainArchitecture', 'x64' }
                     { 'ToolchainToolset', '900' }
+                    { 'ToolchainFrontend', 'clang' }
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', ar_path }
                     { 'ToolchainLinker', clang_path }
@@ -51,6 +52,7 @@ toolchain_definitions = {
                     { 'ToolchainCompilerFamily', 'clang' }
                     { 'ToolchainArchitecture', 'x64' }
                     { 'ToolchainToolset', '1000' }
+                    { 'ToolchainFrontend', 'clang' }
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', ar_path }
                     { 'ToolchainLinker', clang_path }

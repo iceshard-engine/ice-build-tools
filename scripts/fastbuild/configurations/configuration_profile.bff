@@ -5,6 +5,7 @@
     .ConanConfiguration = 'Release'
 ]
 
-.ToolchainProperties_MSVC_x64_v142_Profile = .ToolchainProperties_MSVC_x64_v142_Develop
+.ToolchainFrontendProperties_MSVC_x64_v142_Profile = .ToolchainFrontendProperties_MSVC_x64_v142_Develop
+.ToolchainFrontendProperties_clang_cl_x64_1000_Profile = .ToolchainFrontendProperties_MSVC_x64_v142_Develop
 
-.ToolchainProperties_clang_x64_1000_Profile = .ToolchainProperties_clang_x64_1000_Develop
+.ToolchainFrontendProperties_clang_x64_1000_Profile = .ToolchainFrontendProperties_clang_x64_1000_Develop

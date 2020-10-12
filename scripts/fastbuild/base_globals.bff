@@ -26,7 +26,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // The following structures provide basic definitions of empty variables which may be updated by
 // different toolchains, platforms, configurations
-.ToolchainProperties_Base = [ ]
+.ToolchainFrontend_Base = [ ]
 
 .PlatformProperties_Base =
 [

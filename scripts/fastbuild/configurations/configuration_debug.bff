@@ -5,16 +5,16 @@
     .ConanConfiguration = 'Debug'
 ]
 
-.ToolchainProperties_MSVC_x64_v142_Debug =
+.ToolchainFrontendProperties_MSVC_x64_v142_Debug =
 [
     .CompilerOptions
         + ' /permissive-'
         + ' /await'
         + ' /wd4127' // conditional expression is constant'
 
-        + ' /std:c++latest'
         + ' /D_DEBUG'
         + ' /DISC_DEBUG'
+        + ' /std:c++latest'
         + ' /Od'
         + ' /Z7'
         + ' /MDd'
@@ -22,24 +22,37 @@
 
     .LinkerOptions
         + ' /DEBUG'
+        + ' "ucrtd.lib"'
+        + ' "vcruntimed.lib"'
+        + ' "msvcrtd.lib"'
+        + ' "msvcprtd.lib"'
 ]
 
-.ToolchainProperties_clang_x64_900_Debug =
+.ToolchainFrontendProperties_clang_cl_x64_1000_Debug =
+[
+    Using( .ToolchainFrontendProperties_MSVC_x64_v142_Debug )
+    .CompilerOptions
+        + ' -Wno-#pragma-messages'
+        + ' -Wno-pragma-pack'
+        + ' -Wno-nonportable-include-path'
+]
+
+.ToolchainFrontendProperties_clang_x64_900_Debug =
 [
     .CompilerOptions
         + ' -std=c++2a'
         + ' -D_DEBUG'
-        + ' -ISC_DEBUG'
+        + ' -DISC_DEBUG'
         + ' -O0'
         + ' -Wno-#pragma-messages'
 ]
 
-.ToolchainProperties_clang_x64_1000_Debug =
+.ToolchainFrontendProperties_clang_x64_1000_Debug =
 [
     .CompilerOptions
         + ' -std=c++20'
         + ' -D_DEBUG'
-        + ' -ISC_DEBUG'
+        + ' -DISC_DEBUG'
         + ' -O0'
         + ' -Wno-#pragma-messages'
 ]

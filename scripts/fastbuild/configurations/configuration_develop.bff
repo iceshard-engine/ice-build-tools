@@ -5,7 +5,7 @@
     .ConanConfiguration = 'Release'
 ]
 
-.ToolchainProperties_MSVC_x64_v142_Develop =
+.ToolchainFrontendProperties_MSVC_x64_v142_Develop =
 [
     .CompilerOptions
         + ' /permissive-'
@@ -21,9 +21,22 @@
 
     .LinkerOptions
         + ' /DEBUG'
+        + ' "ucrt.lib"'
+        + ' "vcruntime.lib"'
+        + ' "msvcrt.lib"'
+        + ' "msvcprt.lib"'
 ]
 
-.ToolchainProperties_clang_x64_900_Develop =
+.ToolchainFrontendProperties_clang_cl_x64_1000_Develop =
+[
+    Using( .ToolchainFrontendProperties_MSVC_x64_v142_Develop )
+    .CompilerOptions
+        + ' -Wno-#pragma-messages'
+        + ' -Wno-pragma-pack'
+        + ' -Wno-nonportable-include-path'
+]
+
+.ToolchainFrontendProperties_clang_x64_900_Develop =
 [
     .CompilerOptions
         + ' -std=c++2a'
@@ -32,7 +45,7 @@
         + ' -Wno-#pragma-messages'
 ]
 
-.ToolchainProperties_clang_x64_1000_Develop =
+.ToolchainFrontendProperties_clang_x64_1000_Develop =
 [
     .CompilerOptions
         + ' -std=c++20'

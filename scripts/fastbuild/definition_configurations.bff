@@ -33,8 +33,9 @@ ForEach( .Platform in .PlatformList )
                 .TargetConfig =
                 [
                     .ConfigName = .ConfigurationName
-                    .ConfigToolchain = .ToolchainName
+                    .ConfigToolchain = "$ToolchainCompilerFamily$-$ToolchainArchitecture$-$ToolchainToolset$"
                     .ConfigPlatform = "$PlatformSystem$-$PlatformArchitecture$"
+                    .ConfigFrontend = .'ToolchainFrontend_$ToolchainFrontend$'
                     .ConfigTags = {
                         .PlatformSystem
                         .PlatformArchitecture
@@ -56,10 +57,9 @@ ForEach( .Platform in .PlatformList )
                             ^SDKProperties + .SDK
                         }
                     }
-                    .Properties = []
-                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$'
+                    .ConfigProperties = []
                         + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$PlatformSystem$_$PlatformArchitecture$'
-                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$ConfigurationName$'
+                        + .'ToolchainFrontendProperties_$ToolchainFrontend$_$ToolchainArchitecture$_$ToolchainToolset$_$ConfigurationName$'
                 ]
 
                 ^TargetConfigList + .TargetConfig

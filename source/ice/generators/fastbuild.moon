@@ -38,8 +38,8 @@ class FastBuildGenerator
         @\line '{'
         @\indented =>
             vars = { { 'Executable', info.executable } }
-            if info.light_cache
-                table.insert vars, { 'UseLightCache_Experimental', true }
+            table.insert vars, { 'UseLightCache_Experimental', true } if info.light_cache
+            table.insert vars, { 'CompilerFamily', info.compiler_family } if info.compiler_family
 
             @\variables vars
 

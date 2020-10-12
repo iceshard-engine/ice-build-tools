@@ -8,12 +8,14 @@
     .AliasTags = { 'Windows', 'x64', 'MSVC' }
     .AliasName = 'all-x64'
 ]
+.AliasInfos + .AliasInfo
 
 .AliasInfo =
 [
     .AliasTags = { 'Windows', 'x64', 'clang' }
     .AliasName = 'all-x64-Clang'
 ]
+.AliasInfos + .AliasInfo
 
 #else
 
@@ -22,7 +24,6 @@
     .AliasTags = { 'Linux', 'x64' }
     .AliasName = 'all-x64'
 ]
+.AliasInfos + .AliasInfo
 
 #endif
-
-.AliasInfos + .AliasInfo

@@ -40,6 +40,7 @@ toolchain_definitions = {
                     { 'ToolchainCompilerFamily', 'MSVC' }
                     { 'ToolchainArchitecture', 'x64' }
                     { 'ToolchainToolset', 'v142' }
+                    { 'ToolchainFrontend', 'MSVC' }
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', "$ToolchainPath$\\lib.exe" }
                     { 'ToolchainLinker', "$ToolchainPath$\\link.exe" }

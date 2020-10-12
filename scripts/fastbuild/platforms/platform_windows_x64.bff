@@ -21,14 +21,6 @@
         .OutputExtension_WindowedApp = '.exe'
     ]
 
-    .PlatformOptions =
-    [
-        .LinkerOptions_StaticLib = ''
-        .LinkerOptions_SharedLib = ' /DLL'
-        .LinkerOptions_ConsoleApp = ' /SUBSYSTEM:CONSOLE'
-        .LinkerOptions_WindowedApp = ' /SUBSYSTEM:WINDOWS'
-    ]
-
     .PlatformVSEnabled = true
     .PlatformVSProperties =
     [
@@ -44,19 +36,18 @@
 // Platform options depending on the given toolchain
 .ToolchainProperties_MSVC_x64_v142_Windows_x64 =
 [
+    .LinkerOptions_StaticLib = ''
+    .LinkerOptions_SharedLib = ' /DLL'
+    .LinkerOptions_ConsoleApp = ' /SUBSYSTEM:CONSOLE'
+    .LinkerOptions_WindowedApp = ' /SUBSYSTEM:WINDOWS'
+
     .LinkerOptions
         + ' /MACHINE:x64'
+        + ' /NODEFAULTLIB'
         + ' /DYNAMICBASE'
         + ' /NXCOMPAT'
     .LibrarianOptions
         + ' /MACHINE:x64'
 ]
 
-.ToolchainProperties_clang_x64_900_Windows_x64 =
-[
-]
-
-.ToolchainProperties_clang_x64_1000_Windows_x64 =
-[
-    Using( .ToolchainProperties_clang_x64_900_Windows_x64 )
-]
+.ToolchainProperties_clang_x64_1000_Windows_x64 = .ToolchainProperties_MSVC_x64_v142_Windows_x64
