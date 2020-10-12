@@ -18,7 +18,7 @@ jobs:
         ~/.local/bin/conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Create package
       run: |
-        ~/.local/bin/conan create . ice-build-tools/0.3.1@iceshard/stable
+        ~/.local/bin/conan create . ice-build-tools/0.3.2@iceshard/stable
     - name: Success
       run: |
         echo Validation successful
