@@ -27,17 +27,6 @@
         .LinkerOptions_ConsoleApp = ' '
         .LinkerOptions_WindowedApp = ' '
     ]
-
-    .PlatformVSEnabled = true
-    .PlatformVSProperties =
-    [
-        .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = ''
-
-        .PlatformToolset = 'latest'
-
-        .SolutionPlatform = 'Linux-x64'
-    ]
 ]
 
 // Platform options depending on the given toolchain

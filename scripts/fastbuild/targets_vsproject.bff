@@ -20,9 +20,11 @@
 
         If ( .PlatformVSEnabled )
         {
+            Using( .Toolchain )
+
             .SolutionConfig =
             [
-                Using( .PlatformVSProperties )
+                Using( .'PlatformVSProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$' )
 
                 .Config = '$ConfigName$$ProjectConfigSuffix$'
                 .Platform = .ProjectPlatform
@@ -80,6 +82,7 @@
             Using( .TargetConfig )
             Using( .PlatformInfo )
             Using( .PlatformExtensions )
+            Using( .Toolchain )
 
             .OutDirName = .'KindOutDir_$ProjectKind$'
             .TargetExtension = .'OutputExtension_$ProjectKind$'
@@ -91,9 +94,9 @@
 
             .ProjectConfig =
             [
-                Using( .PlatformVSProperties )
+                Using( .'PlatformVSProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$' )
 
-                .Config = '$ConfigName$'
+                .Config = '$ConfigName$$ProjectConfigSuffix$'
                 .Platform = .ProjectPlatform
 
                 .Target = ''

@@ -313,7 +313,7 @@ ForEach( .TargetConfig in .TargetConfigList )
 
         If ( .HasAllTags )
         {
-            Alias( "$AliasName$-$ConfigName$" )
+            Alias( "$AliasName$-$ConfigName$$AliasSuffix$" )
             {
                 .Targets = .ConfigTargets
             }
