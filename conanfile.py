@@ -14,6 +14,9 @@ class IceBuildToolsConan(ConanFile):
 
     # Additional exports
     exports_sources = [ "source/*", "scripts/*", "LICENSE" ]
+    
+    def package_id(self):
+        del self.info.settings.os
 
     def build(self):
         if self.settings.os == "Windows":
