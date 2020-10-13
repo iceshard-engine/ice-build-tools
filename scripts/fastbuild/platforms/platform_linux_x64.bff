@@ -43,6 +43,11 @@
 // Platform options depending on the given toolchain
 .ToolchainProperties_clang_x64_900_Linux_x64 =
 [
+    .LinkerOptions_StaticLib = ''
+    .LinkerOptions_SharedLib = ''
+    .LinkerOptions_ConsoleApp = ''
+    .LinkerOptions_WindowedApp = ''
+
     .LinkerOptions
         + ''
     .LibrarianOptions
@@ -51,6 +56,11 @@
 
 .ToolchainProperties_clang_x64_1000_Linux_x64 =
 [
+    .LinkerOptions_StaticLib = ''
+    .LinkerOptions_SharedLib = ''
+    .LinkerOptions_ConsoleApp = ''
+    .LinkerOptions_WindowedApp = ''
+
     .LinkerOptions
         + ''
     .LibrarianOptions
