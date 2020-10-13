@@ -54,8 +54,8 @@ class Application
 
         -- Handle errors
         if result.return_code ~= 0
-            print string.format "ERROR: %s", (result.message or "Unknown error occured!")
-            os.exit result.return_code
+            print string.format "ERROR: [%d] %s", result.return_code, (result.message or "Unknown error occured!")
+            os.exit 1
 
         result.value or { }
 
