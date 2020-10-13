@@ -179,11 +179,19 @@ class Project
 
         if os.isfile 'tools/conanfile.txt'
             if args.conan_tools_update or (not os.isfile "build/tools/conaninfo.txt")
-                @conan\install conanfile:'tools', update:args.conan_tools_update, install_folder:'build/tools'
+                @conan\install
+                    conanfile:'tools'
+                    update:args.conan_tools_update
+                    install_folder:'build/tools'
+                    build_policy:'missing'
 
         if os.isfile 'source/conanfile.txt'
             if args.conan_source_update or (not os.isfile "build/conaninfo.txt")
-                @conan\install conanfile:'source', update:args.conan_source_update, install_folder:'build'
+                @conan\install
+                    conanfile:'source'
+                    update:args.conan_source_update
+                    install_folder:'build'
+                    build_policy:'missing'
 
     _build_fastbuild_workspace_script: (args) =>
         assert (os.isdir @output_directory), "Directory '#{@output_directory}' does not exist!"

@@ -5,9 +5,9 @@
 .KindOutDir_WindowedApp = 'bin'
 
 .ConanVariables_StaticLib = { 'IncludeDirs', 'Defines' }
-.ConanVariables_SharedLib = { 'IncludeDirs', 'Defines', 'Libs', 'LibDirs' }
-.ConanVariables_ConsoleApp = { 'IncludeDirs', 'Defines', 'Libs', 'LibDirs' }
-.ConanVariables_WindowedApp = { 'IncludeDirs', 'Defines', 'Libs', 'LibDirs' }
+.ConanVariables_SharedLib = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
+.ConanVariables_ConsoleApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
+.ConanVariables_WindowedApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 
 .AllConfigTargets = { }
 
@@ -137,8 +137,8 @@ ForEach( .TargetConfig in .TargetConfigList )
                     'Defines'
                     'BuildOptions'
                     // 'CompilerFlags'
-                    'Libs'
                     'LibDirs'
+                    'Libs'
                 }
 
                 ForEach( .Var in .Variables )
