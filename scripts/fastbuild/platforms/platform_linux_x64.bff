@@ -48,6 +48,9 @@
     .LinkerOptions_ConsoleApp = ' -pie'
     .LinkerOptions_WindowedApp = ' -pie'
 
+    .CompilerOptions
+        + ' -fpic'
+
     .LinkerOptions
         + ''
     .LibrarianOptions
