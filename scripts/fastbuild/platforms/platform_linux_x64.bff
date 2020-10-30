@@ -38,7 +38,7 @@
     .LinkerOptions_WindowedApp = ' -pie'
 
     .CompilerOptions
-        + ' -stdlib=libc++'
+        + ' -stdlib=libstdc++'
         + ' -fpic'
 
     .LinkerOptions
@@ -55,7 +55,7 @@
     .LinkerOptions_WindowedApp = ' -pie'
 
     .CompilerOptions
-        + ' -stdlib=libc++'
+        + ' -stdlib=libstdc++'
         + ' -fpic'
 
     .LinkerOptions
