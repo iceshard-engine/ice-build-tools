@@ -5,8 +5,51 @@
     .ConanConfiguration = 'Release'
 ]
 
-.ToolchainFrontendProperties_MSVC_x64_v142_Release = .ToolchainFrontendProperties_MSVC_x64_v142_Develop
-.ToolchainFrontendProperties_clang_cl_x64_1000_Release = .ToolchainFrontendProperties_MSVC_x64_v142_Develop
+.ToolchainFrontendProperties_MSVC_x64_v142_Profile =
+[
+    .CompilerOptions
+        + ' /permissive-'
+        + ' /await'
+        + ' /wd4127' // conditional expression is constant'
 
-.ToolchainFrontendProperties_clang_x64_900_Release = .ToolchainFrontendProperties_clang_x64_900_Develop
-.ToolchainFrontendProperties_clang_x64_1000_Release = .ToolchainFrontendProperties_clang_x64_1000_Develop
+        + ' /DISC_RELEASE'
+        + ' /std:c++latest'
+        + ' /O2'
+        + ' /Z7'
+        + ' /MD'
+        + ' /EHsc'
+
+    .LinkerOptions
+        + ' /DEBUG'
+        + ' "ucrt.lib"'
+        + ' "vcruntime.lib"'
+        + ' "msvcrt.lib"'
+        + ' "msvcprt.lib"'
+]
+
+.ToolchainFrontendProperties_clang_cl_x64_1000_Profile =
+[
+    Using( .ToolchainFrontendProperties_MSVC_x64_v142_Profile )
+    .CompilerOptions
+        + ' -Wno-#pragma-messages'
+        + ' -Wno-pragma-pack'
+        + ' -Wno-nonportable-include-path'
+]
+
+.ToolchainFrontendProperties_clang_x64_900_Profile =
+[
+    .CompilerOptions
+        + ' -std=c++2a'
+        + ' -DISC_RELEASE'
+        + ' -O2'
+        + ' -Wno-#pragma-messages'
+]
+
+.ToolchainFrontendProperties_clang_x64_1000_Profile =
+[
+    .CompilerOptions
+        + ' -std=c++20'
+        + ' -DISC_RELEASE'
+        + ' -O2'
+        + ' -Wno-#pragma-messages'
+]

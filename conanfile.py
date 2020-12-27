@@ -4,7 +4,7 @@ import os
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "0.3.4"
+    version = "0.3.5"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
@@ -14,7 +14,7 @@ class IceBuildToolsConan(ConanFile):
 
     # Additional exports
     exports_sources = [ "source/*", "scripts/*", "LICENSE" ]
-    
+
     def package_id(self):
         del self.info.settings.os
 
