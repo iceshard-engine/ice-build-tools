@@ -22,10 +22,6 @@
 
     .LinkerOptions
         + ' /DEBUG'
-        + ' "ucrtd.lib"'
-        + ' "vcruntimed.lib"'
-        + ' "msvcrtd.lib"'
-        + ' "msvcprtd.lib"'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Debug =

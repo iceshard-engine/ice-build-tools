@@ -51,7 +51,6 @@
 
     .LinkerOptions
         + ' /MACHINE:x64'
-        + ' /NODEFAULTLIB'
         + ' /DYNAMICBASE'
         + ' /NXCOMPAT'
     .LibrarianOptions

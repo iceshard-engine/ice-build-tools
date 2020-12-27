@@ -21,10 +21,6 @@
 
     .LinkerOptions
         + ' /DEBUG'
-        + ' "ucrt.lib"'
-        + ' "vcruntime.lib"'
-        + ' "msvcrt.lib"'
-        + ' "msvcprt.lib"'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Release =
