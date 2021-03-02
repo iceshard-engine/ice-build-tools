@@ -3,13 +3,44 @@
 .KindOutDir_SharedLib = 'bin'
 .KindOutDir_ConsoleApp = 'bin'
 .KindOutDir_WindowedApp = 'bin'
+.KindOutDir_HeaderOnly = 'inc'
 
 .ConanVariables_StaticLib = { 'IncludeDirs', 'Defines' }
 .ConanVariables_SharedLib = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 .ConanVariables_ConsoleApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 .ConanVariables_WindowedApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
+.ConanVariables_HeaderOnly = { 'IncludeDirs', 'Defines' }
 
 .AllConfigTargets = { }
+.AllConfigTargetsSkipped = { }
+.AllConfigFinalProperties = [ ]
+
+.Projects_IntellisenseInfo = [ ]
+
+.Final_GlobalRules = { }
+ForEach( .GlobalRule in .GlobalRules )
+{
+    Using( .EmptyProperties )
+    Using( .GlobalRule )
+
+    .Final_GlobalRule =
+    [
+        .Name = .Name
+        .RuleRequires = .Requires
+        .RuleDependsOn = []
+        .RuleProperties_Public = [ ]
+        .RuleProperties_Private =
+        [
+            .Modules = ^Modules
+            .IncludeDirs = ^IncludeDirs
+            .Defines = ^Defines
+            .BuildOptions = ^BuildOptions
+            .Libs = ^Libs
+            .LibDirs = ^LibDirs
+        ]
+    ]
+    ^Final_GlobalRules + .Final_GlobalRule
+}
 
 ForEach( .TargetConfig in .TargetConfigList )
 {
@@ -23,36 +54,206 @@ ForEach( .TargetConfig in .TargetConfigList )
     ForEach( .Project in .ProjectsResolved )
     {
         Using( .Project )
-        Using( .ProjectProperties_Final )
 
         .AvailableTags = { }
             + .AllConfigTargets
+            + .ProjectTags
             + .ConfigTags
             + .SDKNames
 
-        .ProjectRequirementsSatisfied = true
-
         .ProjectConfigTarget = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
 
+        .ProjectRequirementsSatisfied = true
         {
             .ProjectConfigRequires = .ProjectRequires
-            ForEach( .Dependency in .Uses )
-            {
-                ^ProjectConfigRequires + '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-            }
-
             ForEach( .Requirement in .ProjectConfigRequires )
             {
                 If ( .Requirement not in .AvailableTags )
                 {
-                    Print( "INFO: $ProjectName$ is missing $Requirement$ for ($ConfigPlatform$-$ConfigName$-$ConfigToolchain$)" )
+                    Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($ConfigPlatform$-$ConfigName$-$ConfigToolchain$)" )
                     ^ProjectRequirementsSatisfied = false
                 }
             }
         }
 
+        If ( !.ProjectRequirementsSatisfied )
+        {
+            .ConfigFinalPublicProperties_Helper =
+            [
+                .'FinalProperties_$ProjectConfigTarget$' =
+                [
+                    .HasLinkTarget = false
+                ]
+            ]
+            ^AllConfigFinalProperties + .ConfigFinalPublicProperties_Helper
+            ^AllConfigTargetsSkipped + .ProjectConfigTarget
+        }
+
         If ( .ProjectRequirementsSatisfied )
         {
+            Using( .EmptyProperties )
+
+            .ConfigFinalRequires = .ProjectRequires
+            .ConfigFinalDependencies = [ ] // .DependsOn
+            .ConfigFinalSDKProperties = .SDKProperties
+
+            .ConfigFinalProperties = [ ]
+            .ConfigFinalPublicProperties = [ ]
+
+            .ConfigFinalRules = .ProjectRules + .Final_GlobalRules
+
+            ForEach( .ProjectRule in .ConfigFinalRules )
+            {
+                .RuleRequires = { }
+
+                .RuleRequirementsSatisfied = true
+                {
+                    .Name = "<null>"
+
+                    Using( .EmptyProperties )
+                    Using( .ProjectRule )
+
+                    ForEach( .Dependency in .Uses )
+                    {
+                        ^RuleRequires + '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                    }
+
+                    ForEach( .Requirement in .RuleRequires )
+                    {
+                        If ( .Requirement not in .AvailableTags )
+                        {
+                            // Print( "INFO: $ProjectName$ rule '$Name$' is missing '$Requirement$' for ($ConfigPlatform$-$ConfigName$-$ConfigToolchain$)" )
+                            ^RuleRequirementsSatisfied = false
+                        }
+                    }
+                }
+
+                If ( .RuleRequirementsSatisfied )
+                {
+                    Using( .ProjectRule )
+
+                    // Gether dependency properties
+                    .GatheredDependencies = { }
+                    .GatheredProperties = {
+                        'Modules'
+                        'Defines'
+                        'IncludeDirs'
+                        'BuildOptions'
+                        'Libs'
+                        'LibDirs'
+                    }
+
+                    Using( .AllConfigFinalProperties )
+
+                    .RuleFinalPublicProperties =
+                    [
+                        Using( .RuleProperties_Public )
+
+                        // Gather public uses
+                        {
+                            .UsesUnique = .Uses
+                            ForEach( .Dependency in .Uses )
+                            {
+                                .DependencyTarget = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                                Using( .'FinalProperties_$DependencyTarget$' )
+
+                                ForEach( .Value in .Uses )
+                                {
+                                    If ( .Value not in .UsesUnique )
+                                    {
+                                        ^UsesUnique + .Value
+                                    }
+                                }
+                            }
+                            ^Uses = .UsesUnique
+                        }
+                    ]
+
+                    .RuleFinalPrivateProperties =
+                    [
+                        Using( .RuleProperties_Private )
+
+                        // Gather public uses
+                        {
+                            .UsesUnique = .Uses
+                            ForEach( .Dependency in .Uses )
+                            {
+                                .DependencyTarget = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                                Using( .'FinalProperties_$DependencyTarget$' )
+
+                                ForEach( .Value in .Uses )
+                                {
+                                    If ( .Value not in .UsesUnique )
+                                    {
+                                        ^UsesUnique + .Value
+                                    }
+                                }
+                            }
+                            ^Uses = .UsesUnique
+                        }
+                    ]
+
+                    .RuleFinalProperties =
+                    [
+                        .RuleFinalCombinedProperties  = [ ]
+                            + .RuleFinalPrivateProperties
+                            + .RuleFinalPublicProperties
+
+                        Using( .RuleFinalCombinedProperties )
+
+                        .LibraryTargets = { }
+
+                        ForEach( .Dependency in .Uses )
+                        {
+                            If ( .Dependency not in .GatheredDependencies )
+                            {
+                                ^GatheredDependencies + .Dependency
+                                .DependencyTarget = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                                // Print( "$ProjectName$: Gathering $Dependency$..." )
+
+                                ForEach( .Property in .GatheredProperties )
+                                {
+                                    Using( .'FinalProperties_$DependencyTarget$' )
+                                    ^'$Property$' + .'$Property$'
+                                }
+
+                                {
+                                    Using( .'FinalProperties_$DependencyTarget$' )
+                                    If ( .HasLinkTarget )
+                                    {
+                                        ^LibraryTargets + .Dependency
+                                    }
+                                }
+                            }
+                        }
+                        .Uses = .GatheredDependencies
+                    ]
+
+                    ^ConfigFinalPublicProperties + .RuleFinalPublicProperties
+                    ^ConfigFinalProperties + .RuleFinalProperties
+                    ^ConfigFinalRequires + .RuleRequires
+                    ^ConfigFinalDependencies + .RuleDependsOn
+                }
+            }
+
+            {
+                .ConfigFinalPublicProperties_Helper =
+                [
+                    .'FinalProperties_$ProjectConfigTarget$' =
+                    [
+                        Using( .ConfigFinalPublicProperties )
+
+                        .HasLinkTarget = true
+                        If ( .ProjectKind == .Kind_HeaderOnly )
+                        {
+                            ^HasLinkTarget = false
+                        }
+                    ]
+                ]
+                ^AllConfigFinalProperties + .ConfigFinalPublicProperties_Helper
+            }
+
+            Using( .ConfigFinalProperties )
 
             // Print( "Target: $ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$" )
 
@@ -80,7 +281,7 @@ ForEach( .TargetConfig in .TargetConfigList )
                 .Link = {}
                 .Runtime = {}
 
-                Using( .Dependencies )
+                Using( .ConfigFinalDependencies )
 
                 .Vars = { 'Build', 'Link', 'Runtime' }
                 ForEach( .Var in .Vars )
@@ -109,9 +310,9 @@ ForEach( .TargetConfig in .TargetConfigList )
             {
                 If ( .SDKName not in .ConfigTags )
                 {
-                    If ( .SDKName in .ProjectRequires )
+                    If ( .SDKName in .ConfigFinalRequires )
                     {
-                        ^SDKProperties + .SDK
+                        ^ConfigFinalSDKProperties + .SDK
                     }
                 }
             }
@@ -120,7 +321,7 @@ ForEach( .TargetConfig in .TargetConfigList )
             //--------------------------------------------------------------------------
             {
                 Using( .Toolchain )
-                Using( .SDKProperties )
+                Using( .ConfigFinalSDKProperties )
 
                 .IncludeDirs
                     + .SdkIncludeDirs
@@ -149,10 +350,26 @@ ForEach( .TargetConfig in .TargetConfigList )
                         ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
                     }
                 }
+
+                If ( .ProjectKind == .Kind_HeaderOnly )
+                {
+                    .Project_IntellisenseInfo =
+                    [
+                        .'IntellisenseInfo_$ProjectConfigTarget$' =
+                        [
+                            .IncludeDirs = .IncludeDirs
+                            .Defines = .Defines
+                            .BuildOptions = .BuildOptions
+                        ]
+                    ]
+                    ^Projects_IntellisenseInfo + .Project_IntellisenseInfo
+                }
             }
 
             // Conan Modules
             //--------------------------------------------------------------------------
+            .HasRuntimeDependencies = false
+
             ForEach( .ConanModule in .Modules )
             {
                 Using( .'ConanModule_$ConanModule$_$ConanConfigName$' )
@@ -168,7 +385,6 @@ ForEach( .TargetConfig in .TargetConfigList )
 
                 If ( .CopyModules )
                 {
-
 
                     .CopyDirs = false
                     .CopyDirsList = { }
@@ -187,10 +403,12 @@ ForEach( .TargetConfig in .TargetConfigList )
                             .Dest = .TargetOutputDirectory
                         }
                         ^TargetRuntimeDependencies + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir'
+                        ^HasRuntimeDependencies = true
                     }
                 }
             }
 
+            If( .ProjectKind != .Kind_HeaderOnly )
             {
                 Using( .Toolchain )
 
@@ -284,16 +502,30 @@ ForEach( .TargetConfig in .TargetConfigList )
 
                     ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
                 }
+
+                Alias( '$ProjectConfigTarget$' )
+                {
+                    .Targets = .TargetList
+                        + .TargetRuntimeDependencies
+                }
+
+                ^ConfigTargets + .ProjectConfigTarget
+                ^AllConfigTargets + .ProjectConfigTarget
             }
 
-            Alias( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$' )
+            If( .ProjectKind == .Kind_HeaderOnly )
             {
-                .Targets = .TargetList
-                    + .TargetRuntimeDependencies
-            }
+                If ( .HasRuntimeDependencies )
+                {
+                    Alias( '$ProjectConfigTarget$' )
+                    {
+                        .Targets = .TargetRuntimeDependencies
+                    }
 
-            ^ConfigTargets + .ProjectConfigTarget
-            ^AllConfigTargets + .ProjectConfigTarget
+                    ^ConfigTargets + .ProjectConfigTarget
+                    ^AllConfigTargets + .ProjectConfigTarget
+                }
+            }
         }
 
     }

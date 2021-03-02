@@ -21,6 +21,12 @@
 
     .LinkerOptions
         + ' /DEBUG'
+
+    .Defines
+        + 'ISC_PROFILE'
+
+    .BuildOptions
+        + '/std:c++latest'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Profile =
@@ -35,17 +41,25 @@
 .ToolchainFrontendProperties_clang_x64_900_Profile =
 [
     .CompilerOptions
-        + ' -std=c++2a'
-        + ' -DISC_PROFILE'
         + ' -O2'
         + ' -Wno-#pragma-messages'
+
+    .Defines
+        + 'ISC_PROFILE'
+
+    .BuildOptions
+        + '-std=c++2a'
 ]
 
 .ToolchainFrontendProperties_clang_x64_1000_Profile =
 [
     .CompilerOptions
-        + ' -std=c++20'
-        + ' -DISC_PROFILE'
         + ' -O2'
         + ' -Wno-#pragma-messages'
+
+    .Defines
+        + 'ISC_PROFILE'
+
+    .BuildOptions
+        + '-std=c++20'
 ]

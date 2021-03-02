@@ -21,6 +21,12 @@
 
     .LinkerOptions
         + ' /DEBUG'
+
+    .Defines
+        + 'ISC_RELEASE'
+
+    .BuildOptions
+        + '/std:c++latest'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Release =
@@ -35,17 +41,25 @@
 .ToolchainFrontendProperties_clang_x64_900_Release =
 [
     .CompilerOptions
-        + ' -std=c++2a'
-        + ' -DISC_RELEASE'
         + ' -O2'
         + ' -Wno-#pragma-messages'
+
+    .Defines
+        + 'ISC_RELEASE'
+
+    .BuildOptions
+        + '-std=c++2a'
 ]
 
 .ToolchainFrontendProperties_clang_x64_1000_Release =
 [
     .CompilerOptions
-        + ' -std=c++20'
-        + ' -DISC_RELEASE'
         + ' -O2'
         + ' -Wno-#pragma-messages'
+
+    .Defines
+        + 'ISC_RELEASE'
+
+    .BuildOptions
+        + '-std=c++20'
 ]

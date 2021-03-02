@@ -1,20 +1,5 @@
 
-.Properties =
-[
-    // Dependency properties
-    .Uses = { }
-    .Modules = { }
-    .DependsOn = []
-
-    // Compiler properties
-    .Defines = { }
-    .IncludeDirs = { }
-    .BuildOptions = { }
-
-    // Linker properties
-    .Libs = { }
-    .LibDirs = { }
-]
+.Properties = .EmptyProperties
 
 // Global structure of public project properties
 .ProjectPropertiesStruct = [ ]
@@ -24,6 +9,8 @@ ForEach( .Project in .Projects )
 {
     .Public = []
     .Private = []
+
+    .Tags = { }
     .Requires = { }
 
     // Miscelaneous
@@ -43,12 +30,15 @@ ForEach( .Project in .Projects )
 
     .DebugDir = '$WorkspaceBuildDir$'
 
+    .Rules = { }
+
     Using( .Project )
 
     .ResolvedProject =
     [
         .ProjectName = .Name
         .ProjectKind = .Kind
+        .ProjectTags = .Tags
         .ProjectBaseDir = .BaseDir
         .ProjectRequires = .Requires
         .ProjectGroup = ^Group
@@ -66,121 +56,62 @@ ForEach( .Project in .Projects )
             ^ProjectVStudioInputPaths + "$ProjectBaseDir$/$Path$"
         }
 
-        // Public properties
-        .ProjectProperties_Public =
+        .Rule_DefaultInternal =
         [
-            Using( .Properties )
-            Using( .Public )
+            .RuleRequires = { }
+            .RuleDependsOn = ^DependsOn
 
-            // Gather public uses
-            {
-                Using( .ProjectPropertiesStruct )
-
-                .UsesUnique = .Uses
-                ForEach( .Dependency in .Uses )
-                {
-                    Using( .'ProjectProperties_$Dependency$' )
-                    ForEach( .Value in .Uses )
-                    {
-                        If ( .Value not in .UsesUnique )
-                        {
-                            ^UsesUnique + .Value
-                        }
-                    }
-                }
-                ^Uses = .UsesUnique
-            }
-
-            .IncludeDirs + {
-                '$ProjectBaseDir$/public'
-            }
-        ]
-
-        // Private properties
-        .ProjectProperties_Private =
-        [
-            Using( .Properties )
-            Using( .Private )
-
-            // Gather private uses
-            {
-                Using( .ProjectPropertiesStruct )
-
-                .UsesUnique = .Uses
-                ForEach( .Dependency in .Uses )
-                {
-                    Using( .'ProjectProperties_$Dependency$' )
-                    ForEach( .Value in .Uses )
-                    {
-                        If ( .Value not in .UsesUnique )
-                        {
-                            ^UsesUnique + .Value
-                        }
-                    }
-                }
-                ^Uses = .UsesUnique
-            }
-
-            .UnityBuilds = ^UnityBuilds
-            .CopyModules = ^CopyModules
-            .Dependencies = .DependsOn
-        ]
-
-        // Final properties
-        .ProjectProperties_Final = []
-        {
-            Using( .ProjectPropertiesStruct )
-
-            .ProjectProperties_Combined = [ ]
-                + .ProjectProperties_Private
-                + .ProjectProperties_Public
-
-            // Gether dependency properties
-            .GatheredDependencies = { }
-            .GatheredProperties = {
-                'Modules'
-                'Defines'
-                'IncludeDirs'
-            }
-
-            ^ProjectProperties_Final =
+            .RuleProperties_Public =
             [
-                Using( .ProjectProperties_Combined )
+                Using( .Properties )
+                Using( .Public )
 
-                .LibraryTargets = { }
-
-                ForEach( .Dependency in .Uses )
-                {
-                    If ( .Dependency not in .GatheredDependencies )
-                    {
-                        ^GatheredDependencies + .Dependency
-                        // Print( "$ProjectName$: Gathering $Dependency$..." )
-
-                        ForEach( .Property in .GatheredProperties )
-                        {
-                            Using( .'ProjectProperties_$Dependency$' )
-                            ^'$Property$' + .'$Property$'
-                        }
-                    }
-
-                    ^LibraryTargets + .Dependency
+                .IncludeDirs + {
+                    '$ProjectBaseDir$/public'
                 }
-
-                .Uses = .GatheredDependencies
             ]
-        }
+            .RuleProperties_Private =
+            [
+                Using( .Properties )
+                Using( .Private )
 
+                .UnityBuilds = ^UnityBuilds
+                .CopyModules = ^CopyModules
+            ]
+        ]
+
+        .ProjectRules = { .Rule_DefaultInternal }
+
+        ForEach( .Rule in .Rules )
+        {
+            .Requires = { }
+            .DependsOn = []
+            .Public = []
+            .Private = []
+
+            Using( .Rule )
+
+            .ResolvedScope =
+            [
+                .RuleRequires = .Requires
+                .RuleDependsOn = .DependsOn
+                .RuleProperties_Public =
+                [
+                    Using( .Properties )
+                    Using( .Public )
+                ]
+                .RuleProperties_Private =
+                [
+                    Using( .Properties )
+                    Using( .Private )
+
+                    .UnityBuilds = ^UnityBuilds
+                    .CopyModules = ^CopyModules
+                ]
+            ]
+            ^ProjectRules + .ResolvedRule
+        }
     ]
 
     ^ProjectsResolved + .ResolvedProject
-
-    // Save the public properties for later
-    {
-        Using( .ResolvedProject )
-        .ProjectPropertiesEntry =
-        [
-            .'ProjectProperties_$ProjectName$' = .ProjectProperties_Public
-        ]
-        ^ProjectPropertiesStruct + .ProjectPropertiesEntry
-    }
 }

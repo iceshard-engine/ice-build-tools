@@ -18,14 +18,16 @@
         .OutputExtension_SharedLib = '.so'
         .OutputExtension_ConsoleApp = ''
         .OutputExtension_WindowedApp = ''
+        .OutputExtension_HeaderOnly = ''
     ]
 
     .PlatformOptions =
     [
         .LinkerOptions_StaticLib = ''
         .LinkerOptions_SharedLib = ' -shared'
-        .LinkerOptions_ConsoleApp = ' '
-        .LinkerOptions_WindowedApp = ' '
+        .LinkerOptions_ConsoleApp = ''
+        .LinkerOptions_WindowedApp = ''
+        .LinkerOptions_HeaderOnly = ''
     ]
 ]
 
@@ -36,6 +38,7 @@
     .LinkerOptions_SharedLib = ' -shared'
     .LinkerOptions_ConsoleApp = ' -pie'
     .LinkerOptions_WindowedApp = ' -pie'
+    .LinkerOptions_HeaderOnly = ''
 
     .CompilerOptions
         + ' -stdlib=libstdc++'
@@ -53,6 +56,7 @@
     .LinkerOptions_SharedLib = ' -shared'
     .LinkerOptions_ConsoleApp = ' -pie'
     .LinkerOptions_WindowedApp = ' -pie'
+    .LinkerOptions_HeaderOnly = ''
 
     .CompilerOptions
         + ' -stdlib=libstdc++'

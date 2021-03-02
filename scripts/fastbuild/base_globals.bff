@@ -8,6 +8,7 @@
 .EmptyStruct = [ ]
 
 .Kind_None = '<none>'
+.Kind_HeaderOnly = 'HeaderOnly'
 .Kind_StaticLib = 'StaticLib'
 .Kind_SharedLib = 'SharedLib'
 .Kind_ConsoleApp = 'ConsoleApp'
@@ -15,6 +16,7 @@
 .Kind_Applications = { .Kind_ConsoleApp, .Kind_WindowedApp }
 
 .Kind_AllowedList = {
+    .Kind_HeaderOnly
     .Kind_StaticLib
     .Kind_SharedLib
     .Kind_ConsoleApp
@@ -34,6 +36,23 @@
 ]
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following defines are used to allow users project wide configuration changes
+// These properties are based on 'tags' and allow to provide fine grained configuration
+.Rule =
+[
+    .Requires = { }
+    .Uses = { }
+    .Modules = { }
+    .Defines = { }
+    .IncludeDirs = { }
+    .BuildOptions = { }
+    .Libs = { }
+    .LibDirs = { }
+]
+
+.GlobalRules = { }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // The following variables are defined to provide proper building behaviour of final command line options
 // More on this later
 
@@ -41,3 +60,26 @@
 .CompilerPCHOptions = ''
 .LibrarianOptions = ''
 .LinkerOptions = ''
+
+.Defines = { }
+.IncludeDirs = { }
+.BuildOptions = { }
+
+.SolutionItems = { }
+
+.EmptyProperties =
+[
+    // Dependency properties
+    .Uses = { }
+    .Modules = { }
+    .DependsOn = []
+
+    // Compiler properties
+    .Defines = { }
+    .IncludeDirs = { }
+    .BuildOptions = { }
+
+    // Linker properties
+    .Libs = { }
+    .LibDirs = { }
+]

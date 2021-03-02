@@ -56,12 +56,30 @@
         .Projects = { 'all-vcxproj' }
     ]
     .SolutionFolders + .SolutionFolder
+
+    {
+        .HasSolutionItems = false
+        ForEach( .Item in .SolutionItems )
+        {
+            ^HasSolutionItems = true
+        }
+
+        If ( .HasSolutionItems )
+        {
+            .SolutionFolder =
+            [
+                .Path = '0. Miscelaneous/Files'
+                .Items = .SolutionItems
+            ]
+            ^SolutionFolders + .SolutionFolder
+        }
+    }
+
     .SolutionBuildProject = { 'all-vcxproj' }
 
     ForEach( .Project in .ProjectsResolved )
     {
         Using( .Project )
-        Using( .ProjectProperties_Final )
 
         .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
         .ProjectConfigs = { }
@@ -112,7 +130,10 @@
 
                 If ( .TargetAlias in .AllConfigTargets )
                 {
-                    ^Target = '$TargetAlias$-objects'
+                    If ( .ProjectKind != .Kind_HeaderOnly )
+                    {
+                        ^Target = '$TargetAlias$-objects'
+                    }
 
                     ^ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $TargetAlias$'
                     ^ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $TargetAlias$ -c'
@@ -121,6 +142,36 @@
                 .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
                 .LocalDebuggerWorkingDirectory = .ProjectDebugDir
             ]
+
+            If ( .ProjectKind == .Kind_HeaderOnly )
+            {
+                .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+
+                Using( .Projects_IntellisenseInfo )
+                Using( .'IntellisenseInfo_$TargetAlias$' )
+
+                .ProjectConfig_Intellisense =
+                [
+                    .PreprocessorDefinitions = ''
+                    .IncludeSearchPath = ''
+                    .AdditionalOptions = ''
+
+                    ForEach( .Value in .Defines )
+                    {
+                        ^PreprocessorDefinitions + '$Value$;'
+                    }
+                    ForEach( .Value in .IncludeDirs )
+                    {
+                        ^IncludeSearchPath + '$Value$;'
+                    }
+                    ForEach( .Value in .BuildOptions )
+                    {
+                        ^AdditionalOptions + '$Value$ '
+                    }
+                ]
+
+                ^ProjectConfig + .ProjectConfig_Intellisense
+            }
 
             ^ProjectConfigs + .ProjectConfig
         }
