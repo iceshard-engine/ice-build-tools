@@ -91,7 +91,7 @@ ForEach( .Project in .Projects )
 
             Using( .Rule )
 
-            .ResolvedScope =
+            .ResolvedRule =
             [
                 .RuleRequires = .Requires
                 .RuleDependsOn = .DependsOn
