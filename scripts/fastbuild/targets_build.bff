@@ -100,7 +100,7 @@ ForEach( .TargetConfig in .TargetConfigList )
             .ConfigFinalProperties = [ ]
             .ConfigFinalPublicProperties = [ ]
 
-            .ConfigFinalRules = .ProjectRules + .Final_GlobalRules
+            .ConfigFinalRules = .Final_GlobalRules + .ProjectRules
 
             ForEach( .ProjectRule in .ConfigFinalRules )
             {
@@ -302,6 +302,7 @@ ForEach( .TargetConfig in .TargetConfigList )
             {
                 ^FinalProperties + .FrontendProperties
                 ^FinalProperties + .ConfigProperties
+                ^FinalProperties + .ConfigFinalProperties
             }
             Using( .FinalProperties )
 

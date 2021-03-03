@@ -22,10 +22,6 @@
 
     .Defines
         + '_DEBUG'
-        + 'ISC_DEBUG'
-
-    .BuildOptions
-        + '/std:c++latest'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Debug =
@@ -45,10 +41,6 @@
 
     .Defines
         + '_DEBUG'
-        + 'ISC_DEBUG'
-
-    .BuildOptions
-        + '-std=c++2a'
 ]
 
 .ToolchainFrontendProperties_clang_x64_1000_Debug =
@@ -59,8 +51,4 @@
 
     .Defines
         + '_DEBUG'
-        + 'ISC_DEBUG'
-
-    .BuildOptions
-        + '-std=c++20'
 ]

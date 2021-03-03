@@ -19,12 +19,6 @@
 
     .LinkerOptions
         + ' /DEBUG'
-
-    .Defines
-        + 'ISC_DEVELOP'
-
-    .BuildOptions
-        + '/std:c++latest'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Develop =
@@ -41,12 +35,6 @@
     .CompilerOptions
         + ' -O2'
         + ' -Wno-#pragma-messages'
-
-    .Defines
-        + 'ISC_DEVELOP'
-
-    .BuildOptions
-        + '-std=c++2a'
 ]
 
 .ToolchainFrontendProperties_clang_x64_1000_Develop =
@@ -54,10 +42,4 @@
     .CompilerOptions
         + ' -O2'
         + ' -Wno-#pragma-messages'
-
-    .Defines
-        + 'ISC_DEVELOP'
-
-    .BuildOptions
-        + '-std=c++20'
 ]

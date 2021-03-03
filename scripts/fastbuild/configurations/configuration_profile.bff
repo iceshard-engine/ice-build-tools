@@ -12,8 +12,6 @@
         + ' /await'
         + ' /wd4127' // conditional expression is constant'
 
-        + ' /DISC_PROFILE'
-        + ' /std:c++latest'
         + ' /O2'
         + ' /Z7'
         + ' /MD'
@@ -21,12 +19,6 @@
 
     .LinkerOptions
         + ' /DEBUG'
-
-    .Defines
-        + 'ISC_PROFILE'
-
-    .BuildOptions
-        + '/std:c++latest'
 ]
 
 .ToolchainFrontendProperties_clang_cl_x64_1000_Profile =
@@ -43,12 +35,6 @@
     .CompilerOptions
         + ' -O2'
         + ' -Wno-#pragma-messages'
-
-    .Defines
-        + 'ISC_PROFILE'
-
-    .BuildOptions
-        + '-std=c++2a'
 ]
 
 .ToolchainFrontendProperties_clang_x64_1000_Profile =
@@ -56,10 +42,4 @@
     .CompilerOptions
         + ' -O2'
         + ' -Wno-#pragma-messages'
-
-    .Defines
-        + 'ISC_PROFILE'
-
-    .BuildOptions
-        + '-std=c++20'
 ]
