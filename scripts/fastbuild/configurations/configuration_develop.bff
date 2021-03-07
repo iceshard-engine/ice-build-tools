@@ -8,10 +8,6 @@
 .ToolchainFrontendProperties_MSVC_x64_v142_Develop =
 [
     .CompilerOptions
-        + ' /permissive-'
-        + ' /await'
-        + ' /wd4127' // conditional expression is constant'
-
         + ' /O2'
         + ' /Z7'
         + ' /MD'
