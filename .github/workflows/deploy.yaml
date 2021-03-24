@@ -15,11 +15,10 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install conan
-        ~/.local/bin/conan remote add conan-iceshard https://conan.iceshard.net/
-        ~/.local/bin/conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Create package
+        ~/.local/bin/conan config install https://github.com/iceshard-engine/conan-config.git
+    - name: Create (lua-5.1.5, clang-10)
       run: |
-        ~/.local/bin/conan create . ice-build-tools/0.4.3@iceshard/stable
+        ~/.local/bin/conan create . ice-build-tools/0.4.3@iceshard/stable --profile clang-10.0-linux-x86_64
     - name: Deploy
       run: |
         ~/.local/bin/conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
