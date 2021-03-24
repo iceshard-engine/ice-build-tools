@@ -270,7 +270,7 @@ class Project
                 if os.isfile "#{workspace_root}/#{@hooks_script_location}"
                     gen\line!
                     gen\line '// Hook script, allowing to change PlatformList and ConfigurationList before actual project info gathering.'
-                    gen\line "#{workspace_root}/#{@hooks_script_location}"
+                    gen\include "#{workspace_root}/#{@hooks_script_location}"
 
                 gen\line!
                 gen\line '.ProjectsResolved = { }'
