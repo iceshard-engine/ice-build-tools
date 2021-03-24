@@ -4,12 +4,14 @@
 .KindOutDir_ConsoleApp = 'bin'
 .KindOutDir_WindowedApp = 'bin'
 .KindOutDir_HeaderOnly = 'inc'
+.KindOutDir_ObjectList = ''
 
 .ConanVariables_StaticLib = { 'IncludeDirs', 'Defines' }
 .ConanVariables_SharedLib = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 .ConanVariables_ConsoleApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 .ConanVariables_WindowedApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 .ConanVariables_HeaderOnly = { 'IncludeDirs', 'Defines' }
+.ConanVariables_ObjectList = { 'IncludeDirs', 'Defines' }
 
 .AllConfigTargets = { }
 .AllConfigTargetsSkipped = { }
@@ -31,6 +33,7 @@ ForEach( .GlobalRule in .GlobalRules )
         .RuleProperties_Public = [ ]
         .RuleProperties_Private =
         [
+            .Uses = .Uses
             .Modules = ^Modules
             .IncludeDirs = ^IncludeDirs
             .Defines = ^Defines
@@ -58,6 +61,7 @@ ForEach( .TargetConfig in .TargetConfigList )
         .AvailableTags = { }
             + .AllConfigTargets
             + .ProjectTags
+            + .ProjectKind
             + .ConfigTags
             + .SDKNames
 
@@ -100,7 +104,7 @@ ForEach( .TargetConfig in .TargetConfigList )
             .ConfigFinalProperties = [ ]
             .ConfigFinalPublicProperties = [ ]
 
-            .ConfigFinalRules = .Final_GlobalRules + .ProjectRules
+            .ConfigFinalRules = .ProjectRules + .Final_GlobalRules
 
             ForEach( .ProjectRule in .ConfigFinalRules )
             {
@@ -442,6 +446,19 @@ ForEach( .TargetConfig in .TargetConfigList )
                     ObjectList( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' )
                     {
                     }
+                }
+
+                // Object List target
+                If ( .ProjectKind == .Kind_ObjectList )
+                {
+                    Alias( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
+                    {
+                        .Targets = {
+                            '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects'
+                        }
+                    }
+
+                    ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
                 }
 
                 // Static Library target

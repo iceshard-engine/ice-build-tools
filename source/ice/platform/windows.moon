@@ -1,28 +1,27 @@
 class Windows
-    @detect: =>
-        -- Get Windows 10 SDK information
-        get_win10_sdk = ->
-            -- Helper function to ask for registry keys
-            get_registry_key = (root, key, value_type) ->
-                result = nil
-                if f = io.popen "reg query \"#{root}\\Microsoft\\Microsoft SDKs\\Windows\\v10.0\" /v #{key}"
-                    -- Check the lines
-                    for line in f\lines!
-                        if result = line\match "#{key}[%s]+#{value_type}[%s]+(.+)"
-                            break
-                    f\close!
-                result
+    @detect_win10_sdk: =>
+        -- Helper function to ask for registry keys
+        get_registry_key = (root, key, value_type) ->
+            result = nil
+            if f = io.popen "reg query \"#{root}\\Microsoft\\Microsoft SDKs\\Windows\\v10.0\" /v #{key}"
+                -- Check the lines
+                for line in f\lines!
+                    if result = line\match "#{key}[%s]+#{value_type}[%s]+(.+)"
+                        break
+                f\close!
+            result
 
-            -- Result table
-            result = directory:nil, version:nil
-            for root in *{ 'HKLM\\SOFTWARE\\Wow6432Node', 'HKCU\\SOFTWARE\\Wow6432Node', 'HKLM\\SOFTWARE', 'HKCU\\SOFTWARE' }
-                result.directory = get_registry_key root, 'InstallationFolder', 'REG_SZ'
-                result.version = get_registry_key root, 'ProductVersion', 'REG_SZ'
-                if result.directory and result.version
-                    break
+        -- Result table
+        result = directory:nil, version:nil
+        for root in *{ 'HKLM\\SOFTWARE\\Wow6432Node', 'HKCU\\SOFTWARE\\Wow6432Node', 'HKLM\\SOFTWARE', 'HKCU\\SOFTWARE' }
+            result.directory = get_registry_key root, 'InstallationFolder', 'REG_SZ'
+            result.version = get_registry_key root, 'ProductVersion', 'REG_SZ'
+            if result.directory and result.version
+                break
 
-            result if result.directory and result.version
+        result if result.directory and result.version
 
+    @detect_platform_sdks: =>
 
         -- Get the windows 10 universal CRT information
         get_universal_crt = ->
@@ -46,7 +45,7 @@ class Windows
 
         sdk_list = { }
 
-        if win_sdk = get_win10_sdk!
+        if win_sdk = @@detect_win10_sdk!
             sdk_info = {
                 name: 'SDK-Windows-10'
                 struct_name: 'SDK_Windows_10'
@@ -73,5 +72,9 @@ class Windows
             table.insert sdk_list, sdk_info
 
         sdk_list
+
+    @detect: =>
+        print 'WARNING: `Windows\\detect!` is deprecated, use `Windows\\detect_platform_sdks!` instead'
+        @@detect_platforms
 
 { :Windows }

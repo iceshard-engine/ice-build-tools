@@ -10,22 +10,40 @@ import Conan from require 'ice.tools.conan'
 import FastBuildGenerator from require 'ice.generators.fastbuild'
 import ProjectApplication from require 'ice.workspace.application'
 
+class Locator
+    @Type: class
+        @Toolchain: 'Toolchain'
+        @PlatformSDK: 'Platform SDK'
+        @CommonSDK: 'Common SDK'
+
+    new: (@type, @name) =>
+    locate: => false
 
 class Project
     new: (@name) =>
         ProjectApplication.name = @name
 
+        @ice_build_tools_version = os.getenv 'ICE_BUILT_TOOLS_VER'
+
         @application_class = ProjectApplication
         @generator_class = FastBuildGenerator
 
         @solution_name = "#{@name}.sln"
+        @locators =
+            [Locator.Type.Toolchain]: { }
+            [Locator.Type.PlatformSDK]: { }
+            [Locator.Type.CommonSDK]: { }
 
     script: (@project_script) =>
     application: (@application_class) =>
 
+    fastbuild_hooks_script: (@hooks_script_location) =>
     fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
         @solution_name = "#{name}.sln"
+
+    add_locator: (locator) =>
+        table.insert @locators[locator.type], locator
 
     sources: (@source_directory) =>
     output: (@output_directory) =>
@@ -52,7 +70,14 @@ class Project
                 conan_tools_files: -> @_detect_conan_fastbuild_variables conan_tools_update:true
 
     _detect_platform_fastbuild_variables: (args) =>
-        toolchains = nil
+        toolchains = { }
+
+        execute_locators = (locator_type, target_array) ->
+            for locator in *@locators[locator_type]
+                results = locator\locate!
+                if (type results) == 'table' and #results > 0
+                    table.insert target_array, result for result in *results
+
 
         if os.iswindows
             toolchains = { }
@@ -68,11 +93,15 @@ class Project
 
             table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
 
-        platform_sdks = nil
-        platform_sdks = Windows\detect! if os.iswindows
-        platform_sdks = Linux\detect! if os.isunix
+        execute_locators Locator.Type.Toolchain, toolchain_list
 
-        additional_sdks = SDKS\detect!
+        platform_sdks = nil
+        platform_sdks = Windows\detect_platform_sdks! if os.iswindows
+        platform_sdks = Linux\detect! if os.isunix
+        execute_locators Locator.Type.PlatformSDK, platform_sdks
+
+        additional_sdks = SDKS\detect! or { }
+        execute_locators Locator.Type.CommonSDK, additional_sdks
 
         force_detect = args.force_detect or args.fbuild_detect_variables
 
@@ -178,7 +207,17 @@ class Project
         @conan = Conan!
 
         if os.isfile 'tools/conanfile.txt'
-            if args.conan_tools_update or (not os.isfile "build/tools/conaninfo.txt")
+
+            -- We are checking if we need to auto-update at least the ice-build-tools version!
+            same_version = true
+            for line in io.lines 'tools/conanfile.txt'
+                version_match = (line\gmatch "ice%-build%-tools/(%d+.%d+.%d+)")!
+                if version_match and version_match ~= ""
+                    same_version = version_match == @ice_build_tools_version
+
+            print "Running an different 'ice-built-tools-version' than requested, updating..." if not same_version
+
+            if args.conan_tools_update or (not same_version) or (not os.isfile "build/tools/conaninfo.txt")
                 @conan\install
                     conanfile:'tools'
                     update:args.conan_tools_update
@@ -228,6 +267,11 @@ class Project
                 gen\include "#{fbscripts}/base_platforms.bff"
                 gen\include "#{fbscripts}/base_configurations.bff"
 
+                if os.isfile "#{workspace_root}/#{@hooks_script_location}"
+                    gen\line!
+                    gen\line '// Hook script, allowing to change PlatformList and ConfigurationList before actual project info gathering.'
+                    gen\line "#{workspace_root}/#{@hooks_script_location}"
+
                 gen\line!
                 gen\line '.ProjectsResolved = { }'
                 gen\line '{'
@@ -246,4 +290,4 @@ class Project
                     gen\include "#{fbscripts}/targets_vsproject.bff"
                 gen\close!
 
-{ :Project }
+{ :Project, :Locator }

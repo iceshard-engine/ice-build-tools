@@ -19,6 +19,7 @@
         .OutputExtension_ConsoleApp = ''
         .OutputExtension_WindowedApp = ''
         .OutputExtension_HeaderOnly = ''
+        .OutputExtension_ObjectList = ''
     ]
 
     .PlatformOptions =
@@ -28,6 +29,7 @@
         .LinkerOptions_ConsoleApp = ''
         .LinkerOptions_WindowedApp = ''
         .LinkerOptions_HeaderOnly = ''
+        .LinkerOptions_ObjectList = ''
     ]
 ]
 
@@ -39,6 +41,7 @@
     .LinkerOptions_ConsoleApp = ' -pie'
     .LinkerOptions_WindowedApp = ' -pie'
     .LinkerOptions_HeaderOnly = ''
+    .LinkerOptions_ObjectList = ''
 
     .CompilerOptions
         + ' -stdlib=libstdc++'
@@ -57,6 +60,7 @@
     .LinkerOptions_ConsoleApp = ' -pie'
     .LinkerOptions_WindowedApp = ' -pie'
     .LinkerOptions_HeaderOnly = ''
+    .LinkerOptions_ObjectList = ''
 
     .CompilerOptions
         + ' -stdlib=libstdc++'

@@ -9,6 +9,7 @@
 
 .Kind_None = '<none>'
 .Kind_HeaderOnly = 'HeaderOnly'
+.Kind_ObjectList = 'ObjectList'
 .Kind_StaticLib = 'StaticLib'
 .Kind_SharedLib = 'SharedLib'
 .Kind_ConsoleApp = 'ConsoleApp'
@@ -17,6 +18,7 @@
 
 .Kind_AllowedList = {
     .Kind_HeaderOnly
+    .Kind_ObjectList
     .Kind_StaticLib
     .Kind_SharedLib
     .Kind_ConsoleApp
