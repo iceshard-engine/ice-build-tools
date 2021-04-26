@@ -3,7 +3,7 @@
 [
     .PlatformSystem = 'UWP'
     .PlatformArchitecture = 'x64'
-    .PlatformTags = { 'StoreApp' }
+    .PlatformTags = { 'StoreApp', 'WinRT' }
 
     .PlatformRequiredSDKs = {
         'SDK-Windows-10-CXX-WinRT'
