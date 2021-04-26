@@ -134,7 +134,14 @@ ForEach( .TargetConfig in .TargetConfigList )
 
                 If ( .RuleRequirementsSatisfied )
                 {
+                    .RuleKind = .Kind_None
                     Using( .ProjectRule )
+
+                    // Update project kind if needed
+                    If ( .RuleKind != .Kind_None )
+                    {
+                        ^ProjectKind = .RuleKind
+                    }
 
                     // Gether dependency properties
                     .GatheredDependencies = { }
@@ -563,9 +570,18 @@ ForEach( .TargetConfig in .TargetConfigList )
 
         If ( .HasAllTags )
         {
-            Alias( "$AliasName$-$ConfigName$$AliasSuffix$" )
+            .HasTargets = false
+            ForEach (.T in .ConfigTargets)
             {
-                .Targets = .ConfigTargets
+                ^HasTargets = true
+            }
+
+            If ( .HasTargets )
+            {
+                Alias( "$AliasName$-$ConfigName$$AliasSuffix$" )
+                {
+                    .Targets = .ConfigTargets
+                }
             }
         }
     }

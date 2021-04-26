@@ -1,16 +1,15 @@
 
-.Platform_Windows_x64 =
+.Platform_Windows_x64_UWP =
 [
-    .PlatformSystem = 'Windows'
+    .PlatformSystem = 'UWP'
     .PlatformArchitecture = 'x64'
-    .PlatformTags = { 'DesktopApp' }
+    .PlatformTags = { 'StoreApp' }
 
     .PlatformRequiredSDKs = {
-        'SDK-Windows-10'
+        'SDK-Windows-10-CXX-WinRT'
     }
     .PlatformSupportedToolchains = {
         'msvc-x64-v142',
-        'clang-10.0.0'
     }
 
     .PlatformExtensions =
@@ -27,26 +26,25 @@
     .PlatformVSProperties_MSVC_x64_v142 =
     [
         .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = ''
+        .ProjectConfigSuffix = '-UWP'
 
         .PlatformToolset = 'v142'
 
-        .SolutionPlatform = 'Win-x64-v142'
-    ]
-    .PlatformVSProperties_clang_x64_1000 =
-    [
-        .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = '-Clang'
-
-        .PlatformToolset = 'v142'
-
-        .SolutionPlatform = 'Win-x64-Clang10'
+        .SolutionPlatform = 'UWP-x64-v142'
     ]
 ]
 
 // Platform options depending on the given toolchain
-.ToolchainProperties_MSVC_x64_v142_Windows_x64 =
+.ToolchainProperties_MSVC_x64_v142_UWP_x64 =
 [
+    .CompilerOptions
+        + ' /await'
+        + ' /D_UNICODE'
+        + ' /DUNICODE'
+        + ' /DICE_UWP_LEGACY_COROUTINES'
+        + ' /D__WRL_NO_DEFAULT_LIB__'
+        + ' /D"WINAPI_FAMILY=WINAPI_FAMILY_PC_APP"'
+
     .LinkerOptions_StaticLib = ''
     .LinkerOptions_SharedLib = ' /DLL'
     .LinkerOptions_ConsoleApp = ' /SUBSYSTEM:CONSOLE'
@@ -60,9 +58,4 @@
         + ' /NXCOMPAT'
     .LibrarianOptions
         + ' /MACHINE:x64'
-]
-
-.ToolchainProperties_clang_x64_1000_Windows_x64 =
-[
-    Using( .ToolchainProperties_MSVC_x64_v142_Windows_x64 )
 ]

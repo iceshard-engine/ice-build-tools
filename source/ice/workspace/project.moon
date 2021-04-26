@@ -1,23 +1,20 @@
+import Locator from require 'ice.locator'
+
 import VsMSVC from require 'ice.toolchain.vs_msvc'
 import VsClang from require 'ice.toolchain.vs_clang'
 import Clang from require 'ice.toolchain.clang'
 
-import Windows from require 'ice.platform.windows'
-import Linux from require 'ice.platform.linux'
-import SDKS from require 'ice.sdks.sdks'
+
+import SDK_Vulkan from require 'ice.sdks.vulkan'
+import SDK_DX11 from require 'ice.sdks.dx11'
+import SDK_DX12 from require 'ice.sdks.dx12'
+import SDK_Win32 from require 'ice.sdks.win32'
+import SDK_Cpp_WinRT from require 'ice.sdks.winrt_cpp'
 
 import Conan from require 'ice.tools.conan'
 import FastBuildGenerator from require 'ice.generators.fastbuild'
 import ProjectApplication from require 'ice.workspace.application'
 
-class Locator
-    @Type: class
-        @Toolchain: 'Toolchain'
-        @PlatformSDK: 'Platform SDK'
-        @CommonSDK: 'Common SDK'
-
-    new: (@type, @name) =>
-    locate: => false
 
 class Project
     new: (@name) =>
@@ -34,10 +31,18 @@ class Project
             [Locator.Type.PlatformSDK]: { }
             [Locator.Type.CommonSDK]: { }
 
+        -- Initialize with default locators
+        @add_locator SDK_Win32!
+        @add_locator SDK_Cpp_WinRT!
+        @add_locator SDK_DX11!
+        @add_locator SDK_DX12!
+        @add_locator SDK_Vulkan!
+
     script: (@project_script) =>
     application: (@application_class) =>
 
     fastbuild_hooks_script: (@hooks_script_location) =>
+    fastbuild_alias_script: (@alias_script_location) =>
     fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
         @solution_name = "#{name}.sln"
@@ -72,9 +77,9 @@ class Project
     _detect_platform_fastbuild_variables: (args) =>
         toolchains = { }
 
-        execute_locators = (locator_type, target_array) ->
+        execute_locators = (locator_type, target_array, detected_platforms) ->
             for locator in *@locators[locator_type]
-                results = locator\locate!
+                results = locator\locate detected_platforms
                 if (type results) == 'table' and #results > 0
                     table.insert target_array, result for result in *results
 
@@ -95,13 +100,11 @@ class Project
 
         execute_locators Locator.Type.Toolchain, toolchain_list
 
-        platform_sdks = nil
-        platform_sdks = Windows\detect_platform_sdks! if os.iswindows
-        platform_sdks = Linux\detect! if os.isunix
-        execute_locators Locator.Type.PlatformSDK, platform_sdks
+        platform_sdks = { }
+        additional_sdks = { }
 
-        additional_sdks = SDKS\detect! or { }
-        execute_locators Locator.Type.CommonSDK, additional_sdks
+        execute_locators Locator.Type.PlatformSDK, platform_sdks
+        execute_locators Locator.Type.CommonSDK, additional_sdks, platform_sdks
 
         force_detect = args.force_detect or args.fbuild_detect_variables
 
@@ -209,15 +212,20 @@ class Project
         if os.isfile 'tools/conanfile.txt'
 
             -- We are checking if we need to auto-update at least the ice-build-tools version!
+            dev_version = false
             same_version = true
             for line in io.lines 'tools/conanfile.txt'
-                version_match = (line\gmatch "ice%-build%-tools/(%d+.%d+.%d+)")!
+                version_match, channel_match = (line\gmatch "ice%-build%-tools/(%d+.%d+.%d+)@%w+/(%w+)")!
+
+--                if channel_match and channel_match == "dev"
+--                    dev_version = true
                 if version_match and version_match ~= ""
                     same_version = version_match == @ice_build_tools_version
 
             print "Running an different 'ice-built-tools-version' than requested, updating..." if not same_version
+            print "Running 'ice-built-tools' development version, force updating..." if dev_version
 
-            if args.conan_tools_update or (not same_version) or (not os.isfile "build/tools/conaninfo.txt")
+            if args.conan_tools_update or (not same_version) or dev_version or (not os.isfile "build/tools/conaninfo.txt")
                 @conan\install
                     conanfile:'tools'
                     update:args.conan_tools_update
@@ -283,6 +291,11 @@ class Project
                 gen\line!
                 gen\include "#{fbscripts}/definition_configurations.bff"
                 gen\include "#{fbscripts}/definition_alias.bff"
+
+                if os.isfile "#{workspace_root}/#{@alias_script_location}"
+                    gen\line!
+                    gen\line '// Alias script, allowing to change alias definitions before target creation.'
+                    gen\include "#{workspace_root}/#{@alias_script_location}"
 
                 gen\line!
                 gen\include "#{fbscripts}/targets_build.bff"

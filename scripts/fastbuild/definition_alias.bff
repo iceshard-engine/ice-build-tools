@@ -1,6 +1,4 @@
 
-.AliasInfos = { }
-
 #if __WINDOWS__
 
 .AliasInfo =
@@ -8,6 +6,14 @@
     .AliasTags = { 'Windows', 'x64', 'MSVC' }
     .AliasName = 'all-x64'
     .AliasSuffix = ''
+]
+.AliasInfos + .AliasInfo
+
+.AliasInfo =
+[
+    .AliasTags = { 'UWP', 'x64', 'MSVC' }
+    .AliasName = 'all-x64'
+    .AliasSuffix = '-UWP'
 ]
 .AliasInfos + .AliasInfo
 

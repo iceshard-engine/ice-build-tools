@@ -4,6 +4,8 @@
 // Iterate over each defined platform
 ForEach( .Platform in .PlatformList )
 {
+    .PlatformTags = { }
+
     Using( .Platform )
 
     .PlatformSupportedComponents = .PlatformSupportedToolchains + .SDKNames
@@ -15,6 +17,7 @@ ForEach( .Platform in .PlatformList )
         .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSDKs
 
         .HasAllTags = true
+        // Print( "Test: $PlatformSystem$-$PlatformArchitecture$" )
         ForEach( .Tag in .TargetPlatformRequiredComponents )
         {
             If ( .Tag not in .PlatformSupportedComponents )
@@ -42,7 +45,7 @@ ForEach( .Platform in .PlatformList )
                         .ToolchainCompilerFamily
                         .ToolchainToolset
                         .ConfigName
-                    } + .PlatformRequiredSDKs
+                    } + .PlatformRequiredSDKs + .PlatformTags
 
                     .ConanConfigName = .ConanConfiguration
 

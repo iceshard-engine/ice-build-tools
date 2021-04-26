@@ -85,3 +85,5 @@
     .Libs = { }
     .LibDirs = { }
 ]
+
+.AliasInfos = { }

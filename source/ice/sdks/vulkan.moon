@@ -1,5 +1,8 @@
-class Vulkan
-    @detect: =>
+import Locator from require 'ice.locator'
+
+class SDK_Vulkan extends Locator
+    new: => super Locator.Type.CommonSDK, "Vulkan SDK Locator"
+    locate: =>
         sdk_info = nil
 
         vulkan_sdk = os.getenv "VULKAN_SDK"
@@ -18,6 +21,6 @@ class Vulkan
                 "vulkan-1"
             }
 
-        sdk_info
+        { sdk_info }
 
-{ :Vulkan }
+{ :SDK_Vulkan }

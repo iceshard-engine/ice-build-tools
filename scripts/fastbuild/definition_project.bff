@@ -84,6 +84,7 @@ ForEach( .Project in .Projects )
 
         ForEach( .Rule in .Rules )
         {
+            .Kind = .Kind_None
             .Requires = { }
             .DependsOn = []
             .Public = []
@@ -93,6 +94,7 @@ ForEach( .Project in .Projects )
 
             .ResolvedRule =
             [
+                .RuleKind = .Kind
                 .RuleRequires = .Requires
                 .RuleDependsOn = .DependsOn
                 .RuleProperties_Public =
