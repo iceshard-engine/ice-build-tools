@@ -4,6 +4,7 @@
 
     .SolutionProjects = { }
     .SolutionBuildProject = { }
+    .SolutionDeployProjects = { }
     .SolutionConfigs = { }
 
     .SolutionFolders = { }
@@ -147,8 +148,9 @@
             {
                 .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
 
-                Using( .Projects_IntellisenseInfo )
-                Using( .'IntellisenseInfo_$TargetAlias$' )
+                Using( .Projects_SolutionInfo )
+                Using( .'SolutionInfo_$TargetAlias$' )
+                Using( .Intellisense )
 
                 .ProjectConfig_Intellisense =
                 [

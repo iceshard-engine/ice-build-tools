@@ -17,7 +17,7 @@
 .AllConfigTargetsSkipped = { }
 .AllConfigFinalProperties = [ ]
 
-.Projects_IntellisenseInfo = [ ]
+.Projects_SolutionInfo = [ ]
 
 .Final_GlobalRules = { }
 ForEach( .GlobalRule in .GlobalRules )
@@ -106,6 +106,9 @@ ForEach( .TargetConfig in .TargetConfigList )
 
             .ConfigFinalRules = .ProjectRules + .Final_GlobalRules
 
+            // .ConfigHasDeploySteps = false
+            .ConfigFinalDeploys = { }
+
             ForEach( .ProjectRule in .ConfigFinalRules )
             {
                 .RuleRequires = { }
@@ -135,6 +138,11 @@ ForEach( .TargetConfig in .TargetConfigList )
                 If ( .RuleRequirementsSatisfied )
                 {
                     .RuleKind = .Kind_None
+                    .RuleDeploy =
+                    [
+                        .Executable = .EmptyString
+                    ]
+
                     Using( .ProjectRule )
 
                     // Update project kind if needed
@@ -244,6 +252,20 @@ ForEach( .TargetConfig in .TargetConfigList )
                     ^ConfigFinalProperties + .RuleFinalProperties
                     ^ConfigFinalRequires + .RuleRequires
                     ^ConfigFinalDependencies + .RuleDependsOn
+
+                    {
+                        Using( .RuleDeploy )
+                        If ( .Executable != .EmptyString )
+                        {
+                            .DeployEntry =
+                            [
+                                .DeployName = .RuleName
+                                Using( .RuleDeploy )
+                            ]
+                            ^ConfigFinalDeploys + .DeployEntry
+                            // ^ConfigHasDeploySteps = true
+                        }
+                    }
                 }
             }
 
@@ -365,16 +387,19 @@ ForEach( .TargetConfig in .TargetConfigList )
 
                 If ( .ProjectKind == .Kind_HeaderOnly )
                 {
-                    .Project_IntellisenseInfo =
+                    .Project_SolutionInfo =
                     [
-                        .'IntellisenseInfo_$ProjectConfigTarget$' =
+                        .'SolutionInfo_$ProjectConfigTarget$' =
                         [
-                            .IncludeDirs = .IncludeDirs
-                            .Defines = .Defines
-                            .BuildOptions = .BuildOptions
+                            .Intellisense =
+                            [
+                                .IncludeDirs = .IncludeDirs
+                                .Defines = .Defines
+                                .BuildOptions = .BuildOptions
+                            ]
                         ]
                     ]
-                    ^Projects_IntellisenseInfo + .Project_IntellisenseInfo
+                    ^Projects_SolutionInfo + .Project_SolutionInfo
                 }
             }
 
@@ -526,6 +551,41 @@ ForEach( .TargetConfig in .TargetConfigList )
                     }
 
                     ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
+                }
+
+                ForEach( .DeployEntry in .ConfigFinalDeploys )
+                {
+                    .Arguments = ''
+                    .Inputs = { }
+                    .Output = ''
+
+                    Using( .DeployEntry )
+
+                    If ( .Executable != .EmptyString )
+                    {
+                        .PreBuildDependencies = .TargetList
+
+                        Exec( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-deploy-$DeployName$' )
+                        {
+                            .ExecExecutable = .Executable
+                            .ExecInput = .Inputs
+                            .ExecArguments = .Arguments
+                            .ExecOutput = .Output
+                            .ExecUseStdOutAsOutput = false
+                            .ExecAlwaysShowOutput = true
+                            .ExecAlways = true
+
+                            If ( .ExecOutput == .EmptyString )
+                            {
+                                ^ExecUseStdOutAsOutput = true
+                                ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_deploy_$DeployName$_log.txt'
+                            }
+                        }
+
+                        ^TargetList = {
+                            '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-deploy-$DeployName$'
+                        }
+                    }
                 }
 
                 Alias( '$ProjectConfigTarget$' )

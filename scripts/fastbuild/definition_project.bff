@@ -34,6 +34,13 @@ ForEach( .Project in .Projects )
 
     Using( .Project )
 
+    .Deploy =
+    [
+        .Executable = ''
+        .Arguments = ''
+        .Inputs = { }
+    ]
+
     .ResolvedProject =
     [
         .ProjectName = .Name
@@ -58,8 +65,10 @@ ForEach( .Project in .Projects )
 
         .Rule_DefaultInternal =
         [
+            .RuleName = "$Name$_DefaultRule"
             .RuleRequires = { }
             .RuleDependsOn = ^DependsOn
+            .RuleDeploy = .Deploy
 
             .RuleProperties_Public =
             [
@@ -94,9 +103,11 @@ ForEach( .Project in .Projects )
 
             .ResolvedRule =
             [
+                .RuleName = .Name
                 .RuleKind = .Kind
                 .RuleRequires = .Requires
                 .RuleDependsOn = .DependsOn
+                .RuleDeploy = .Deploy
                 .RuleProperties_Public =
                 [
                     Using( .Properties )
