@@ -35,7 +35,10 @@
 
 .ToolchainFrontendProperties_clang_x64_1000_Develop =
 [
-    .CompilerOptions
-        + ' -O2'
-        + ' -Wno-#pragma-messages'
+    Using( .ToolchainFrontendProperties_clang_x64_900_Develop )
+]
+
+.ToolchainFrontendProperties_clang_x64_1100_Develop =
+[
+    Using( .ToolchainFrontendProperties_clang_x64_1000_Develop )
 ]

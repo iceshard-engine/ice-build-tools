@@ -6,8 +6,8 @@
     .FrontendFlag_Defines =
     [
         .FlagVariable = 'CompilerOptions'
-        .FlagPrefix = '-D"'
-        .FlagSuffix = '"'
+        .FlagPrefix = '-D'
+        .FlagSuffix = ''
     ]
     .FrontendFlag_IncludeDirs =
     [

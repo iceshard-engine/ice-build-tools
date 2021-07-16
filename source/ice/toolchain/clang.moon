@@ -61,6 +61,36 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
+    '11.0.0': {
+        name: 'clang-11.0.0'
+        struct_name: 'Toolchain_Clang_x64_1100'
+        compiler_name: 'compiler-clang-x64-1100'
+
+        generate_structure: (gen, clang_path, ar_path) ->
+            struct_name = 'Toolchain_Clang_x64_1100'
+            compiler_name = 'compiler-clang-x64-1100'
+
+            gen\structure struct_name, (gen) ->
+                gen\line!
+                gen\compiler
+                    name: compiler_name
+                    executable: clang_path
+                    extra_files: { }
+
+                gen\line!
+                gen\variables {
+                    { 'ToolchainCompilerFamily', 'clang' }
+                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainToolset', '1100' }
+                    { 'ToolchainFrontend', 'clang' }
+                    { 'ToolchainCompiler', compiler_name }
+                    { 'ToolchainLibrarian', ar_path }
+                    { 'ToolchainLinker', clang_path }
+                    { 'ToolchainIncludeDirs', { } }
+                    { 'ToolchainLibDirs', { } }
+                    { 'ToolchainLibs', { } }
+                }
+    }
 }
 
 detect_compilers = (ver_major) ->

@@ -35,7 +35,10 @@
 
 .ToolchainFrontendProperties_clang_x64_1000_Release =
 [
-    .CompilerOptions
-        + ' -O2'
-        + ' -Wno-#pragma-messages'
+    Using( .ToolchainFrontendProperties_clang_x64_900_Release )
+]
+
+.ToolchainFrontendProperties_clang_x64_1100_Release =
+[
+    Using( .ToolchainFrontendProperties_clang_x64_1000_Release )
 ]

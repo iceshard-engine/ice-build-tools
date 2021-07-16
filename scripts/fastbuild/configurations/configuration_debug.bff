@@ -41,10 +41,10 @@
 
 .ToolchainFrontendProperties_clang_x64_1000_Debug =
 [
-    .CompilerOptions
-        + ' -O0'
-        + ' -Wno-#pragma-messages'
+    Using( .ToolchainFrontendProperties_clang_x64_900_Debug )
+]
 
-    .Defines
-        + '_DEBUG'
+.ToolchainFrontendProperties_clang_x64_1100_Debug =
+[
+    Using( .ToolchainFrontendProperties_clang_x64_1000_Debug )
 ]

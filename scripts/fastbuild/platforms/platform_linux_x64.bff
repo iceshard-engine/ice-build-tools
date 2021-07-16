@@ -10,6 +10,7 @@
     .PlatformSupportedToolchains = {
         'clang-9.0.0'
         'clang-10.0.0'
+        'clang-11.0.0'
     }
 
     .PlatformExtensions =
@@ -44,8 +45,8 @@
     .LinkerOptions_ObjectList = ''
 
     .CompilerOptions
-        + ' -stdlib=libstdc++'
-        + ' -fpic'
+        + ' -stdlib=libc++'
+        + ' -fPIC'
 
     .LinkerOptions
         + ''
@@ -55,19 +56,10 @@
 
 .ToolchainProperties_clang_x64_1000_Linux_x64 =
 [
-    .LinkerOptions_StaticLib = ' -static'
-    .LinkerOptions_SharedLib = ' -shared'
-    .LinkerOptions_ConsoleApp = ' -pie'
-    .LinkerOptions_WindowedApp = ' -pie'
-    .LinkerOptions_HeaderOnly = ''
-    .LinkerOptions_ObjectList = ''
+    Using( .ToolchainProperties_clang_x64_900_Linux_x64 )
+]
 
-    .CompilerOptions
-        + ' -stdlib=libstdc++'
-        + ' -fpic'
-
-    .LinkerOptions
-        + ''
-    .LibrarianOptions
-        + ''
+.ToolchainProperties_clang_x64_1100_Linux_x64 =
+[
+    Using( .ToolchainProperties_clang_x64_1000_Linux_x64 )
 ]
