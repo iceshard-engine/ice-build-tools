@@ -25,6 +25,7 @@ class Project
         @application_class = ProjectApplication
         @generator_class = FastBuildGenerator
 
+        @conan_profile = 'default'
         @solution_name = "#{@name}.sln"
         @locators =
             [Locator.Type.Toolchain]: { }
@@ -43,6 +44,13 @@ class Project
 
     fastbuild_hooks_script: (@hooks_script_location) =>
     fastbuild_alias_script: (@alias_script_location) =>
+
+    set_conan_profile: (profile_pair) =>
+        if os.iswindows
+            @conan_profile = profile_pair.windows
+        if os.isunix
+            @conan_profile = profile_pair.unix or profile_pair.linux
+
     fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
         @solution_name = "#{name}.sln"
@@ -60,13 +68,21 @@ class Project
         assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
         assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
+        application = @application_class!
+        if os.isunix
+            if application.args.init or (application.args.conan_profile ~= nil and application.args.conan_profile ~= 'default')
+                if application.args.conan_profile != @conan_profile
+                    print string.format "ERROR: [-256] Provided conan profile needs to match the profile defined in the workspace.moon script! (%s != %s)", (tostring application.args.conan_profile), @conan_profile
+                    os.exit -256
+
         @_detect_platform_fastbuild_variables { }
         @_detect_conan_fastbuild_variables { }
         @_build_fastbuild_workspace_script { }
 
-        command_result = @application_class!\run
+        command_result = application\run
             source_dir: @source_directory
             output_dir: @output_directory
+            conan_profile: @conan_profile
             fastbuild_solution_name: @solution_name
             generate:
                 fbuild_platform_files: -> @_detect_platform_fastbuild_variables fbuild_detect_variables:true
@@ -229,6 +245,7 @@ class Project
                 @conan\install
                     conanfile:'tools'
                     update:args.conan_tools_update
+                    profile:@conan_profile
                     install_folder:'build/tools'
                     build_policy:'missing'
 
@@ -237,6 +254,7 @@ class Project
                 @conan\install
                     conanfile:'source'
                     update:args.conan_source_update
+                    profile:@conan_profile
                     install_folder:'build'
                     build_policy:'missing'
 

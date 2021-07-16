@@ -15,6 +15,8 @@ class Application
         @parser = argparse @@name, @@description, @@epilog
         @parser\require_command false
         @parser\command_target "command"
+        @parser\command "init", "Used to initialize the workspace for development."
+        @parser\option "--conan_profile", "Conan profile."
 
         if @@.args
             for _, { :func, :opts } in pairs @@.args
@@ -27,12 +29,13 @@ class Application
 
             -- Save the object
             @commands[name] = command
+        @args = @parser\parse arg
 
     run: (project) =>
         result = nil
 
         -- Execute the given command or the main handler
-        args = @parser\parse arg
+        args = @args
         if args.command
             old_dir = os.cwd!
 
