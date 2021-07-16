@@ -63,21 +63,33 @@ toolchain_definitions = {
     }
 }
 
-detect_compilers = ->
-    {
-        {
-            clang_path: Where\path 'clang++'
+detect_compilers = (ver_major) ->
+    binaries = {
+        '9': {
+            clang_path: Where\path 'clang++-9'
+            ar_path: Where\path 'ar'
+        },
+        '10': {
+            clang_path: Where\path 'clang++-10'
+            ar_path: Where\path 'ar'
+        },
+        '11': {
+            clang_path: Where\path 'clang++-11'
             ar_path: Where\path 'ar'
         }
     }
+    return binaries[tostring ver_major]
 
 class Clang
-    @detect: (version) =>
+    @detect: (conan_profile) =>
         toolchain_list = { }
 
-        -- Append all MSVC compilers
-        for compiler in *detect_compilers version, requires
+        if conan_profile
+            ver_major, ver_minor, os, arch = (conan_profile\gmatch "-(%d+).(%d+)-(%w+)-([%w_]+)")!
+            if not (ver_major and os and arch)
+                return { }
 
+            compiler = detect_compilers ver_major
             if compiler.clang_path and compiler.ar_path
 
                 clang_exe = compiler.clang_path

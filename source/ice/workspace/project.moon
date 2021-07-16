@@ -9,6 +9,7 @@ import SDK_Vulkan from require 'ice.sdks.vulkan'
 import SDK_DX11 from require 'ice.sdks.dx11'
 import SDK_DX12 from require 'ice.sdks.dx12'
 import SDK_Win32 from require 'ice.sdks.win32'
+import SDK_Linux from require 'ice.sdks.linux'
 import SDK_Cpp_WinRT from require 'ice.sdks.winrt_cpp'
 
 import Conan from require 'ice.tools.conan'
@@ -34,6 +35,7 @@ class Project
 
         -- Initialize with default locators
         @add_locator SDK_Win32!
+        @add_locator SDK_Linux!
         @add_locator SDK_Cpp_WinRT!
         @add_locator SDK_DX11!
         @add_locator SDK_DX12!
@@ -110,7 +112,7 @@ class Project
 
         if os.isunix
             toolchains = { }
-            clang_toolchains = Clang\detect!
+            clang_toolchains = Clang\detect @conan_profile
 
             table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
 
