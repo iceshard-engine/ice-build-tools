@@ -18,8 +18,8 @@ jobs:
         ~/.local/bin/conan config install https://github.com/iceshard-engine/conan-config.git
     - name: Create (lua-5.1.5, clang-10)
       run: |
-        ~/.local/bin/conan create . ice-build-tools/0.4.7@iceshard/stable --profile clang-10.0-linux-x86_64
+        ~/.local/bin/conan create . ice-build-tools/0.4.8@iceshard/stable --profile clang-10.0-linux-x86_64
     - name: Deploy
       run: |
         ~/.local/bin/conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
-        ~/.local/bin/conan upload -r conan-iceshard ice-build-tools/0.4.7@iceshard/stable --all
+        ~/.local/bin/conan upload -r conan-iceshard ice-build-tools/0.4.8@iceshard/stable --all
