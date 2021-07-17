@@ -14,6 +14,9 @@
     .SolutionFolderCurrentProjects = { }
     .SolutionBuildProjectDependencies = { }
 
+    .AllProjectConfigs = { }
+    .AllTestsProjectConfigs = { }
+
     ForEach( .TargetConfig in .TargetConfigList )
     {
         Using( .TargetConfig )
@@ -32,18 +35,33 @@
 
                 .SolutionConfig = '$ConfigName$'
                 .SolutionPlatform = .SolutionPlatform
+            ]
+            ^SolutionConfigs + .SolutionConfig
+
+            .AllProjectConfig =
+            [
+                Using( .SolutionConfig )
 
                 .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-^$(Platform)-^$(Configuration)'
                 .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-^$(Platform)-^$(Configuration) -c'
             ]
-            ^SolutionConfigs + .SolutionConfig
+            ^AllProjectConfigs + .AllProjectConfig
+
+            .AllTestsProjectConfig =
+            [
+                Using( .SolutionConfig )
+
+                .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t test-all-^$(Platform)-^$(Configuration)'
+                .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t test-all-^$(Platform)-^$(Configuration) -c'
+            ]
+            ^AllTestsProjectConfigs + .AllTestsProjectConfig
         }
     }
 
     VCXProject( 'all-vcxproj' )               // (optional) Alias
     {
         .ProjectOutput = '$WorkspaceBuildDir$/projects/all.vcxproj'
-        .ProjectConfigs = .SolutionConfigs
+        .ProjectConfigs = .AllProjectConfigs
         .ProjectBasePath = .WorkspaceBuildDir
         .ProjectInputPaths = { }
 
@@ -51,10 +69,21 @@
         .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
     }
 
+    VCXProject( 'all-tests-vcxproj' )               // (optional) Alias
+    {
+        .ProjectOutput = '$WorkspaceBuildDir$/projects/all_tests.vcxproj'
+        .ProjectConfigs = .AllTestsProjectConfigs
+        .ProjectBasePath = .WorkspaceBuildDir
+        .ProjectInputPaths = { }
+
+        .IntermediateDirectory = '$WorkspaceBuildDir$/obj/helpers/all_tests'
+        .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all_tests'
+    }
+
     .SolutionFolder =
     [
         .Path = '0. Miscelaneous'
-        .Projects = { 'all-vcxproj' }
+        .Projects = { 'all-vcxproj', 'all-tests-vcxproj' }
     ]
     .SolutionFolders + .SolutionFolder
 

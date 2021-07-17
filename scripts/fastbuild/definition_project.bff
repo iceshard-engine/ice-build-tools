@@ -32,6 +32,12 @@ ForEach( .Project in .Projects )
 
     .Rules = { }
 
+    .UnitTests =
+    [
+        .Enabled = false
+        .Arguments = ''
+    ]
+
     Using( .Project )
 
     .Deploy =
@@ -68,6 +74,7 @@ ForEach( .Project in .Projects )
             .RuleName = "$Name$_DefaultRule"
             .RuleRequires = { }
             .RuleDependsOn = ^DependsOn
+            .RuleUnitTests = .UnitTests
             .RuleDeploy = .Deploy
 
             .RuleProperties_Public =
@@ -107,7 +114,9 @@ ForEach( .Project in .Projects )
                 .RuleKind = .Kind
                 .RuleRequires = .Requires
                 .RuleDependsOn = .DependsOn
+                .RuleUnitTests = .UnitTests
                 .RuleDeploy = .Deploy
+
                 .RuleProperties_Public =
                 [
                     Using( .Properties )

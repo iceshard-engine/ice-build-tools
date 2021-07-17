@@ -53,6 +53,7 @@ ForEach( .TargetConfig in .TargetConfigList )
     Using( .PlatformExtensions )
 
     .ConfigTargets = { }
+    .ConfigTargetsTests = { }
 
     ForEach( .Project in .ProjectsResolved )
     {
@@ -107,6 +108,7 @@ ForEach( .TargetConfig in .TargetConfigList )
             .ConfigFinalRules = .ProjectRules + .Final_GlobalRules
 
             // .ConfigHasDeploySteps = false
+            .ConfigFinalUnitTests = [ ]
             .ConfigFinalDeploys = { }
 
             ForEach( .ProjectRule in .ConfigFinalRules )
@@ -141,6 +143,10 @@ ForEach( .TargetConfig in .TargetConfigList )
                     .RuleDeploy =
                     [
                         .Executable = .EmptyString
+                    ]
+                    .RuleUnitTests =
+                    [
+                        .Enabled = false
                     ]
 
                     Using( .ProjectRule )
@@ -266,6 +272,14 @@ ForEach( .TargetConfig in .TargetConfigList )
                             // ^ConfigHasDeploySteps = true
                         }
                     }
+
+                    {
+                        Using( .RuleUnitTests )
+                        If ( .Enabled )
+                        {
+                            ^ConfigFinalUnitTests = .RuleUnitTests
+                        }
+                    }
                 }
             }
 
@@ -296,6 +310,7 @@ ForEach( .TargetConfig in .TargetConfigList )
             .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
             .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
             .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
+            .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
             .TargetOutputName = "$ProjectName$$TargetExtension$"
             .TargetList = { }
 
@@ -553,6 +568,25 @@ ForEach( .TargetConfig in .TargetConfigList )
                     ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
                 }
 
+                If ( .ProjectKind in .Kind_Applications )
+                {
+                    .Enabled = false
+
+                    Using( .ConfigFinalUnitTests )
+                    If ( .Enabled )
+                    {
+                        .TestExecutable = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
+                        .TestOutput = '$TargetTestOutputDirectory$/$ProjectName$_test_results.txt'
+                        .TestWorkingDir = '$WorkspaceBuildDir$'
+
+                        Test( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-test' )
+                        {
+                        }
+
+                        ^ConfigTargetsTests + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-test'
+                    }
+                }
+
                 ForEach( .DeployEntry in .ConfigFinalDeploys )
                 {
                     .Arguments = ''
@@ -636,11 +670,25 @@ ForEach( .TargetConfig in .TargetConfigList )
                 ^HasTargets = true
             }
 
+            .HasTestTargets = false
+            ForEach (.T in .ConfigTargetsTests)
+            {
+                ^HasTestTargets = true
+            }
+
             If ( .HasTargets )
             {
                 Alias( "$AliasName$-$ConfigName$$AliasSuffix$" )
                 {
                     .Targets = .ConfigTargets
+                }
+            }
+
+            If ( .HasTestTargets )
+            {
+                Alias( "test-$AliasName$-$ConfigName$$AliasSuffix$" )
+                {
+                    .Targets = .ConfigTargetsTests
                 }
             }
         }
