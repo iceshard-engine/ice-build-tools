@@ -9,7 +9,6 @@
 [
     .CompilerOptions
         + ' /O2'
-        + ' /Z7'
         + ' /MD'
         + ' /EHsc'
 
