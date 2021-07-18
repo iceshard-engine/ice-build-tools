@@ -3,18 +3,20 @@ import FastBuild from require "ice.tools.fastbuild"
 
 class BuildCommand extends BaseCommand
     @arguments {
-        BaseCommand.args.clean
-        BaseCommand.args.update_deps
         option 'target',
             name: '-t --target'
             default: 'all-x64-Develop'
+        option 'summary',
+            name: '-s --summary'
+            choices: { "off", "success", "always" }
+            default: 'off'
+        flag 'clean',
+            name: '-c --clean'
         flag 'verbose',
             name: '-v --verbose'
     }
 
     prepare: (args, project) =>
-        super args, project
-
         os.chdir project.output_dir
 
     execute: (args) =>
@@ -24,7 +26,8 @@ class BuildCommand extends BaseCommand
             clean:args.clean
             monitor:true
             distributed:true
-            summary:false
+            summary:args.summary == 'always'
+            nosummaryonerror:args.summary == 'success'
             verbose:args.verbose
 
 { :BuildCommand }

@@ -5,15 +5,11 @@ import VStudio from require "ice.tools.vswhere"
 
 class VStudioCommand extends BaseCommand
     @arguments {
-        BaseCommand.args.clean
-        BaseCommand.args.update_deps
         flag 'start',
             name: '--start'
     }
 
     prepare: (args, project) =>
-        super args, project
-
         os.chdir project.output_dir
 
     execute: (args, project) =>
