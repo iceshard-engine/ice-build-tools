@@ -422,40 +422,44 @@ ForEach( .TargetConfig in .TargetConfigList )
             //--------------------------------------------------------------------------
             .HasRuntimeDependencies = false
 
-            ForEach( .ConanModule in .Modules )
             {
-                Using( .'ConanModule_$ConanModule$_$ConanConfigName$' )
+                Using( .'ConanModules_$ConanConfigName$' )
 
-                ForEach( .Var in .'ConanVariables_$ProjectKind$' )
+                ForEach( .ConanModule in .Modules )
                 {
-                    Using( .'FrontendFlag_$Var$' )
-                    ForEach( .Value in .'$Var$' )
-                    {
-                        ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
-                    }
-                }
+                    Using( .'ConanModule_$ConanModule$' )
 
-                If ( .CopyModules )
-                {
-
-                    .CopyDirs = false
-                    .CopyDirsList = { }
-                    ForEach( .BinDir in .BinDirs )
+                    ForEach( .Var in .'ConanVariables_$ProjectKind$' )
                     {
-                        ^CopyDirs = true
-                        ^CopyDirsList + "$BinDir$/"
-                    }
-
-                    If ( .CopyDirs )
-                    {
-                        CopyDir( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir' )
+                        Using( .'FrontendFlag_$Var$' )
+                        ForEach( .Value in .'$Var$' )
                         {
-                            .SourcePaths = .CopyDirsList
-                            .SourcePathsPattern = '*.dll'
-                            .Dest = .TargetOutputDirectory
+                            ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
                         }
-                        ^TargetRuntimeDependencies + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir'
-                        ^HasRuntimeDependencies = true
+                    }
+
+                    If ( .CopyModules )
+                    {
+
+                        .CopyDirs = false
+                        .CopyDirsList = { }
+                        ForEach( .BinDir in .BinDirs )
+                        {
+                            ^CopyDirs = true
+                            ^CopyDirsList + "$BinDir$/"
+                        }
+
+                        If ( .CopyDirs )
+                        {
+                            CopyDir( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir' )
+                            {
+                                .SourcePaths = .CopyDirsList
+                                .SourcePathsPattern = '*.dll'
+                                .Dest = .TargetOutputDirectory
+                            }
+                            ^TargetRuntimeDependencies + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir'
+                            ^HasRuntimeDependencies = true
+                        }
                     }
                 }
             }

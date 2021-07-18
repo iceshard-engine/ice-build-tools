@@ -14,8 +14,14 @@ import SDK_Cpp_WinRT from require 'ice.sdks.winrt_cpp'
 
 import Conan from require 'ice.tools.conan'
 import FastBuildGenerator from require 'ice.generators.fastbuild'
+
+import ProfileList, Profile from require 'ice.workspace.profile'
 import ProjectApplication from require 'ice.workspace.application'
 
+-- import install_conan_tools, install_conan_source_dependencies from require 'ice.workspace.util.conan_install_helpers'
+install_conan_dependencies = ->
+generate_fastbuild_variables_script = ->
+generate_fastbuild_workspace_script = ->
 
 class Project
     new: (@name) =>
@@ -43,15 +49,11 @@ class Project
 
     script: (@project_script) =>
     application: (@application_class) =>
+    profiles: (profiles_file) =>
+        @profile_list = ProfileList\from_file profiles_file
 
     fastbuild_hooks_script: (@hooks_script_location) =>
     fastbuild_alias_script: (@alias_script_location) =>
-
-    set_conan_profile: (profile_pair) =>
-        if os.iswindows
-            @conan_profile = profile_pair.windows
-        if os.isunix
-            @conan_profile = profile_pair.unix or profile_pair.linux
 
     fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
@@ -71,256 +73,250 @@ class Project
         assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
         application = @application_class!
-        if os.isunix
-            if application.args.init or (application.args.conan_profile ~= nil and application.args.conan_profile ~= 'default')
-                if application.args.conan_profile != @conan_profile
-                    print string.format "ERROR: [-256] Provided conan profile needs to match the profile defined in the workspace.moon script! (%s != %s)", (tostring application.args.conan_profile), @conan_profile
-                    os.exit -256
 
-        @_detect_platform_fastbuild_variables { }
-        @_detect_conan_fastbuild_variables { }
-        @_build_fastbuild_workspace_script { }
+        selected_profile = @profile_list\prepare_profile @output_directory
+
+        install_conan_dependencies selected_profile, false
+        generate_fastbuild_variables_script selected_profile, @locators, @output_directory, false
+        generate_fastbuild_workspace_script selected_profile, @output_directory, @source_directory, @, false
 
         command_result = application\run
             source_dir: @source_directory
             output_dir: @output_directory
             conan_profile: @conan_profile
             fastbuild_solution_name: @solution_name
-            generate:
-                fbuild_platform_files: -> @_detect_platform_fastbuild_variables fbuild_detect_variables:true
-                fbuild_workspace_files: -> @_build_fastbuild_workspace_script fbuild_workspace_script:true
-                conan_source_files: -> @_detect_conan_fastbuild_variables conan_source_update:true
-                conan_tools_files: -> @_detect_conan_fastbuild_variables conan_tools_update:true
-
-    _detect_platform_fastbuild_variables: (args) =>
-        toolchains = { }
-
-        execute_locators = (locator_type, target_array, detected_platforms) ->
-            for locator in *@locators[locator_type]
-                results = locator\locate detected_platforms
-                if (type results) == 'table' and #results > 0
-                    table.insert target_array, result for result in *results
+            action: {
+                install_conan_dependencies: -> install_conan_dependencies selected_profile, true
+                generate_fastbuild_variables_script: -> generate_fastbuild_variables_script selected_profile, @locators, @output_directory, true
+                generate_fastbuild_workspace_script: -> generate_fastbuild_workspace_script selected_profile, @output_directory, @source_directory, @, true
+            }
 
 
-        if os.iswindows
-            toolchains = { }
-            msvc_toolchains = VsMSVC\detect '[16.0,17.0)'
-            clang_toolchains = VsClang\detect '[16.0,17.0)'
+install_conan_dependencies = (profile, force_update) ->
+    unless os.isfile 'source/conanfile.txt'
+        print "No description for source dependencies found, skipping..." if not same_version
+        return
 
-            table.insert toolchains, toolchain for toolchain in *msvc_toolchains or { }
-            table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
+    profile_paths = profile\generate_conan_profiles!
 
-        if os.isunix
-            toolchains = { }
-            clang_toolchains = Clang\detect @conan_profile
+    for profile_path in *profile_paths
+        profile_file = "#{profile_path}/conan_profile.txt"
+        info_file = "#{profile_path}/conaninfo.txt"
 
-            table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
+        unless os.isfile profile_file
+            error "Generated Conan profile file 'conan_profile.txt' was not found in path #{profile_path}"
 
-        execute_locators Locator.Type.Toolchain, toolchain_list
+        if force_update or not (os.isfile info_file)
+            Conan!\install
+                conanfile:'source'
+                update:false,
+                profile:profile_file,
+                install_folder:profile_path
+                build_policy:'missing'
 
-        platform_sdks = { }
-        additional_sdks = { }
+generate_fastbuild_variables_script = (profile, locators, output_dir, force_update) ->
 
-        execute_locators Locator.Type.PlatformSDK, platform_sdks
-        execute_locators Locator.Type.CommonSDK, additional_sdks, platform_sdks
+    execute_locators = (locator_type, target_array, detected_platforms) ->
+        for locator in *locators[locator_type]
+            results = locator\locate detected_platforms
+            if (type results) == 'table' and #results > 0
+                table.insert target_array, result for result in *results
 
-        force_detect = args.force_detect or args.fbuild_detect_variables
+    toolchains = { }
+    platform_sdks = { }
+    additional_sdks = { }
 
-        error "No supported toolchain detected!" unless toolchains and #toolchains > 0
+    if os.iswindows
+        compiler_version = tonumber profile.compiler.version
+        toolchain_version = "[#{compiler_version}.0,#{compiler_version+1}.0)"
 
-        if os.iswindows or os.isunix
-            error "No supported platforms detected!" unless platform_sdks and #platform_sdks > 0
-        else
-            platform_sdks = { }
+        msvc_toolchains = VsMSVC\detect toolchain_version
+        clang_toolchains = VsClang\detect toolchain_version
 
-        os.mkdir @output_directory unless os.isdir @output_directory
-        os.chdir @output_directory, (dir) ->
-            if force_detect or not os.isfile "detected_toolchains.bff"
-                gen = @.generator_class "detected_toolchains.bff"
+        table.insert toolchains, toolchain for toolchain in *msvc_toolchains or { }
+        table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
 
-                toolchain_list = { }
-                toolchain_names = { }
+    if os.isunix
+        clang_toolchains = Clang\detect profile
 
-                for toolchain in *toolchains
-                    toolchain.generate gen
+        table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
 
-                    table.insert toolchain_names, toolchain.name
-                    table.insert toolchain_list, toolchain.struct_name
-                    gen\line!
 
-                gen\line '.ToolchainList = {'
-                gen\indented (gen) ->
-                    gen\line ".#{value}" for value in *toolchain_list
-                gen\line '}'
+    -- execute_locators Locator.Type.Toolchain, toolchains -- Currently unused
+    execute_locators Locator.Type.PlatformSDK, platform_sdks
+    execute_locators Locator.Type.CommonSDK, additional_sdks, platform_sdks
 
-                gen\line '.ToolchainNames = {'
-                gen\indented (gen) ->
-                    gen\line "'#{value}'" for value in *toolchain_names
-                gen\line '}\n'
+    error "No supported toolchain detected!" unless toolchains and #toolchains > 0
+    if os.iswindows or os.isunix
+        error "No supported platforms detected!" unless platform_sdks and #platform_sdks > 0
 
-                gen\close!
+    os.mkdir output_dir unless os.isdir output_dir
+    os.chdir output_dir, (dir) ->
+        if force_update or not (os.isfile "detected_toolchains.bff")
+            gen = FastBuildGenerator "detected_toolchains.bff"
 
-            if force_detect or not os.isfile "detected_platforms.bff"
-                gen = @.generator_class "detected_platforms.bff"
+            toolchain_list = { }
+            toolchain_names = { }
 
-                sdk_list = { }
-                sdk_names = { }
+            for toolchain in *toolchains
+                toolchain.generate gen
 
-                for sdk in *platform_sdks
+                table.insert toolchain_names, toolchain.name
+                table.insert toolchain_list, toolchain.struct_name
+                gen\line!
 
-                    gen\line!
-                    gen\structure sdk.struct_name, (gen) ->
-                        gen\variables {
-                            { 'SdkIncludeDirs', sdk.includedirs }
-                            { 'SdkLibDirs', sdk.libdirs }
-                            { 'SdkLibs', sdk.libs }
-                        }
+            gen\line '.ToolchainList = {'
+            gen\indented (gen) ->
+                gen\line ".#{value}" for value in *toolchain_list
+            gen\line '}'
 
-                    table.insert sdk_names, sdk.name
-                    table.insert sdk_list, sdk.struct_name
+            gen\line '.ToolchainNames = {'
+            gen\indented (gen) ->
+                gen\line "'#{value}'" for value in *toolchain_names
+            gen\line '}\n'
+
+            gen\close!
+
+        if force_update or not (os.isfile "detected_platforms.bff")
+            gen = FastBuildGenerator "detected_platforms.bff"
+
+            sdk_list = { }
+            sdk_names = { }
+
+            for sdk in *platform_sdks
 
                 gen\line!
-                gen\line '.PlatformSDKList = {'
-                gen\indented (gen) ->
-                    gen\line ".#{value}" for value in *sdk_list
-                gen\line '}'
+                gen\structure sdk.struct_name, (gen) ->
+                    gen\variables {
+                        { 'SdkIncludeDirs', sdk.includedirs }
+                        { 'SdkLibDirs', sdk.libdirs }
+                        { 'SdkLibs', sdk.libs }
+                    }
 
-                gen\line '.PlatformSDKNames = {'
-                gen\indented (gen) ->
-                    gen\line "'#{value}'" for value in *sdk_names
-                gen\line '}'
+                table.insert sdk_names, sdk.name
+                table.insert sdk_list, sdk.struct_name
 
-                gen\close!
+            gen\line!
+            gen\line '.PlatformSDKList = {'
+            gen\indented (gen) ->
+                gen\line ".#{value}" for value in *sdk_list
+            gen\line '}'
 
-            if force_detect or not os.isfile "detected_sdks.bff"
-                gen = @.generator_class "detected_sdks.bff"
+            gen\line '.PlatformSDKNames = {'
+            gen\indented (gen) ->
+                gen\line "'#{value}'" for value in *sdk_names
+            gen\line '}'
 
-                sdk_list = { }
-                sdk_names = { }
+            gen\close!
 
-                for sdk in *additional_sdks
+        if force_update or (not os.isfile "detected_sdks.bff")
+            gen = FastBuildGenerator "detected_sdks.bff"
 
-                    gen\line!
-                    gen\structure sdk.struct_name, (gen) ->
-                        gen\variables {
-                            { 'SdkIncludeDirs', sdk.includedirs }
-                            { 'SdkLibDirs', sdk.libdirs }
-                            { 'SdkLibs', sdk.libs }
-                        }
+            sdk_list = { }
+            sdk_names = { }
 
-                    table.insert sdk_names, sdk.name
-                    table.insert sdk_list, sdk.struct_name
-
-                gen\line!
-                gen\line '.SDKList = {'
-                gen\indented (gen) ->
-                    gen\line ".#{value}" for value in *sdk_list
-                gen\line '}'
-
-                gen\line '.SDKNames = {'
-                gen\indented (gen) ->
-                    gen\line "'#{value}'" for value in *sdk_names
-                gen\line '}'
-
-                gen\close!
-
-    _detect_conan_fastbuild_variables: (args) =>
-        @conan = Conan!
-
-        if os.isfile 'tools/conanfile.txt'
-
-            -- We are checking if we need to auto-update at least the ice-build-tools version!
-            dev_version = false
-            same_version = true
-            for line in io.lines 'tools/conanfile.txt'
-                version_match, channel_match = (line\gmatch "ice%-build%-tools/(%d+.%d+.%d+)@%w+/(%w+)")!
-
---                if channel_match and channel_match == "dev"
---                    dev_version = true
-                if version_match and version_match ~= ""
-                    same_version = version_match == @ice_build_tools_version
-
-            print "Running an different 'ice-built-tools-version' than requested, updating..." if not same_version
-            print "Running 'ice-built-tools' development version, force updating..." if dev_version
-
-            if args.conan_tools_update or (not same_version) or dev_version or (not os.isfile "build/tools/conaninfo.txt")
-                @conan\install
-                    conanfile:'tools'
-                    update:args.conan_tools_update
-                    profile:@conan_profile
-                    install_folder:'build/tools'
-                    build_policy:'missing'
-
-        if os.isfile 'source/conanfile.txt'
-            if args.conan_source_update or (not os.isfile "build/conaninfo.txt")
-                @conan\install
-                    conanfile:'source'
-                    update:args.conan_source_update
-                    profile:@conan_profile
-                    install_folder:'build'
-                    build_policy:'missing'
-
-    _build_fastbuild_workspace_script: (args) =>
-        assert (os.isdir @output_directory), "Directory '#{@output_directory}' does not exist!"
-
-        workspace_root = os.cwd!\gsub '\\', '/'
-
-        os.chdir @output_directory, (dir) ->
-            if args.fbuild_workspace_script or (not os.isfile "fbuild.bff")
-                gen = @.generator_class "fbuild.bff"
-                fbscripts = os.getenv 'ICE_FBUILD_SCRIPTS'
-
-                gen\variables {
-                    { 'WorkspaceRoot', workspace_root }
-                    { 'WorkspaceBuildDir', "#{workspace_root}/#{@output_directory}" }
-                    { 'WorkspaceCodeDir', "#{workspace_root}/#{@source_directory}" }
-                }
-                gen\line!
-                gen\include "conan.bff"
-                gen\include "detected_toolchains.bff"
-                gen\include "detected_platforms.bff"
-                gen\include "detected_sdks.bff"
+            for sdk in *additional_sdks
 
                 gen\line!
-                gen\line '.SDKList + .PlatformSDKList'
-                gen\line '.SDKNames + .PlatformSDKNames'
+                gen\structure sdk.struct_name, (gen) ->
+                    gen\variables {
+                        { 'SdkIncludeDirs', sdk.includedirs }
+                        { 'SdkLibDirs', sdk.libdirs }
+                        { 'SdkLibs', sdk.libs }
+                    }
 
+                table.insert sdk_names, sdk.name
+                table.insert sdk_list, sdk.struct_name
+
+            gen\line!
+            gen\line '.SDKList = {'
+            gen\indented (gen) ->
+                gen\line ".#{value}" for value in *sdk_list
+            gen\line '}'
+
+            gen\line '.SDKNames = {'
+            gen\indented (gen) ->
+                gen\line "'#{value}'" for value in *sdk_names
+            gen\line '}'
+
+            gen\close!
+
+generate_fastbuild_workspace_script = (profile, output, source, project, force_update) ->
+    assert (os.isdir output), "Directory '#{output}' does not exist!"
+
+    workspace_root = os.cwd!\gsub '\\', '/'
+
+    os.chdir output, (dir) ->
+        if force_update or (not os.isfile "fbuild.bff")
+            gen = FastBuildGenerator "fbuild.bff"
+            fbscripts = os.getenv 'ICE_FBUILD_SCRIPTS'
+
+            gen\variables {
+                { 'WorkspaceRoot', workspace_root }
+                { 'WorkspaceBuildDir', "#{workspace_root}/#{output}" }
+                { 'WorkspaceCodeDir', "#{workspace_root}/#{source}" }
+            }
+            gen\line!
+
+            gen\line '.ConanBuildTypes = {'
+            gen\indented (gen) ->
+                gen\line "'#{build_type}'" for { build_type, _ } in *profile\get_profile_pairs!
+            gen\line '}'
+
+            for { build_type, profile_path } in *profile\get_profile_pairs!
                 gen\line!
-                gen\line ".UserSolutionName = '#{@solution_name}'"
-                gen\line ".UserScriptFile = '#{@project_script}'"
-
-                gen\line!
-                gen\include "#{fbscripts}/base_globals.bff"
-                gen\include "#{fbscripts}/base_toolchains.bff"
-                gen\include "#{fbscripts}/base_platforms.bff"
-                gen\include "#{fbscripts}/base_configurations.bff"
-
-                if os.isfile "#{workspace_root}/#{@hooks_script_location}"
-                    gen\line!
-                    gen\line '// Hook script, allowing to change PlatformList and ConfigurationList before actual project info gathering.'
-                    gen\include "#{workspace_root}/#{@hooks_script_location}"
-
-                gen\line!
-                gen\line '.ProjectsResolved = { }'
+                gen\line ".ConanModules_#{build_type} = [ ]"
                 gen\line '{'
-                gen\line '.Projects = { }'
-                gen\include "#{workspace_root}/#{@script_location}"
-                gen\include "#{fbscripts}/definition_project.bff"
+                gen\indented (gen) ->
+                    gen\include "#{profile_path}/conan.bff"
+                    gen\line "^ConanModules_#{build_type} = .ConanModules"
                 gen\line '}'
+            gen\line!
 
+            gen\include "detected_toolchains.bff"
+            gen\include "detected_platforms.bff"
+            gen\include "detected_sdks.bff"
+
+            gen\line!
+            gen\line '.SDKList + .PlatformSDKList'
+            gen\line '.SDKNames + .PlatformSDKNames'
+
+            gen\line!
+            gen\line ".UserSolutionName = '#{project.solution_name}'"
+            gen\line ".UserScriptFile = '#{project.project_script}'"
+
+            gen\line!
+            gen\include "#{fbscripts}/base_globals.bff"
+            gen\include "#{fbscripts}/base_toolchains.bff"
+            gen\include "#{fbscripts}/base_platforms.bff"
+            gen\include "#{fbscripts}/base_configurations.bff"
+
+            if os.isfile "#{workspace_root}/#{project.hooks_script_location}"
                 gen\line!
-                gen\include "#{fbscripts}/definition_configurations.bff"
-                gen\include "#{fbscripts}/definition_alias.bff"
+                gen\line '// Hook script, allowing to change PlatformList and ConfigurationList before actual project info gathering.'
+                gen\include "#{workspace_root}/#{project.hooks_script_location}"
 
-                if os.isfile "#{workspace_root}/#{@alias_script_location}"
-                    gen\line!
-                    gen\line '// Alias script, allowing to change alias definitions before target creation.'
-                    gen\include "#{workspace_root}/#{@alias_script_location}"
+            gen\line!
+            gen\line '.ProjectsResolved = { }'
+            gen\line '{'
+            gen\line '.Projects = { }'
+            gen\include "#{workspace_root}/#{project.script_location}"
+            gen\include "#{fbscripts}/definition_project.bff"
+            gen\line '}'
 
+            gen\line!
+            gen\include "#{fbscripts}/definition_configurations.bff"
+            gen\include "#{fbscripts}/definition_alias.bff"
+
+            if os.isfile "#{workspace_root}/#{project.alias_script_location}"
                 gen\line!
-                gen\include "#{fbscripts}/targets_build.bff"
-                if os.iswindows
-                    gen\include "#{fbscripts}/targets_vsproject.bff"
-                gen\close!
+                gen\line '// Alias script, allowing to change alias definitions before target creation.'
+                gen\include "#{workspace_root}/#{project.alias_script_location}"
+
+            gen\line!
+            gen\include "#{fbscripts}/targets_build.bff"
+            if os.iswindows
+                gen\include "#{fbscripts}/targets_vsproject.bff"
+            gen\close!
 
 { :Project, :Locator }
