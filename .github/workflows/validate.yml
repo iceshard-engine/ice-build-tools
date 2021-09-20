@@ -21,7 +21,7 @@ jobs:
         sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
     - name: Create (lua-5.1.5, clang-12)
       run: |
-        ~/.local/bin/conan create . ice-build-tools/0.5.1@iceshard/stable --profile clang-12.0-linux-x86_64
+        ~/.local/bin/conan create . ice-build-tools/0.5.1@iceshard/stable --profile clang-12.0-linux-x86_64 --build=missing
     - name: Success
       run: |
         echo Validation successful
