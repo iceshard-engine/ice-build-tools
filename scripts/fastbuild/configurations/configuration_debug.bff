@@ -47,3 +47,8 @@
 [
     Using( .ToolchainFrontendProperties_clang_x64_1000_Debug )
 ]
+
+.ToolchainFrontendProperties_clang_x64_1200_Debug =
+[
+    Using( .ToolchainFrontendProperties_clang_x64_1100_Debug )
+]

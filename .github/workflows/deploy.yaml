@@ -22,8 +22,8 @@ jobs:
         sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
     - name: Create (lua-5.1.5, clang-12)
       run: |
-        ~/.local/bin/conan create . ice-build-tools/0.5.2@iceshard/stable --profile clang-12.0-linux-x86_64 --build=missing
+        ~/.local/bin/conan create . ice-build-tools/0.5.3@iceshard/stable --profile clang-12.0-linux-x86_64 --build=missing
     - name: Deploy
       run: |
         ~/.local/bin/conan user iceshard -r conan-iceshard -p ${{ secrets.CONAN_PASSWORD }}
-        ~/.local/bin/conan upload -r conan-iceshard ice-build-tools/0.5.2@iceshard/stable --all
+        ~/.local/bin/conan upload -r conan-iceshard ice-build-tools/0.5.3@iceshard/stable --all

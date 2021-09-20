@@ -41,3 +41,8 @@
 [
     Using( .ToolchainFrontendProperties_clang_x64_1000_Release )
 ]
+
+.ToolchainFrontendProperties_clang_x64_1200_Release =
+[
+    Using( .ToolchainFrontendProperties_clang_x64_1100_Release )
+]
