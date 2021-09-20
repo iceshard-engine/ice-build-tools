@@ -15,9 +15,13 @@ jobs:
         pip3 install setuptools
         pip3 install conan
         ~/.local/bin/conan config install https://github.com/iceshard-engine/conan-config.git
-    - name: Create (lua-5.1.5, clang-10)
+    - name: Setup runner (clang-12)
       run: |
-        ~/.local/bin/conan create . ice-build-tools/0.5.1@iceshard/stable --profile clang-10.0-linux-x86_64
+        sudo apt update
+        sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
+    - name: Create (lua-5.1.5, clang-12)
+      run: |
+        ~/.local/bin/conan create . ice-build-tools/0.5.1@iceshard/stable --profile clang-12.0-linux-x86_64
     - name: Success
       run: |
         echo Validation successful

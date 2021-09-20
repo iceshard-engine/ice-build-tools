@@ -91,6 +91,36 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
+    '12.0.0': {
+        name: 'clang-12.0.0'
+        struct_name: 'Toolchain_Clang_x64_1200'
+        compiler_name: 'compiler-clang-x64-1200'
+
+        generate_structure: (gen, clang_path, ar_path) ->
+            struct_name = 'Toolchain_Clang_x64_1200'
+            compiler_name = 'compiler-clang-x64-1200'
+
+            gen\structure struct_name, (gen) ->
+                gen\line!
+                gen\compiler
+                    name: compiler_name
+                    executable: clang_path
+                    extra_files: { }
+
+                gen\line!
+                gen\variables {
+                    { 'ToolchainCompilerFamily', 'clang' }
+                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainToolset', '1200' }
+                    { 'ToolchainFrontend', 'clang' }
+                    { 'ToolchainCompiler', compiler_name }
+                    { 'ToolchainLibrarian', ar_path }
+                    { 'ToolchainLinker', clang_path }
+                    { 'ToolchainIncludeDirs', { } }
+                    { 'ToolchainLibDirs', { } }
+                    { 'ToolchainLibs', { } }
+                }
+    }
 }
 
 detect_compilers = (ver_major) ->
@@ -106,6 +136,10 @@ detect_compilers = (ver_major) ->
         '11': {
             clang_path: Where\path 'clang++-11'
             ar_path: Where\path 'ar'
+        },
+        '12': {
+            clang_path: Where\path 'clang++-12'
+            ar_path: Where\path 'ar'
         }
     }
     return binaries[tostring ver_major]
@@ -114,10 +148,8 @@ class Clang
     @detect: (conan_profile) =>
         toolchain_list = { }
 
-        if conan_profile
-            ver_major, ver_minor, os, arch = (conan_profile\gmatch "-(%d+).(%d+)-(%w+)-([%w_]+)")!
-            if not (ver_major and os and arch)
-                return { }
+        if conan_profile and conan_profile.compiler and conan_profile.compiler.version
+            ver_major = conan_profile.compiler.version
 
             compiler = detect_compilers ver_major
             if compiler.clang_path and compiler.ar_path
