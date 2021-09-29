@@ -5,6 +5,7 @@ class BuildCommand extends BaseCommand
     @arguments {
         option 'target',
             name: '-t --target'
+            count: '*'
             default: 'all-x64-Develop'
         option 'summary',
             name: '-s --summary'
@@ -22,7 +23,7 @@ class BuildCommand extends BaseCommand
     execute: (args) =>
         FastBuild!\build
             config:'fbuild.bff'
-            target:args.target
+            target:table.concat args.target, ' '
             clean:args.clean
             monitor:true
             distributed:true
