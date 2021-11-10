@@ -16,6 +16,11 @@
         + ' /DEBUG'
 ]
 
+.ToolchainFrontendProperties_MSVC_x64_v143_Develop  =
+[
+    Using( .ToolchainFrontendProperties_MSVC_x64_v142_Develop )
+]
+
 .ToolchainFrontendProperties_clang_cl_x64_1000_Develop =
 [
     Using( .ToolchainFrontendProperties_MSVC_x64_v142_Develop )

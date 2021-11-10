@@ -73,6 +73,78 @@ toolchain_definitions = {
                     } }
                 }
     }
+    --[[ Toolchain: MSVC - x64 - v143 ]]
+    msvc_x64_v143: {
+        name: 'msvc-x64-v143'
+        struct_name: 'Toolchain_MSVC_x64_v143'
+        compiler_name: 'compiler-msvc-x64-v143'
+
+        generate_structure: (gen, toolchain_bin_dir, toolchain_dir, tools_version) ->
+            struct_name = 'Toolchain_MSVC_x64_v143'
+            compiler_name = 'compiler-msvc-x64-v143'
+
+            gen\structure struct_name, (gen) ->
+                gen\variables { { 'ToolchainPath', toolchain_bin_dir } }
+
+                gen\line!
+                gen\compiler
+                    name: compiler_name
+                    executable: "$ToolchainPath$\\cl.exe"
+                    extra_files: {
+                        "$ToolchainPath$\\c1.dll",
+                        "$ToolchainPath$\\c1xx.dll",
+                        "$ToolchainPath$\\c2.dll",
+                        "$ToolchainPath$\\msobj140.dll",
+                        "$ToolchainPath$\\mspdb140.dll",
+                        "$ToolchainPath$\\mspdbcore.dll",
+                        "$ToolchainPath$\\mspdbsrv.exe",
+                        "$ToolchainPath$\\mspft140.dll",
+                        "$ToolchainPath$\\msvcp140.dll",
+                        "$ToolchainPath$\\atlprov.dll",
+                        "$ToolchainPath$\\tbbmalloc.dll",
+                        "$ToolchainPath$\\vcruntime140.dll",
+                        "$ToolchainPath$\\1033\\mspft140ui.dll",
+                        "$ToolchainPath$\\1033\\clui.dll",
+                    }
+
+                gen\line!
+                gen\variables {
+                    { 'ToolchainCompilerFamily', 'MSVC' }
+                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainToolset', 'v143' }
+                    { 'ToolchainFrontend', 'MSVC' }
+                    { 'ToolchainCompiler', compiler_name }
+                    { 'ToolchainLibrarian', "$ToolchainPath$\\lib.exe" }
+                    { 'ToolchainLinker', "$ToolchainPath$\\link.exe" }
+                    { 'ToolchainIncludeDirs', {
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\include",
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\atlmfc\\include",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\include",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\UnitTest\\include",
+                    } }
+                    { 'ToolchainLibDirs', {
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\lib\\x64",
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\atlmfc\\lib\\x64",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\lib\\x64",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\UnitTest\\lib",
+                    } }
+                    { 'ToolchainLibs', {
+                        'kernel32',
+                        'user32',
+                        'gdi32',
+                        'winspool',
+                        'comdlg32',
+                        'advapi32',
+                        'shell32',
+                        'ole32',
+                        'oleaut32',
+                        'uuid',
+                        'odbc32',
+                        'odbccp32',
+                        'delayimp',
+                    } }
+                }
+    }
 }
 
 detect_compilers = (version, requirements) ->

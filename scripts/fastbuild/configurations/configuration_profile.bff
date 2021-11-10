@@ -16,6 +16,11 @@
         + ' /DEBUG'
 ]
 
+.ToolchainFrontendProperties_MSVC_x64_v143_Profile  =
+[
+    Using( .ToolchainFrontendProperties_MSVC_x64_v142_Profile )
+]
+
 .ToolchainFrontendProperties_clang_cl_x64_1000_Profile =
 [
     Using( .ToolchainFrontendProperties_MSVC_x64_v142_Profile )

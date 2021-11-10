@@ -10,6 +10,7 @@
     }
     .PlatformSupportedToolchains = {
         'msvc-x64-v142',
+        'msvc-x64-v143',
         'clang-10.0.0'
     }
 
@@ -32,6 +33,15 @@
         .PlatformToolset = 'v142'
 
         .SolutionPlatform = 'Win-x64-v142'
+    ]
+    .PlatformVSProperties_MSVC_x64_v143 =
+    [
+        .ProjectPlatform = 'x64'
+        .ProjectConfigSuffix = ''
+
+        .PlatformToolset = 'v143'
+
+        .SolutionPlatform = 'Win-x64-v143'
     ]
     .PlatformVSProperties_clang_x64_1000 =
     [
@@ -60,6 +70,11 @@
         + ' /NXCOMPAT'
     .LibrarianOptions
         + ' /MACHINE:x64'
+]
+
+.ToolchainProperties_MSVC_x64_v143_Windows_x64 =
+[
+    Using( .ToolchainProperties_MSVC_x64_v142_Windows_x64 )
 ]
 
 .ToolchainProperties_clang_x64_1000_Windows_x64 =

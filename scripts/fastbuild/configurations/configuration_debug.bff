@@ -19,6 +19,11 @@
         + '_DEBUG'
 ]
 
+.ToolchainFrontendProperties_MSVC_x64_v143_Debug =
+[
+    Using( .ToolchainFrontendProperties_MSVC_x64_v142_Debug )
+]
+
 .ToolchainFrontendProperties_clang_cl_x64_1000_Debug =
 [
     Using( .ToolchainFrontendProperties_MSVC_x64_v142_Debug )

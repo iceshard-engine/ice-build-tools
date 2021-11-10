@@ -4,7 +4,7 @@ import ConanProfileGenerator from require "ice.generators.conan_profile"
 class Profile
     new: (@location, @system, @arch, @compiler, @build_types) =>
         @profile = ConanProfileGenerator!
-        @profile\set_compiler @compiler.name, @compiler.version, @compiler.libcxx
+        @profile\set_compiler @compiler.name, (@compiler.conan_version or @compiler.version), @compiler.libcxx
         @profile\set_system @system
         @profile\set_architecture @arch
 
