@@ -1,269 +1,275 @@
 
-// {
-//     .PlatformVSEnabled = false
+{
+    .PlatformVSEnabled = false
 
-//     .SolutionProjects = { }
-//     .SolutionBuildProject = { }
-//     .SolutionDeployProjects = { }
-//     .SolutionConfigs = { }
+    .SolutionProjects = { }
+    .SolutionBuildProject = { }
+    .SolutionDeployProjects = { }
+    .SolutionConfigs = { }
 
-//     .SolutionFolders = { }
-//     .SolutionFolderIndex = 1
-//     .SolutionFolderGroupNames = { }
-//     .SolutionFolderCurrentName = ''
-//     .SolutionFolderCurrentProjects = { }
-//     .SolutionBuildProjectDependencies = { }
+    .SolutionFolders = { }
+    .SolutionFolderIndex = 1
+    .SolutionFolderGroupNames = { }
+    .SolutionFolderCurrentName = ''
+    .SolutionFolderCurrentProjects = { }
+    .SolutionBuildProjectDependencies = { }
 
-//     .AllProjectConfigs = { }
-//     .AllTestsProjectConfigs = { }
+    .AllProjectConfigs = { }
+    .AllTestsProjectConfigs = { }
+    .HasAnyConfig = false
 
-//     ForEach( .TargetConfig in .TargetConfigList )
-//     {
-//         Using( .TargetConfig )
-//         Using( .PlatformInfo )
+    ForEach( .Pipeline in .AvailablePipelines )
+    {
+        .VSSuffix = ''
+        .VSEnabled = false
+        .PipelineVSInfo = []
 
-//         If ( .PlatformVSEnabled )
-//         {
-//             Using( .Toolchain )
+        Using( .Pipeline )
+        Using( .PipelineVSInfo )
 
-//             .SolutionConfig =
-//             [
-//                 Using( .'PlatformVSProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$' )
+        If ( .VSEnabled )
+        {
+            .PlatformVSName = ''
 
-//                 .Config = '$ConfigName$$ProjectConfigSuffix$'
-//                 .Platform = .ProjectPlatform
+            Using( .PipelinePlatformInfo )
 
-//                 .SolutionConfig = '$ConfigName$'
-//                 .SolutionPlatform = .SolutionPlatform
-//             ]
-//             ^SolutionConfigs + .SolutionConfig
+            If ( .PlatformVSName != .EmptyString )
+            {
+                .SolutionConfig =
+                [
+                    .Config = '$PipelineConfig$$VSSuffix$'
+                    .Platform = .PlatformVSName
 
-//             .AllProjectConfig =
-//             [
-//                 Using( .SolutionConfig )
+                    .SolutionConfig = '$PipelineConfig$'
+                    .SolutionPlatform = '$PipelineName$$VSSuffix$'
+                ]
+                ^SolutionConfigs + .SolutionConfig
 
-//                 .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-^$(Platform)-^$(Configuration)'
-//                 .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-^$(Platform)-^$(Configuration) -c'
-//             ]
-//             ^AllProjectConfigs + .AllProjectConfig
+                .AllProjectConfig =
+                [
+                    Using( .SolutionConfig )
 
-//             .AllTestsProjectConfig =
-//             [
-//                 Using( .SolutionConfig )
+                    .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-$PipelineName$-$PipelineConfig$'
+                    .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t all-$PipelineName$-$PipelineConfig$ -c'
+                ]
+                ^AllProjectConfigs + .AllProjectConfig
 
-//                 .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t test-all-^$(Platform)-^$(Configuration)'
-//                 .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t test-all-^$(Platform)-^$(Configuration) -c'
-//             ]
-//             ^AllTestsProjectConfigs + .AllTestsProjectConfig
-//         }
-//     }
+                // .AllTestsProjectConfig =
+                // [
+                //     Using( .SolutionConfig )
 
-//     VCXProject( 'all-vcxproj' )               // (optional) Alias
-//     {
-//         .ProjectOutput = '$WorkspaceBuildDir$/projects/all.vcxproj'
-//         .ProjectConfigs = .AllProjectConfigs
-//         .ProjectBasePath = .WorkspaceBuildDir
-//         .ProjectInputPaths = { }
+                //     .ProjectBuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t test-all-^$(Platform)-^$(Configuration)'
+                //     .ProjectRebuildCommand = '^$(SolutionDir)/$UserScriptFile$ build -t test-all-^$(Platform)-^$(Configuration) -c'
+                // ]
+                // ^AllTestsProjectConfigs + .AllTestsProjectConfig
 
-//         .IntermediateDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
-//         .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
-//     }
+                ^HasAnyConfig = true
+            }
+        }
+    }
 
-//     VCXProject( 'all-tests-vcxproj' )               // (optional) Alias
-//     {
-//         .ProjectOutput = '$WorkspaceBuildDir$/projects/all_tests.vcxproj'
-//         .ProjectConfigs = .AllTestsProjectConfigs
-//         .ProjectBasePath = .WorkspaceBuildDir
-//         .ProjectInputPaths = { }
+    If ( .HasAnyConfig )
+    {
+        VCXProject( 'all-vcxproj' )               // (optional) Alias
+        {
+            .ProjectOutput = '$WorkspaceBuildDir$/projects/all.vcxproj'
+            .ProjectConfigs = .AllProjectConfigs
+            .ProjectBasePath = .WorkspaceBuildDir
+            .ProjectInputPaths = { }
 
-//         .IntermediateDirectory = '$WorkspaceBuildDir$/obj/helpers/all_tests'
-//         .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all_tests'
-//     }
+            .IntermediateDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
+            .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
+        }
 
-//     .SolutionFolder =
-//     [
-//         .Path = '0. Miscelaneous'
-//         .Projects = { 'all-vcxproj', 'all-tests-vcxproj' }
-//     ]
-//     .SolutionFolders + .SolutionFolder
+        // VCXProject( 'all-tests-vcxproj' )               // (optional) Alias
+        // {
+        //     .ProjectOutput = '$WorkspaceBuildDir$/projects/all_tests.vcxproj'
+        //     .ProjectConfigs = .AllTestsProjectConfigs
+        //     .ProjectBasePath = .WorkspaceBuildDir
+        //     .ProjectInputPaths = { }
 
-//     {
-//         .HasSolutionItems = false
-//         ForEach( .Item in .SolutionItems )
-//         {
-//             ^HasSolutionItems = true
-//         }
+        //     .IntermediateDirectory = '$WorkspaceBuildDir$/obj/helpers/all_tests'
+        //     .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all_tests'
+        // }
 
-//         If ( .HasSolutionItems )
-//         {
-//             .SolutionFolder =
-//             [
-//                 .Path = '0. Miscelaneous/Files'
-//                 .Items = .SolutionItems
-//             ]
-//             ^SolutionFolders + .SolutionFolder
-//         }
-//     }
+        .SolutionFolder =
+        [
+            .Path = '0. Miscelaneous'
+            .Projects = { 'all-vcxproj' } ;, 'all-tests-vcxproj' }
+        ]
+        .SolutionFolders + .SolutionFolder
 
-//     .SolutionBuildProject = { 'all-vcxproj' }
+        {
+            .HasSolutionItems = false
+            ForEach( .Item in .SolutionItems )
+            {
+                ^HasSolutionItems = true
+            }
 
-//     ForEach( .Project in .ProjectsResolved )
-//     {
-//         Using( .Project )
+            If ( .HasSolutionItems )
+            {
+                .SolutionFolder =
+                [
+                    .Path = '0. Miscelaneous/Files'
+                    .Items = .SolutionItems
+                ]
+                ^SolutionFolders + .SolutionFolder
+            }
+        }
 
-//         .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
-//         .ProjectConfigs = { }
-//         .ProjectBasePath = .ProjectBaseDir
-//         .ProjectInputPaths = .ProjectVStudioInputPaths
-//         .ProjectFiles = {
-//             '$ProjectBaseDir$/$ProjectName$.bff'
-//         }
-//         .ProjectAllowedFileExtensions = {
-//             '*.h', '*.c', '*.hpp', '*.cpp', '*.cxx', '*.hxx', '*.inl',
-//             '*.m', '*.mm',
-//             '*.rc', '*.resx',
-//             '*.bff', '*.natvis'
-//         }
+        .SolutionBuildProject = { 'all-vcxproj' }
 
-//         ForEach( .TargetConfig in .TargetConfigList )
-//         {
-//             Using( .TargetConfig )
-//             Using( .PlatformInfo )
-//             Using( .PlatformExtensions )
-//             Using( .Toolchain )
+        ForEach( .Project in .ProjectsResolved )
+        {
+            Using( .Project )
 
-//             .OutDirName = .'KindOutDir_$ProjectKind$'
-//             .TargetExtension = .'OutputExtension_$ProjectKind$'
+            .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
+            .ProjectConfigs = { }
+            .ProjectBasePath = .ProjectBaseDir
+            .ProjectInputPaths = .ProjectVStudioInputPaths
+            .ProjectFiles = {
+                '$ProjectBaseDir$/$ProjectName$.bff'
+            }
+            .ProjectAllowedFileExtensions = {
+                '*.h', '*.c', '*.hpp', '*.cpp', '*.cxx', '*.hxx', '*.inl',
+                '*.m', '*.mm',
+                '*.rc', '*.resx',
+                '*.bff', '*.natvis'
+            }
 
-//             .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
-//             .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
-//             .TargetOutputName = "$ProjectName$$TargetExtension$"
-//             .TargetList = { }
+            Using( .Piepline_CompileVSTargets )
 
-//             .ProjectConfig =
-//             [
-//                 Using( .'PlatformVSProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$' )
+            ForEach( .Pipeline in .AvailablePipelines )
+            {
+                .VSSuffix = ''
+                .VSEnabled = false
 
-//                 .Config = '$ConfigName$$ProjectConfigSuffix$'
-//                 .Platform = .ProjectPlatform
+                Using( .Pipeline )
+                Using( .PipelineVSInfo )
+                Using( .PipelinePlatformInfo )
+                Using( .PipelineOutputExtensions )
 
-//                 .Target = ''
-//                 .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
 
-//                 .Output = .TargetOutputName
-//                 .OutputDirectory = .TargetOutputDirectory
-//                 .IntermediateDirectory = .TargetIntermediateDirectory
-//                 .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
+                .OutDirName = .'KindOutDir_$ProjectKind$'
+                .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-//                 .ProjectBuildCommand = ''
-//                 .ProjectRebuildCommand = ''
+                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetOutputName = "$ProjectName$$TargetExtension$"
+                .TargetList = { }
 
-//                 If ( .TargetAlias in .AllConfigTargets )
-//                 {
-//                     If ( .ProjectKind != .Kind_HeaderOnly )
-//                     {
-//                         ^Target = '$TargetAlias$-objects'
-//                     }
+                .ProjectConfig =
+                [
+                    .Config = '$PipelineConfig$$VSSuffix$'
+                    .Platform = .PlatformVSName
 
-//                     ^ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $TargetAlias$'
-//                     ^ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $TargetAlias$ -c'
-//                 }
+                    .Target = .'CompileTarget_$ProjectTarget$'
 
-//                 .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
-//                 .LocalDebuggerWorkingDirectory = .ProjectDebugDir
-//             ]
+                    .Output = .TargetOutputName
+                    .OutputDirectory = .TargetOutputDirectory
+                    .IntermediateDirectory = .TargetIntermediateDirectory
+                    .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
 
-//             If ( .ProjectKind == .Kind_HeaderOnly )
-//             {
-//                 .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                    .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
+                    .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
 
-//                 Using( .Projects_SolutionInfo )
-//                 Using( .'SolutionInfo_$TargetAlias$' )
-//                 Using( .Intellisense )
+                    .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
+                    .LocalDebuggerWorkingDirectory = .ProjectDebugDir
+                ]
 
-//                 .ProjectConfig_Intellisense =
-//                 [
-//                     .PreprocessorDefinitions = ''
-//                     .IncludeSearchPath = ''
-//                     .AdditionalOptions = ''
+                If ( .ProjectKind == .Kind_HeaderOnly )
+                {
+                    Using( .Projects_SolutionInfo )
+                    Using( .'SolutionInfo_$ProjectTarget$' )
+                    Using( .Intellisense )
 
-//                     ForEach( .Value in .Defines )
-//                     {
-//                         ^PreprocessorDefinitions + '$Value$;'
-//                     }
-//                     ForEach( .Value in .IncludeDirs )
-//                     {
-//                         ^IncludeSearchPath + '$Value$;'
-//                     }
-//                     ForEach( .Value in .BuildOptions )
-//                     {
-//                         ^AdditionalOptions + '$Value$ '
-//                     }
-//                 ]
+                    .ProjectConfig_Intellisense =
+                    [
+                        .PreprocessorDefinitions = ''
+                        .IncludeSearchPath = ''
+                        .AdditionalOptions = ''
 
-//                 ^ProjectConfig + .ProjectConfig_Intellisense
-//             }
+                        ForEach( .Value in .Defines )
+                        {
+                            ^PreprocessorDefinitions + '$Value$;'
+                        }
+                        ForEach( .Value in .IncludeDirs )
+                        {
+                            ^IncludeSearchPath + '$Value$;'
+                        }
+                        ForEach( .Value in .BuildOptions )
+                        {
+                            ^AdditionalOptions + '$Value$ '
+                        }
+                    ]
 
-//             ^ProjectConfigs + .ProjectConfig
-//         }
+                    Print( .ProjectConfig_Intellisense )
 
-//         VCXProject( '$ProjectName$-vcxproj' )               // (optional) Alias
-//         {
-//         }
+                    ^ProjectConfig + .ProjectConfig_Intellisense
+                }
 
-//         If ( .ProjectKind in .Kind_Applications )
-//         {
-//             ^SolutionBuildProjectDependencies + '$ProjectName$-vcxproj'
-//         }
+                ^ProjectConfigs + .ProjectConfig
+            }
 
-//         If ( .ProjectGroup not in .SolutionFolderGroupNames )
-//         {
-//             .HasProjects = false
-//             ForEach( .P in .SolutionFolderCurrentProjects )
-//             {
-//                 ^HasProjects = true
-//             }
+            VCXProject( '$ProjectName$-vcxproj' )               // (optional) Alias
+            {
+            }
 
-//             If ( .HasProjects )
-//             {
-//                 .SolutionFolder =
-//                 [
-//                     .Path = '$SolutionFolderIndex$. $SolutionFolderCurrentName$'
-//                     .Projects = .SolutionFolderCurrentProjects
-//                 ]
-//                 ^SolutionFolders + .SolutionFolder
-//                 ^SolutionFolderCurrentProjects = { }
-//                 ^SolutionFolderIndex + 1
-//             }
+            If ( .ProjectKind in .Kind_Applications )
+            {
+                ^SolutionBuildProjectDependencies + '$ProjectName$-vcxproj'
+            }
 
-//             ^SolutionFolderGroupNames + .ProjectGroup
-//             ^SolutionFolderCurrentName = .ProjectGroup
-//         }
+            If ( .ProjectGroup not in .SolutionFolderGroupNames )
+            {
+                .HasProjects = false
+                ForEach( .P in .SolutionFolderCurrentProjects )
+                {
+                    ^HasProjects = true
+                }
 
-//         If ( .ProjectGroup == .SolutionFolderCurrentName )
-//         {
-//             ^SolutionFolderCurrentProjects + '$ProjectName$-vcxproj'
-//         }
+                If ( .HasProjects )
+                {
+                    .SolutionFolder =
+                    [
+                        .Path = '$SolutionFolderIndex$. $SolutionFolderCurrentName$'
+                        .Projects = .SolutionFolderCurrentProjects
+                    ]
+                    ^SolutionFolders + .SolutionFolder
+                    ^SolutionFolderCurrentProjects = { }
+                    ^SolutionFolderIndex + 1
+                }
 
-//         ^SolutionProjects + '$ProjectName$-vcxproj'
-//     }
+                ^SolutionFolderGroupNames + .ProjectGroup
+                ^SolutionFolderCurrentName = .ProjectGroup
+            }
 
-//     .SolutionFolder =
-//     [
-//         .Path = '$SolutionFolderIndex$. $SolutionFolderCurrentName$'
-//         .Projects = .SolutionFolderCurrentProjects
-//     ]
-//     .SolutionFolders + .SolutionFolder
+            If ( .ProjectGroup == .SolutionFolderCurrentName )
+            {
+                ^SolutionFolderCurrentProjects + '$ProjectName$-vcxproj'
+            }
 
-//     .SolutionDependency =
-//     [
-//         .Dependencies = { 'all-vcxproj' }
-//         .Projects = .SolutionBuildProjectDependencies
-//     ]
-//     .SolutionDependencies = { .SolutionDependency }
+            ^SolutionProjects + '$ProjectName$-vcxproj'
+        }
 
-//     VSSolution( 'solution' )
-//     {
-//         .SolutionOutput = '$WorkspaceRoot$/$UserSolutionName$'
-//     }
-// }
+        .SolutionFolder =
+        [
+            .Path = '$SolutionFolderIndex$. $SolutionFolderCurrentName$'
+            .Projects = .SolutionFolderCurrentProjects
+        ]
+        .SolutionFolders + .SolutionFolder
+
+        .SolutionDependency =
+        [
+            .Dependencies = { 'all-vcxproj' }
+            .Projects = .SolutionBuildProjectDependencies
+        ]
+        .SolutionDependencies = { .SolutionDependency }
+
+        VSSolution( 'solution' )
+        {
+            .SolutionOutput = '$WorkspaceRoot$/$UserSolutionName$'
+        }
+    }
+}

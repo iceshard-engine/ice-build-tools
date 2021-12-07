@@ -24,6 +24,10 @@
     .TaskType_Deploy
 }
 
+.Piepline_CompileVSTargets =
+[
+]
+
 //
 // Prepare global build rules
 //
@@ -513,22 +517,22 @@ ForEach( .Pipeline in .AvailablePipelines )
                         }
                     }
 
-                    // If ( .ProjectKind == .Kind_HeaderOnly )
-                    // {
-                    //     .Project_SolutionInfo =
-                    //     [
-                    //         .'SolutionInfo_$ProjectConfigTarget$' =
-                    //         [
-                    //             .Intellisense =
-                    //             [
-                    //                 .IncludeDirs = .IncludeDirs
-                    //                 .Defines = .Defines
-                    //                 .BuildOptions = .BuildOptions
-                    //             ]
-                    //         ]
-                    //     ]
-                    //     ^Projects_SolutionInfo + .Project_SolutionInfo
-                    // }
+                    If ( .ProjectKind == .Kind_HeaderOnly )
+                    {
+                        .Piepline_CompileVSTargets_Extension =
+                        [
+                            .'SolutionInfo_$ProjectTarget$' =
+                            [
+                                .Intellisense =
+                                [
+                                    .IncludeDirs = .IncludeDirs
+                                    .Defines = .Defines
+                                    .BuildOptions = .BuildOptions
+                                ]
+                            ]
+                        ]
+                        ^Piepline_CompileVSTargets + .Piepline_CompileVSTargets_Extension
+                    }
                 }
 
                 Using( .PipelineStepTasks )
@@ -539,6 +543,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .CurrentTargets = { }
 
                 .TaskIdx = 0
+                .TaskVSTargetSaved = false
+
                 ForEach( .Task in .'$Step$_Tasks' )
                 {
                     .Type = 'Unknown'
@@ -589,6 +595,17 @@ ForEach( .Pipeline in .AvailablePipelines )
                             }
 
                             ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+
+                            If ( !.TaskVSTargetSaved )
+                            {
+                                ^TaskVSTargetSaved = true
+
+                                .Piepline_CompileVSTargets_Extension =
+                                [
+                                    .'CompileTarget_$ProjectTarget$' = '$ProjectTarget$-$TaskIdx$-$Step$'
+                                ]
+                                ^Piepline_CompileVSTargets + .Piepline_CompileVSTargets_Extension
+                            }
                         }
                     }
 

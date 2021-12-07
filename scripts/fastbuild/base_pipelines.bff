@@ -46,6 +46,13 @@
         .Task_LinkExecutable
         .Task_TestExecutable
     }
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = true
+        .VSToolset = 'v142'
+        .VSSuffix = ''
+    ]
 ]
 
 .BuildPipelines = {

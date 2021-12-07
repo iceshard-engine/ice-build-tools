@@ -53,6 +53,7 @@
     .PlatformSystem = 'Windows'
     .PlatformArchitecture = 'x64'
     .PlatformTags = { 'DesktopApp' }
+    .PlatformVSName = 'x64'
 
     .PlatformRequiredSDKs = {
         'SDK-Windows-10'
