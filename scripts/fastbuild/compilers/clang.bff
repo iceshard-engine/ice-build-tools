@@ -1,8 +1,6 @@
 
-.ToolchainFrontend_clang =
+.CompilerFrontend_clang =
 [
-    Using( .ToolchainFrontend_Base )
-
     .FrontendFlag_Defines =
     [
         .FlagVariable = 'CompilerOptions'
@@ -31,6 +29,12 @@
     [
         .FlagVariable = 'LinkerOptions'
         .FlagPrefix = '-L'
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LinkOptions =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = ''
         .FlagSuffix = ''
     ]
 

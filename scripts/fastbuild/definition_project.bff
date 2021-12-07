@@ -14,7 +14,7 @@ ForEach( .Project in .Projects )
     .Requires = { }
 
     // Miscelaneous
-    .UnityBuilds = true
+    .AllowUnityBuilds = true
     .CopyModules = false
     .DependsOn = []
 
@@ -56,6 +56,7 @@ ForEach( .Project in .Projects )
         .ProjectRequires = .Requires
         .ProjectGroup = ^Group
         .ProjectDebugDir = .DebugDir
+        .ProjectAllowUnityBuilds = .AllowUnityBuilds
 
         .ProjectSourcePaths = { }
         ForEach( .Path in .InputPaths )
@@ -91,7 +92,6 @@ ForEach( .Project in .Projects )
                 Using( .Properties )
                 Using( .Private )
 
-                .UnityBuilds = ^UnityBuilds
                 .CopyModules = ^CopyModules
             ]
         ]
@@ -127,7 +127,6 @@ ForEach( .Project in .Projects )
                     Using( .Properties )
                     Using( .Private )
 
-                    .UnityBuilds = ^UnityBuilds
                     .CopyModules = ^CopyModules
                 ]
             ]

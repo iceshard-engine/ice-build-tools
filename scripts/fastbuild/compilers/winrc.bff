@@ -1,0 +1,45 @@
+
+.CompilerFrontend_WinRC =
+[
+    .FrontendFlag_Defines =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '/D"'
+        .FlagSuffix = '"'
+    ]
+    .FrontendFlag_IncludeDirs =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '/I"'
+        .FlagSuffix = '"'
+    ]
+    .FrontendFlag_BuildOptions =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_Libs =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LibDirs =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LinkOptions =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+
+    .FrontendProperties =
+    [
+        .CompilerOptions + ' /nologo /c "%1" /Fo"%2"'
+    ]
+]

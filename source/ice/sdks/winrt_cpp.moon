@@ -9,7 +9,7 @@ class SDK_Cpp_WinRT extends Locator
             win_sdk_winrt = os.isdir "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\cppwinrt" if win_sdk ~= nil
 
             if win_sdk and win_sdk_winrt
-                sdk_info = {
+                @\add_result {
                     tags: { 'windows', 'windows-10', 'winrt' }
                     name: 'SDK-Windows-10-CXX-WinRT'
                     struct_name: 'SDK_Windows_10_CXX_WinRT'
@@ -28,6 +28,5 @@ class SDK_Cpp_WinRT extends Locator
                         "WindowsApp"
                     }
                 }
-                return { sdk_info }
 
 { :SDK_Cpp_WinRT }

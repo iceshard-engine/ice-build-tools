@@ -13,12 +13,20 @@
 .ConanVariables_HeaderOnly = { 'IncludeDirs', 'Defines' }
 .ConanVariables_ObjectList = { 'IncludeDirs', 'Defines' }
 
-.AllConfigTargets = { }
-.AllConfigTargetsSkipped = { }
-.AllConfigFinalProperties = [ ]
+.TaskType_Compile = 'Compile'
+.TaskType_Link = 'Link'
+.TaskType_Test = 'Test'
+.TaskType_Deploy = 'Deploy'
+.TaskType_ValidList = {
+    .TaskType_Compile,
+    .TaskType_Link
+    .TaskType_Test
+    .TaskType_Deploy
+}
 
-.Projects_SolutionInfo = [ ]
-
+//
+// Prepare global build rules
+//
 .Final_GlobalRules = { }
 ForEach( .GlobalRule in .GlobalRules )
 {
@@ -45,33 +53,30 @@ ForEach( .GlobalRule in .GlobalRules )
     ^Final_GlobalRules + .Final_GlobalRule
 }
 
-ForEach( .TargetConfig in .TargetConfigList )
+
+//
+// For each available pipeline create all targets
+//
+ForEach( .Pipeline in .AvailablePipelines )
 {
-    Using( .TargetConfig )
+    Using( .Pipeline )
 
-    Using( .PlatformInfo )
-    Using( .PlatformExtensions )
-
-    .ConfigTargets = { }
-    .ConfigTargetsTests = { }
+    .PipelineTargets = { }
+    .PipelineProperties_Public = []
 
     ForEach( .Project in .ProjectsResolved )
     {
+        .ProjectAllowUnityBuilds = true
+
         Using( .Project )
 
-        .AvailableTags = { }
-            + .AllConfigTargets
-            + .ProjectTags
-            + .ProjectKind
-            + .ConfigTags
-            + .SDKNames
+        .AvailableTags = .SDKNames
+            + .PipelineTags
 
-        .ProjectConfigTarget = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-
+        // Check if we the project has all requirements covered
         .ProjectRequirementsSatisfied = true
         {
-            .ProjectConfigRequires = .ProjectRequires
-            ForEach( .Requirement in .ProjectConfigRequires )
+            ForEach( .Requirement in .ProjectRequires )
             {
                 If ( .Requirement not in .AvailableTags )
                 {
@@ -81,620 +86,724 @@ ForEach( .TargetConfig in .TargetConfigList )
             }
         }
 
-        If ( !.ProjectRequirementsSatisfied )
-        {
-            .ConfigFinalPublicProperties_Helper =
-            [
-                .'FinalProperties_$ProjectConfigTarget$' =
-                [
-                    .HasLinkTarget = false
-                ]
-            ]
-            ^AllConfigFinalProperties + .ConfigFinalPublicProperties_Helper
-            ^AllConfigTargetsSkipped + .ProjectConfigTarget
-        }
-
+        // Build targets for the project
         If ( .ProjectRequirementsSatisfied )
         {
+            .AvailableTags
+                + .ProjectTags
+                + .ProjectKind
+
+            // Final list of rules for the current step
+            .StepRules = { }
+            ForEach( .PipelineRule in .PipelineRules )
+            {
+                Using( .EmptyProperties )
+                Using( .PipelineRule )
+
+                .Final_PipelineRule =
+                [
+                    .Name = .Name
+                    .RuleRequires = .Requires
+                    .RuleDependsOn = []
+                    .RuleProperties_Public = [ ]
+                    .RuleProperties_Private =
+                    [
+                        .Uses = .Uses
+                        .Modules = ^Modules
+                        .IncludeDirs = ^IncludeDirs
+                        .Defines = ^Defines
+                        .BuildOptions = ^BuildOptions
+                        .Libs = ^Libs
+                        .LibDirs = ^LibDirs
+                        .LinkOptions = ^LinkOptions
+                    ]
+                ]
+                ^StepRules + .Final_PipelineRule
+            }
+
+            .StepRules
+                + .ProjectRules
+                + .Final_GlobalRules
+
+            // .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelineConfig$'
+            .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+            .ProjectStruct = '$ProjectName$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+            .ProjectSubTargets = { }
+
             Using( .EmptyProperties )
 
-            .ConfigFinalRequires = .ProjectRequires
-            .ConfigFinalDependencies = [ ] // .DependsOn
-            .ConfigFinalSDKProperties = .SDKProperties
+            // Prepare a struct where we can hold all targets defined in a step
+            .Step_Previous = 'INIT'
+            .Step_TargetsContainer =
+            [
+                .Step_Targets_INIT = {}
+            ]
 
-            .ConfigFinalProperties = [ ]
-            .ConfigFinalPublicProperties = [ ]
+            // Some helper variables so we dont duplicate target creation
+            .Step_CopyDirsTargets = { }
 
-            .ConfigFinalRules = .ProjectRules + .Final_GlobalRules
 
-            // .ConfigHasDeploySteps = false
-            .ConfigFinalUnitTests = [ ]
-            .ConfigFinalDeploys = { }
-
-            ForEach( .ProjectRule in .ConfigFinalRules )
+            // Go through each step
+            ForEach( .Step in .PipelineSteps )
             {
-                .RuleRequires = { }
+                .AvailableTags + "Step-$Step$"
 
-                .RuleRequirementsSatisfied = true
+                .ProjectStepStruct = 'PublicProperties_$Step$_$ProjectStruct$'
+                .ProjectStepProperties_Public = []
+                .ProjectStepProperties_Combined = []
+                .ProjectStepDependencies = []
+                .ProjectStepDeploys = { }
+                .ProjectStepUnitTest = [ ]
+
+                ForEach( .Rule in .StepRules )
                 {
+                    .RuleRequirementsSatisfied = true
+
+                    // Check if we ment the rule requirements
                     .Name = "<null>"
+                    .RuleRequires = { }
 
                     Using( .EmptyProperties )
-                    Using( .ProjectRule )
+                    Using( .Rule )
 
                     ForEach( .Dependency in .Uses )
                     {
-                        ^RuleRequires + '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                        ^RuleRequires + '$Dependency$-$PipelineName$-$ConfigPlatform$-$ConfigName$'
                     }
 
                     ForEach( .Requirement in .RuleRequires )
                     {
                         If ( .Requirement not in .AvailableTags )
                         {
-                            // Print( "INFO: $ProjectName$ rule '$Name$' is missing '$Requirement$' for ($ConfigPlatform$-$ConfigName$-$ConfigToolchain$)" )
                             ^RuleRequirementsSatisfied = false
                         }
                     }
-                }
 
-                If ( .RuleRequirementsSatisfied )
-                {
-                    .RuleKind = .Kind_None
-                    .RuleDeploy =
-                    [
-                        .Executable = .EmptyString
-                    ]
-                    .RuleUnitTests =
-                    [
-                        .Enabled = false
-                    ]
+                    // Print( "$ProjectName$ $Step$ ($Name$) == $RuleRequirementsSatisfied$" )
 
-                    Using( .ProjectRule )
-
-                    // Update project kind if needed
-                    If ( .RuleKind != .Kind_None )
+                    If ( .RuleRequirementsSatisfied )
                     {
-                        ^ProjectKind = .RuleKind
-                    }
-
-                    // Gether dependency properties
-                    .GatheredDependencies = { }
-                    .GatheredProperties = {
-                        'Modules'
-                        'Defines'
-                        'IncludeDirs'
-                        'BuildOptions'
-                        'Libs'
-                        'LibDirs'
-                    }
-
-                    Using( .AllConfigFinalProperties )
-
-                    .RuleFinalPublicProperties =
-                    [
-                        Using( .RuleProperties_Public )
-
-                        // Gather public uses
-                        {
-                            .UsesUnique = .Uses
-                            ForEach( .Dependency in .Uses )
-                            {
-                                .DependencyTarget = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-                                Using( .'FinalProperties_$DependencyTarget$' )
-
-                                ForEach( .Value in .Uses )
-                                {
-                                    If ( .Value not in .UsesUnique )
-                                    {
-                                        ^UsesUnique + .Value
-                                    }
-                                }
-                            }
-                            ^Uses = .UsesUnique
-                        }
-                    ]
-
-                    .RuleFinalPrivateProperties =
-                    [
-                        Using( .RuleProperties_Private )
-
-                        // Gather public uses
-                        {
-                            .UsesUnique = .Uses
-                            ForEach( .Dependency in .Uses )
-                            {
-                                .DependencyTarget = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-                                Using( .'FinalProperties_$DependencyTarget$' )
-
-                                ForEach( .Value in .Uses )
-                                {
-                                    If ( .Value not in .UsesUnique )
-                                    {
-                                        ^UsesUnique + .Value
-                                    }
-                                }
-                            }
-                            ^Uses = .UsesUnique
-                        }
-                    ]
-
-                    .RuleFinalProperties =
-                    [
-                        .RuleFinalCombinedProperties  = [ ]
-                            + .RuleFinalPrivateProperties
-                            + .RuleFinalPublicProperties
-
-                        Using( .RuleFinalCombinedProperties )
-
-                        .LibraryTargets = { }
-
-                        ForEach( .Dependency in .Uses )
-                        {
-                            If ( .Dependency not in .GatheredDependencies )
-                            {
-                                ^GatheredDependencies + .Dependency
-                                .DependencyTarget = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-                                // Print( "$ProjectName$: Gathering $Dependency$..." )
-
-                                ForEach( .Property in .GatheredProperties )
-                                {
-                                    Using( .'FinalProperties_$DependencyTarget$' )
-                                    ^'$Property$' + .'$Property$'
-                                }
-
-                                {
-                                    Using( .'FinalProperties_$DependencyTarget$' )
-                                    If ( .HasLinkTarget )
-                                    {
-                                        ^LibraryTargets + .Dependency
-                                    }
-                                }
-                            }
-                        }
-                        .Uses = .GatheredDependencies
-                    ]
-
-                    ^ConfigFinalPublicProperties + .RuleFinalPublicProperties
-                    ^ConfigFinalProperties + .RuleFinalProperties
-                    ^ConfigFinalRequires + .RuleRequires
-                    ^ConfigFinalDependencies + .RuleDependsOn
-
-                    {
-                        Using( .RuleDeploy )
-                        If ( .Executable != .EmptyString )
-                        {
-                            .DeployEntry =
-                            [
-                                .DeployName = .RuleName
-                                Using( .RuleDeploy )
-                            ]
-                            ^ConfigFinalDeploys + .DeployEntry
-                            // ^ConfigHasDeploySteps = true
-                        }
-                    }
-
-                    {
-                        Using( .RuleUnitTests )
-                        If ( .Enabled )
-                        {
-                            ^ConfigFinalUnitTests = .RuleUnitTests
-                        }
-                    }
-                }
-            }
-
-            {
-                .ConfigFinalPublicProperties_Helper =
-                [
-                    .'FinalProperties_$ProjectConfigTarget$' =
-                    [
-                        Using( .ConfigFinalPublicProperties )
-
-                        .HasLinkTarget = true
-                        If ( .ProjectKind == .Kind_HeaderOnly )
-                        {
-                            ^HasLinkTarget = false
-                        }
-                    ]
-                ]
-                ^AllConfigFinalProperties + .ConfigFinalPublicProperties_Helper
-            }
-
-            Using( .ConfigFinalProperties )
-
-            // Print( "Target: $ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$" )
-
-            .OutDirName = .'KindOutDir_$ProjectKind$'
-            .TargetExtension = .'OutputExtension_$ProjectKind$'
-
-            .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
-            .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
-            .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
-            .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-            .TargetOutputName = "$ProjectName$$TargetExtension$"
-            .TargetList = { }
-
-            // Print( "IntDir: $TargetIntermediateDirectory$" )
-            // Print( "LibDir: $TargetImpLibDirectory$" )
-            // Print( "Output: $TargetOutputDirectory$/$TargetName$" )
-
-            // Build dependency lists
-            //--------------------------------------------------------------------------
-            .TargetBuildDependencies = {}
-            .TargetLinkDependencies = {}
-            .TargetRuntimeDependencies = {}
-
-            {
-                .Build = {}
-                .Link = {}
-                .Runtime = {}
-
-                Using( .ConfigFinalDependencies )
-
-                .Vars = { 'Build', 'Link', 'Runtime' }
-                ForEach( .Var in .Vars )
-                {
-                    ForEach( .Dependency in .'$Var$' )
-                    {
-                        .DependencyTargetName = '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-                        If ( .DependencyTargetName in .AllConfigTargets )
-                        {
-                            ^'Target$Var$Dependencies' + .DependencyTargetName
-                        }
-                    }
-                }
-            }
-
-            Using( .ConfigFrontend )
-            .FinalProperties = []
-            {
-                ^FinalProperties + .FrontendProperties
-                ^FinalProperties + .ConfigProperties
-                ^FinalProperties + .ConfigFinalProperties
-            }
-            Using( .FinalProperties )
-
-            // Project specific SDK
-            ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
-            {
-                If ( .SDKName not in .ConfigTags )
-                {
-                    If ( .SDKName in .ConfigFinalRequires )
-                    {
-                        ^ConfigFinalSDKProperties + .SDK
-                    }
-                }
-            }
-
-            // Compiler flags
-            //--------------------------------------------------------------------------
-            {
-                Using( .Toolchain )
-                Using( .ConfigFinalSDKProperties )
-
-                .IncludeDirs
-                    + .SdkIncludeDirs
-                    + .ToolchainIncludeDirs
-                .LibDirs
-                    + .SdkLibDirs
-                    + .ToolchainLibDirs
-                .Libs
-                    + .SdkLibs
-                    + .ToolchainLibs
-
-                .Variables = {
-                    'IncludeDirs'
-                    'Defines'
-                    'BuildOptions'
-                    // 'CompilerFlags'
-                    'LibDirs'
-                    'Libs'
-                }
-
-                ForEach( .Var in .Variables )
-                {
-                    Using( .'FrontendFlag_$Var$' )
-                    ForEach( .Value in .'$Var$' )
-                    {
-                        ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
-                    }
-                }
-
-                If ( .ProjectKind == .Kind_HeaderOnly )
-                {
-                    .Project_SolutionInfo =
-                    [
-                        .'SolutionInfo_$ProjectConfigTarget$' =
+                        .RuleKind = .Kind_None
+                        .RuleDeploy =
                         [
-                            .Intellisense =
-                            [
-                                .IncludeDirs = .IncludeDirs
-                                .Defines = .Defines
-                                .BuildOptions = .BuildOptions
-                            ]
+                            .Executable = .EmptyString
+                        ]
+                        .RuleUnitTests =
+                        [
+                            .Enabled = false
+                        ]
+
+                        // Update project kind if needed
+                        If ( .RuleKind != .Kind_None )
+                        {
+                            ^ProjectKind = .RuleKind
+                        }
+
+                        // Gether dependency properties
+                        .GatheredDependencies = { }
+                        .GatheredProperties = {
+                            'Modules'
+                            'Defines'
+                            'IncludeDirs'
+                            'BuildOptions'
+                            'Libs'
+                            'LibDirs'
+                            'LinkOptions'
+                            'DependsOn'
+                        }
+
+                        Using( .EmptyProperties )
+                        Using( .PipelineProperties_Public )
+
+                        .RuleStepProject_FinalProperties_Public =
+                        [
+                            Using( .RuleProperties_Public )
+
+                            // Gather public uses
+                            {
+                                .UsesUnique = .Uses
+                                ForEach( .Dependency in .Uses )
+                                {
+                                    .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+                                    Using( .'$DependencyStruct$' )
+
+                                    ForEach( .Value in .Uses )
+                                    {
+                                        If ( .Value not in .UsesUnique )
+                                        {
+                                            ^UsesUnique + .Value
+                                        }
+                                    }
+                                }
+                                ^Uses = .UsesUnique
+                            }
+                        ]
+
+                        // Enable `interface` dependency visibility for less restrictive build setup
+                        .RuleStepProject_FinalProperties_Interface =
+                        [
+                        ]
+
+                        .RuleStepProject_FinalProperties_Private =
+                        [
+                            Using( .RuleProperties_Private )
+
+                            // Gather public uses
+                            {
+                                .UsesUnique = .Uses
+                                ForEach( .Dependency in .Uses )
+                                {
+                                    .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+                                    Using( .'$DependencyStruct$' )
+
+                                    ForEach( .Value in .Uses )
+                                    {
+                                        If ( .Value not in .UsesUnique )
+                                        {
+                                            ^UsesUnique + .Value
+                                        }
+                                    }
+                                }
+                                ^Uses = .UsesUnique
+                            }
+                        ]
+
+                        .RuleFinalCombinedProperties = [ ]
+                            + .RuleStepProject_FinalProperties_Private
+                            + .RuleStepProject_FinalProperties_Interface
+                            + .RuleStepProject_FinalProperties_Public
+
+                        .RuleStepProject_FinalProperties_Combined =
+                        [
+                            Using( .RuleFinalCombinedProperties )
+
+                            .LibraryTargets = { }
+
+                            ForEach( .Dependency in .Uses )
+                            {
+                                If ( .Dependency not in .GatheredDependencies )
+                                {
+                                    ^GatheredDependencies + .Dependency
+                                    .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+
+                                    // Print( "$ProjectName$: Gathering $Dependency$..." )
+
+                                    ForEach( .Property in .GatheredProperties )
+                                    {
+                                        Using( .'$DependencyStruct$' )
+                                        ^'$Property$' + .'$Property$'
+                                    }
+
+                                    {
+                                        Using( .'$DependencyStruct$' )
+                                        If ( .HasLinkTarget )
+                                        {
+                                            ^LibraryTargets + .Dependency
+                                        }
+                                    }
+                                }
+                            }
+
+                            .Uses = .GatheredDependencies
+
+                            ^ProjectStepDependencies + .DependsOn
+                        ]
+
+                        ^ProjectStepProperties_Public + .RuleStepProject_FinalProperties_Public
+                        ^ProjectStepProperties_Combined + .RuleStepProject_FinalProperties_Combined
+                        ^ProjectRequires + .RuleRequires
+
+                        {
+                            Using( .Rule )
+                            Using( .RuleDeploy )
+                            If ( .Executable != .EmptyString )
+                            {
+                                .DeployEntry =
+                                [
+                                    .DeployName = .RuleName
+                                    Print( .DeployName )
+                                    Using( .RuleDeploy )
+                                ]
+                                ^ProjectStepDeploys + .DeployEntry
+                            }
+                        }
+
+                        {
+                            Using( .Rule )
+                            Using( .RuleUnitTests )
+                            If ( .Enabled )
+                            {
+                                ^ProjectStepUnitTest = .RuleUnitTests
+                            }
+                        }
+                    }
+
+                } // ForEach( .Rule in .ProjectPipelineConfigRules )
+
+                {
+                    .PipelineProperties_PublicExtension =
+                    [
+                        .'$ProjectStepStruct$' =
+                        [
+                            Using( .ProjectStepProperties_Public )
+
+                            .HasLinkTarget = true
+                            If ( .ProjectKind == .Kind_HeaderOnly )
+                            {
+                                ^HasLinkTarget = false
+                            }
                         ]
                     ]
-                    ^Projects_SolutionInfo + .Project_SolutionInfo
-                }
-            }
+                    ^PipelineProperties_Public + .PipelineProperties_PublicExtension
 
-            // Conan Modules
-            //--------------------------------------------------------------------------
-            .HasRuntimeDependencies = false
+                } // ForEach( .Rule in .ProjectRules )
 
-            {
-                Using( .'ConanModules_$ConanConfigName$' )
+                Using( .PipelineOutputExtensions )
+                Using( .PipelineToolchainInfo )
+                Using( .'CompilerFrontend_$ToolchainCompilerFamily$' )
+                Using( .FrontendProperties )
 
-                ForEach( .ConanModule in .Modules )
+                // Print( "Target: $ProjectTarget$" )
+
+                .OutDirName = .'KindOutDir_$ProjectKind$'
+                .TargetExtension = .'OutputExtension_$ProjectKind$'
+
+                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                .TargetOutputName = "$ProjectName$$TargetExtension$"
+                .TargetList = { }
+
+                // Print( "IntDir: $TargetIntermediateDirectory$" )
+                // Print( "LibDir: $TargetImpLibDirectory$" )
+                // Print( "Output: $TargetOutputDirectory$/$TargetOutputName$" )
+                // Print( .RuleProperties )
+
+                // Dependency list
+                //--------------------------------------------------------------------------
+                .StepDependencies = { }
+
                 {
-                    Using( .'ConanModule_$ConanModule$' )
+                    .'$Step$' = {}
 
-                    ForEach( .Var in .'ConanVariables_$ProjectKind$' )
+                    Using( .ProjectStepDependencies )
+
+                    ForEach( .Dependency in .'$Step$' )
+                    {
+                        .DependencyTargetName = '$Dependency$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                        ^StepDependencies + .DependencyTargetName
+                    }
+                }
+
+
+                .FinalProperties = .ProjectStepProperties_Combined
+
+                // Project specific SDK
+                ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
+                {
+                    If ( .SDKName not in .PipelineTags )
+                    {
+                        If ( .SDKName in .ProjectRequires )
+                        {
+                            ^FinalProperties + .SDK
+                        }
+                    }
+                }
+
+                .FinalProperties
+                    + .PipelineProperties_SDKs
+                    + .PipelineProperties_Toolchain
+
+                // Conan Modules
+                //--------------------------------------------------------------------------
+                .ProcessedConanModules = { }
+
+                {
+                    Using( .FinalProperties )
+                    Using( .'ConanModules_$PipelineConfigConan$' )
+
+                    ForEach( .ConanModule in .Modules )
+                    {
+                        If ( .ConanModule not in .ProcessedConanModules )
+                        {
+                            ^ProcessedConanModules + .ConanModule
+
+                            Using( .'ConanModule_$ConanModule$' )
+
+                            ForEach( .Var in .'ConanVariables_$ProjectKind$' )
+                            {
+                                Using( .'FrontendFlag_$Var$' )
+                                ForEach( .Value in .'$Var$' )
+                                {
+                                    ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                                }
+                            }
+
+                            If ( .CopyModules )
+                            {
+
+                                .CopyDirs = false
+                                .CopyDirsList = { }
+                                ForEach( .BinDir in .BinDirs )
+                                {
+                                    ^CopyDirs = true
+                                    ^CopyDirsList + "$BinDir$/"
+                                }
+
+                                If ( .CopyDirs )
+                                {
+                                    .CopyDirTargetName = '$ProjectTarget$-$ConanModule$-copydir'
+
+                                    If ( .CopyDirTargetName not in .Step_CopyDirsTargets )
+                                    {
+                                        // Only do this once
+                                        ^Step_CopyDirsTargets + .CopyDirTargetName
+
+                                        CopyDir( '$CopyDirTargetName$' )
+                                        {
+                                            .SourcePaths = .CopyDirsList
+                                            .SourcePathsPattern = '*.dll'
+                                            .Dest = .TargetOutputDirectory
+                                        }
+                                        ^StepDependencies + '$ProjectTarget$-$ConanModule$-copydir'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Store all libraries that should be linked in the final executable 'link step'
+                .LibraryTargets = { }
+
+                // Apply link step all flags
+                //--------------------------------------------------------------------------
+                {
+                    Using( .FinalProperties )
+
+                    ^LibraryTargets = .LibraryTargets
+
+                    .Variables = {
+                        'IncludeDirs'
+                        'Defines'
+                        'BuildOptions'
+                        'LibDirs'
+                        'Libs'
+                        'LinkOptions'
+                    }
+
+                    ForEach( .Var in .Variables )
                     {
                         Using( .'FrontendFlag_$Var$' )
+
+                        If( .ProjectKind == .Kind_StaticLib )
+                        {
+                            // TODO: Special case clean up?
+                            .Const_LinkOptions = 'LinkOptions'
+                            If ( .Var == .Const_LinkOptions )
+                            {
+                                ^FlagVariable = 'LibrarianOptions'
+                            }
+                        }
+
                         ForEach( .Value in .'$Var$' )
                         {
                             ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
                         }
                     }
 
-                    If ( .CopyModules )
+                    // If ( .ProjectKind == .Kind_HeaderOnly )
+                    // {
+                    //     .Project_SolutionInfo =
+                    //     [
+                    //         .'SolutionInfo_$ProjectConfigTarget$' =
+                    //         [
+                    //             .Intellisense =
+                    //             [
+                    //                 .IncludeDirs = .IncludeDirs
+                    //                 .Defines = .Defines
+                    //                 .BuildOptions = .BuildOptions
+                    //             ]
+                    //         ]
+                    //     ]
+                    //     ^Projects_SolutionInfo + .Project_SolutionInfo
+                    // }
+                }
+
+                Using( .PipelineStepTasks )
+                Using( .Step_TargetsContainer )
+
+                .PreBuildDependencies = .StepDependencies
+                .PreviousTargets = .'Step_Targets_$Step_Previous$'
+                .CurrentTargets = { }
+
+                .TaskIdx = 0
+                ForEach( .Task in .'$Step$_Tasks' )
+                {
+                    .Type = 'Unknown'
+
+                    Using( .Task )
+
+                    If ( !.ProjectAllowUnityBuilds )
                     {
+                        ^AllowUnityBuilds = false
+                    }
 
-                        .CopyDirs = false
-                        .CopyDirsList = { }
-                        ForEach( .BinDir in .BinDirs )
-                        {
-                            ^CopyDirs = true
-                            ^CopyDirsList + "$BinDir$/"
-                        }
+                    // If we are using an unknown task type
+                    If ( .Type not in .TaskType_ValidList )
+                    {
+                        Error( "Task has a unknown type: $Type$" )
+                    }
 
-                        If ( .CopyDirs )
+                    If( .Type == .TaskType_Compile )
+                    {
+                        If ( .ProjectKind != .Kind_HeaderOnly )
                         {
-                            CopyDir( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir' )
+                            .Compiler = .ToolchainCompiler
+                            .CompilerOutputPath = .TargetIntermediateDirectory
+                            .CompilerInputUnity = { }
+                            .CompilerInputPath = .ProjectSourcePaths
+
+                            // Unity files
+                            //--------------------------------------------------------------------------
+                            If ( .AllowUnityBuilds )
                             {
-                                .SourcePaths = .CopyDirsList
-                                .SourcePathsPattern = '*.dll'
-                                .Dest = .TargetOutputDirectory
+                                Unity( '$ProjectTarget$-$TaskIdx$-unity' )
+                                {
+                                    .UnityInputPath = .ProjectSourcePaths
+                                    .UnityInputPattern = { '*.c', '*.cpp', '*.cxx' }
+                                    .UnityOutputPath = .TargetIntermediateDirectory
+                                    .UnityOutputPattern = 'unity_$ProjectName$_*.cxx'
+                                }
+
+                                // Reset compiler input paths
+                                ^CompilerInputUnity = '$ProjectTarget$-$TaskIdx$-unity'
+                                ^CompilerInputPath = { }
                             }
-                            ^TargetRuntimeDependencies + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir'
-                            ^HasRuntimeDependencies = true
-                        }
-                    }
-                }
-            }
 
-            If( .ProjectKind != .Kind_HeaderOnly )
-            {
-                Using( .Toolchain )
-
-                {
-                    .Compiler = .ToolchainCompiler
-                    .CompilerOutputPath = .TargetIntermediateDirectory
-                    .CompilerInputUnity = { }
-                    .CompilerInputPath = .ProjectSourcePaths
-                    .CompilerInputPattern = { '*.c', '*.cpp', '*.cxx' }
-
-                    // Unity files
-                    //--------------------------------------------------------------------------
-                    If ( .UnityBuilds )
-                    {
-                        Unity( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-unity' )
-                        {
-                            .UnityInputPath = .ProjectSourcePaths
-                            .UnityInputPattern = { '*.c', '*.cpp', '*.cxx' }
-                            .UnityOutputPath = .TargetIntermediateDirectory
-                            .UnityOutputPattern = 'unity_$ProjectName$_*.cxx'
-                        }
-
-                        // Reset compiler input paths
-                        ^CompilerInputUnity = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-unity'
-                        ^CompilerInputPath = { }
-                    }
-
-                    // Object list
-                    //--------------------------------------------------------------------------
-                    ObjectList( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' )
-                    {
-                    }
-                }
-
-                // Object List target
-                If ( .ProjectKind == .Kind_ObjectList )
-                {
-                    Alias( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
-                    {
-                        .Targets = {
-                            '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects'
-                        }
-                    }
-
-                    ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                }
-
-                // Static Library target
-                //--------------------------------------------------------------------------
-                If ( .ProjectKind == .Kind_StaticLib )
-                {
-                    .Compiler = .ToolchainCompiler
-                    .CompilerOutputPath = .TargetIntermediateDirectory
-
-                    .Librarian = .ToolchainLibrarian
-                    .LibrarianAdditionalInputs = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects'
-                    .LibrarianOutput = '$TargetOutputDirectory$/$TargetOutputName$'
-
-                    Library( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
-                    {
-                    }
-
-                    ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                }
-
-                // Shared Library target
-                //--------------------------------------------------------------------------
-                If ( .ProjectKind == .Kind_SharedLib )
-                {
-                    .Libraries = { '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' }
-                    ForEach( .Library in .LibraryTargets )
-                    {
-                        ^Libraries + '$Library$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                    }
-
-                    .Linker = .ToolchainLinker
-                    .LinkerOutput = '$TargetOutputDirectory$/$TargetOutputName$'
-                    .LinkerOptions + .'LinkerOptions_$ProjectKind$'
-
-                    DLL( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
-                    {
-                    }
-
-                    ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                }
-
-                // Executable targets
-                //--------------------------------------------------------------------------
-                If ( .ProjectKind in .Kind_Applications )
-                {
-                    .Libraries = { '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' }
-                    ForEach( .Library in .LibraryTargets )
-                    {
-                        ^Libraries + '$Library$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                    }
-
-                    .Linker = .ToolchainLinker
-                    .LinkerOutput = '$TargetOutputDirectory$/$TargetOutputName$'
-                    .LinkerOptions + .'LinkerOptions_$ProjectKind$'
-
-                    Executable( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
-                    {
-                    }
-
-                    ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                }
-
-                If ( .ProjectKind in .Kind_Applications )
-                {
-                    .Enabled = false
-
-                    Using( .ConfigFinalUnitTests )
-                    If ( .Enabled )
-                    {
-                        .TestExecutable = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
-                        .TestOutput = '$TargetTestOutputDirectory$/$ProjectName$_test_results.txt'
-                        .TestWorkingDir = '$WorkspaceBuildDir$'
-
-                        Test( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-test' )
-                        {
-                        }
-
-                        ^ConfigTargetsTests + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-test'
-                    }
-                }
-
-                ForEach( .DeployEntry in .ConfigFinalDeploys )
-                {
-                    .Arguments = ''
-                    .Inputs = { }
-                    .Output = ''
-
-                    Using( .DeployEntry )
-
-                    If ( .Executable != .EmptyString )
-                    {
-                        .PreBuildDependencies = .TargetList
-
-                        Exec( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-deploy-$DeployName$' )
-                        {
-                            .ExecExecutable = .Executable
-                            .ExecInput = .Inputs
-                            .ExecArguments = .Arguments
-                            .ExecOutput = .Output
-                            .ExecUseStdOutAsOutput = false
-                            .ExecAlwaysShowOutput = true
-                            .ExecAlways = true
-
-                            If ( .ExecOutput == .EmptyString )
+                            // Object list
+                            //--------------------------------------------------------------------------
+                            ObjectList( '$ProjectTarget$-$TaskIdx$-$Step$' )
                             {
-                                ^ExecUseStdOutAsOutput = true
-                                ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_deploy_$DeployName$_log.txt'
+                            }
+
+                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                        }
+                    }
+
+                    If( .Type == .TaskType_Link )
+                    {
+                        // Object List target
+                        If ( .ProjectKind == .Kind_ObjectList )
+                        {
+                            Alias( '$ProjectTarget$-$TaskIdx$-$Step$' )
+                            {
+                                .Targets = .PreviousTargets
+                            }
+
+                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                        }
+
+                        // Static Library target
+                        //--------------------------------------------------------------------------
+                        If ( .ProjectKind == .Kind_StaticLib )
+                        {
+                            .Compiler = .ToolchainCompiler
+                            .CompilerOutputPath = .TargetIntermediateDirectory
+
+                            .Librarian = .ToolchainLibrarian
+                            .LibrarianAdditionalInputs = .PreviousTargets
+                            .LibrarianOutput = '$TargetOutputDirectory$/$TargetOutputName$'
+
+                            Library( '$ProjectTarget$-$TaskIdx$-$Step$' )
+                            {
+                            }
+
+                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                        }
+
+                        // Shared Library target
+                        //--------------------------------------------------------------------------
+                        If ( .ProjectKind == .Kind_SharedLib )
+                        {
+                            .Libraries = .PreviousTargets
+                            ForEach( .Library in .LibraryTargets )
+                            {
+                                ^Libraries + '$Library$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$-$Step$'
+                            }
+
+                            .Linker = .ToolchainLinker
+                            .LinkerOutput = '$TargetOutputDirectory$/$TargetOutputName$'
+
+                            DLL( '$ProjectTarget$-$TaskIdx$-$Step$' )
+                            {
+                            }
+
+                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                        }
+
+                        // Executable targets
+                        //--------------------------------------------------------------------------
+                        If ( .ProjectKind in .Kind_Applications )
+                        {
+                            .Libraries = .PreviousTargets
+                            ForEach( .Library in .LibraryTargets )
+                            {
+                                ^Libraries + '$Library$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$-$Step$'
+                            }
+
+                            .Linker = .ToolchainLinker
+                            .LinkerOutput = '$TargetOutputDirectory$/$TargetOutputName$'
+
+                            Executable( '$ProjectTarget$-$TaskIdx$-$Step$' )
+                            {
+                            }
+
+                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                        }
+                    }
+
+                    If ( .Type == .TaskType_Test )
+                    {
+                        If ( .ProjectKind in .Kind_Applications )
+                        {
+                            .Enabled = false
+
+                            Using( .ProjectStepUnitTest )
+                            If ( .Enabled )
+                            {
+                                ForEach( .PreviousTarget in .PreviousTargets )
+                                {
+                                    .TestExecutable = '$PreviousTarget$'
+                                    .TestOutput = '$TargetTestOutputDirectory$/$ProjectName$_$Step$_test_results.txt'
+                                    .TestWorkingDir = '$WorkspaceBuildDir$'
+
+                                    Test( '$PreviousTarget$-test' )
+                                    {
+                                    }
+
+                                    ^CurrentTargets + '$PreviousTarget$-test'
+                                }
                             }
                         }
+                    }
 
-                        ^TargetList = {
-                            '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-deploy-$DeployName$'
+                    If ( .Type == .TaskType_Deploy )
+                    {
+                        If ( .ProjectKind != .Kind_HeaderOnly )
+                        {
+                            ForEach( .DeployEntry in .ProjectStepDeploys )
+                            {
+                                .Arguments = ''
+                                .Inputs = { }
+                                .Output = ''
+
+                                Using( .DeployEntry )
+
+                                If ( .Executable != .EmptyString )
+                                {
+                                    .PreBuildDependencies = .CurrentTargets
+
+                                    Exec( '$ProjectTarget$-$Step$-deploy-$DeployName$' )
+                                    {
+                                        .ExecExecutable = .Executable
+                                        .ExecInput = .Inputs
+                                        .ExecArguments = .Arguments
+                                        .ExecOutput = .Output
+                                        .ExecUseStdOutAsOutput = false
+                                        .ExecAlwaysShowOutput = true
+                                        .ExecAlways = true
+
+                                        If ( .ExecOutput == .EmptyString )
+                                        {
+                                            ^ExecUseStdOutAsOutput = true
+                                            ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_deploy_$Step$_$DeployName$_log.txt'
+                                        }
+                                    }
+
+                                    ^CurrentTargets = {
+                                        '$ProjectTarget$-$Step$-deploy-$DeployName$'
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ^TaskIdx + 1
+                } // ForEach( .Task in .'$Step$_Tasks' )
+
+                {
+                    .HasTargets = false
+                    .HasDependencies = false
+
+                    ForEach ( ._ in .CurrentTargets )
+                    {
+                        ^HasTargets = true
+                    }
+                    ForEach ( ._ in .StepDependencies )
+                    {
+                        ^HasDependencies = true
+                    }
+
+                    If ( .HasTargets )
+                    {
+                        Alias( '$ProjectTarget$-$Step$' )
+                        {
+                            .Targets = .CurrentTargets
+                        }
+
+                        ^ProjectSubTargets + '$ProjectTarget$-$Step$'
+                    }
+
+                    If ( !.HasTargets )
+                    {
+                        If ( .HasDependencies )
+                        {
+                            Alias( '$ProjectTarget$-$Step$' )
+                            {
+                                .Targets = .StepDependencies
+                            }
+
+                            ^ProjectSubTargets + '$ProjectTarget$-$Step$'
                         }
                     }
                 }
 
-                Alias( '$ProjectConfigTarget$' )
-                {
-                    .Targets = .TargetList
-                        + .TargetRuntimeDependencies
-                }
+                // Save the created targets
+                .Step_TargetsContainer_Extension =
+                [
+                    .'Step_Targets_$Step$' = .CurrentTargets
+                ]
+                ^Step_TargetsContainer + .Step_TargetsContainer_Extension
+                ^Step_Previous = .Step
 
-                ^ConfigTargets + .ProjectConfigTarget
-                ^AllConfigTargets + .ProjectConfigTarget
-            }
+            } // ForEach( .Step in .PipelineSteps )
 
-            If( .ProjectKind == .Kind_HeaderOnly )
+            Alias( '$ProjectTarget$' )
             {
-                If ( .HasRuntimeDependencies )
-                {
-                    Alias( '$ProjectConfigTarget$' )
-                    {
-                        .Targets = .TargetRuntimeDependencies
-                    }
-
-                    ^ConfigTargets + .ProjectConfigTarget
-                    ^AllConfigTargets + .ProjectConfigTarget
-                }
+                .Targets = .ProjectSubTargets
             }
-        }
 
-    }
+            ^PipelineTargets + '$ProjectTarget$'
 
-    ForEach( .AliasInfo in .AliasInfos )
+        } // If ( .ProjectRequirementsSatisfied )
+    } // ForEach( .Project in .ProjectsResolved )
+
     {
-        Using( .AliasInfo )
-
-        .HasAllTags = true
-        ForEach( .Tag in .AliasTags )
+        .HasTargets = false
+        ForEach ( ._ in .PipelineTargets )
         {
-            If ( .Tag not in .ConfigTags )
-            {
-                ^HasAllTags = false
-            }
+            ^HasTargets = true
         }
 
-        If ( .HasAllTags )
+        If ( .HasTargets )
         {
-            .HasTargets = false
-            ForEach (.T in .ConfigTargets)
+            Alias( 'all-$PipelineName$-$PipelineConfig$' )
             {
-                ^HasTargets = true
-            }
-
-            .HasTestTargets = false
-            ForEach (.T in .ConfigTargetsTests)
-            {
-                ^HasTestTargets = true
-            }
-
-            If ( .HasTargets )
-            {
-                Alias( "$AliasName$-$ConfigName$$AliasSuffix$" )
-                {
-                    .Targets = .ConfigTargets
-                }
-            }
-
-            If ( .HasTestTargets )
-            {
-                Alias( "test-$AliasName$-$ConfigName$$AliasSuffix$" )
-                {
-                    .Targets = .ConfigTargetsTests
-                }
+                .Targets = .PipelineTargets
             }
         }
     }
-}
+
+} // ForEach( .Pipeline in .AvailablePipelines )

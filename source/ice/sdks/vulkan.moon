@@ -21,6 +21,7 @@ class SDK_Vulkan extends Locator
                 "vulkan-1"
             }
 
-        { sdk_info }
+            @\add_result sdk_info
+
 
 { :SDK_Vulkan }

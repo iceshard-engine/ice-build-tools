@@ -8,8 +8,9 @@
     .PlatformRequiredSDKs = {
         'SDK-Windows-10-CXX-WinRT'
     }
-    .PlatformSupportedToolchains = {
-        'msvc-x64-v142',
+    .PlatformSupportedToolchainFamilies = {
+        'msvc'
+        'winrc'
     }
 
     .PlatformExtensions =
@@ -21,41 +22,4 @@
         .OutputExtension_ObjectList = ''
         .OutputExtension_HeaderOnly = ''
     ]
-
-    .PlatformVSEnabled = true
-    .PlatformVSProperties_MSVC_x64_v142 =
-    [
-        .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = '-UWP'
-
-        .PlatformToolset = 'v142'
-
-        .SolutionPlatform = 'UWP-x64-v142'
-    ]
-]
-
-// Platform options depending on the given toolchain
-.ToolchainProperties_MSVC_x64_v142_UWP_x64 =
-[
-    .CompilerOptions
-        + ' /await'
-        + ' /D_UNICODE'
-        + ' /DUNICODE'
-        + ' /DICE_UWP_LEGACY_COROUTINES'
-        + ' /D__WRL_NO_DEFAULT_LIB__'
-        + ' /D"WINAPI_FAMILY=WINAPI_FAMILY_PC_APP"'
-
-    .LinkerOptions_StaticLib = ''
-    .LinkerOptions_SharedLib = ' /DLL'
-    .LinkerOptions_ConsoleApp = ' /SUBSYSTEM:CONSOLE'
-    .LinkerOptions_WindowedApp = ' /SUBSYSTEM:WINDOWS'
-    .LinkerOptions_HeaderOnly = ''
-    .LinkerOptions_ObjectList = ''
-
-    .LinkerOptions
-        + ' /MACHINE:x64'
-        + ' /DYNAMICBASE'
-        + ' /NXCOMPAT'
-    .LibrarianOptions
-        + ' /MACHINE:x64'
 ]

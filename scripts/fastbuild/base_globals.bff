@@ -28,16 +28,6 @@
 .DefaultGroup = 'Unspecified'
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// The following structures provide basic definitions of empty variables which may be updated by
-// different toolchains, platforms, configurations
-.ToolchainFrontend_Base = [ ]
-
-.PlatformProperties_Base =
-[
-    .ToolchainProperties = { }
-]
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // The following defines are used to allow users project wide configuration changes
 // These properties are based on 'tags' and allow to provide fine grained configuration
 .Rule =
@@ -84,6 +74,7 @@
     // Linker properties
     .Libs = { }
     .LibDirs = { }
+    .LinkOptions = { }
 ]
 
 .AliasInfos = { }

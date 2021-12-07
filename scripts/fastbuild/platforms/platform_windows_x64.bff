@@ -1,4 +1,53 @@
 
+.PlatformRule_Windows_x64 =
+[
+    .Name = 'Win-x64-Generic-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'x64' }
+
+    .LinkOptions = {
+        '/MACHINE:x64'
+    }
+]
+
+.PlatformRule_Windows_StaticLib =
+[
+    .Name = 'Win-StaticLib-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'StaticLib' }
+]
+
+.PlatformRule_Windows_SharedLib =
+[
+    .Name = 'Win-SharedLib-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'SharedLib' }
+    .LinkOptions = {
+        '/DLL'
+        '/DYNAMICBASE'
+        '/NXCOMPAT'
+    }
+]
+
+.PlatformRule_Windows_ConsoleApp =
+[
+    .Name = 'Win-ConsoleApp-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'ConsoleApp' }
+    .LinkOptions = {
+        '/SUBSYSTEM:CONSOLE'
+        '/DYNAMICBASE'
+        '/NXCOMPAT'
+    }
+]
+
+.PlatformRule_Windows_WindowedApp =
+[
+    .Name = 'Win-WindowedApp-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'WindowedApp' }
+    .LinkOptions = {
+        '/SUBSYSTEM:WINDOWS'
+        '/DYNAMICBASE'
+        '/NXCOMPAT'
+    }
+]
+
 .Platform_Windows_x64 =
 [
     .PlatformSystem = 'Windows'
@@ -8,10 +57,13 @@
     .PlatformRequiredSDKs = {
         'SDK-Windows-10'
     }
-    .PlatformSupportedToolchains = {
-        'msvc-x64-v142',
-        'msvc-x64-v143',
-        'clang-10.0.0'
+
+    .PlatformRules = {
+        .PlatformRule_Windows_x64
+        .PlatformRule_Windows_StaticLib
+        .PlatformRule_Windows_SharedLib
+        .PlatformRule_Windows_ConsoleApp
+        .PlatformRule_Windows_WindowedApp
     }
 
     .PlatformExtensions =
@@ -23,61 +75,4 @@
         .OutputExtension_ObjectList = ''
         .OutputExtension_HeaderOnly = ''
     ]
-
-    .PlatformVSEnabled = true
-    .PlatformVSProperties_MSVC_x64_v142 =
-    [
-        .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = ''
-
-        .PlatformToolset = 'v142'
-
-        .SolutionPlatform = 'Win-x64-v142'
-    ]
-    .PlatformVSProperties_MSVC_x64_v143 =
-    [
-        .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = ''
-
-        .PlatformToolset = 'v143'
-
-        .SolutionPlatform = 'Win-x64-v143'
-    ]
-    .PlatformVSProperties_clang_x64_1000 =
-    [
-        .ProjectPlatform = 'x64'
-        .ProjectConfigSuffix = '-Clang'
-
-        .PlatformToolset = 'v142'
-
-        .SolutionPlatform = 'Win-x64-Clang10'
-    ]
-]
-
-// Platform options depending on the given toolchain
-.ToolchainProperties_MSVC_x64_v142_Windows_x64 =
-[
-    .LinkerOptions_StaticLib = ''
-    .LinkerOptions_SharedLib = ' /DLL'
-    .LinkerOptions_ConsoleApp = ' /SUBSYSTEM:CONSOLE'
-    .LinkerOptions_WindowedApp = ' /SUBSYSTEM:WINDOWS'
-    .LinkerOptions_HeaderOnly = ''
-    .LinkerOptions_ObjectList = ''
-
-    .LinkerOptions
-        + ' /MACHINE:x64'
-        + ' /DYNAMICBASE'
-        + ' /NXCOMPAT'
-    .LibrarianOptions
-        + ' /MACHINE:x64'
-]
-
-.ToolchainProperties_MSVC_x64_v143_Windows_x64 =
-[
-    Using( .ToolchainProperties_MSVC_x64_v142_Windows_x64 )
-]
-
-.ToolchainProperties_clang_x64_1000_Windows_x64 =
-[
-    Using( .ToolchainProperties_MSVC_x64_v142_Windows_x64 )
 ]

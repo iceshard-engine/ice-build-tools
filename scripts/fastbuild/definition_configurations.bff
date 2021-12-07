@@ -1,74 +1,204 @@
 
-.TargetConfigList = { }
+.AvailablePlatforms = { }
+.AvailablePlatformsNames = { }
+.AvailableToolchains = .ToolchainList
+.AvailableToolchainsNames = .ToolchainNames
+.AvailablePipelines = { }
 
-// Iterate over each defined platform
-ForEach( .Platform in .PlatformList )
+//
+// We search for available platform on a given system
+//
+ForEach( .PlatformName in .PlatformNames, .Platform in .PlatformList )
 {
-    .PlatformTags = { }
-
     Using( .Platform )
 
-    .PlatformSupportedComponents = .PlatformSupportedToolchains + .SDKNames
+    .PlatformAvailable = true
+    ForEach ( .Requirement in .PlatformRequiredSDKs )
+    {
+        If ( .Requirement not in .SDKNames)
+        {
+            ^PlatformAvailable = false
+        }
+    }
 
-    ForEach( .ToolchainName in .ToolchainNames, .Toolchain in .ToolchainList )
+    If ( .PlatformAvailable )
+    {
+        ^AvailablePlatforms + .Platform
+        ^AvailablePlatformsNames + .PlatformName
+    }
+}
+
+//
+// Once we have available platforms (and toolchains from the generation step)
+//  we can start to check if we have pipelines defined for any platform + tolchain pairs
+//
+ForEach( .Pipeline in .BuildPipelines )
+{
+    .PipelineRequires = { }
+
+    Using( .Pipeline )
+
+    .HasPipelineStepsDefined = false
+    ForEach( ._ in .PipelineSteps )
+    {
+        ^HasPipelineStepsDefined = true
+    }
+
+    If ( !.HasPipelineStepsDefined )
+    {
+        Error( "Pipeline missing list of steps!" )
+    }
+
+    .FoundPlatform = false
+    .FoundToolchain = false
+
+    .SelectedPlatform = []
+    .SelectedPlatformArchitecture = 'None'
+    .SelectedToolchain = []
+
+
+    ForEach( .Name in .AvailablePlatformsNames, .Platform in .AvailablePlatforms )
+    {
+        Using( .Platform )
+
+        If ( .Name == .PipelinePlatform )
+        {
+            ^FoundPlatform = true
+            ^SelectedPlatform = .Platform
+            ^SelectedPlatformArchitecture = .PlatformArchitecture
+        }
+    }
+
+    ForEach( .Name in .AvailableToolchainsNames, .Toolchain in .AvailableToolchains )
     {
         Using( .Toolchain )
 
-        .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSDKs
-
-        .HasAllTags = true
-        // Print( "Test: $PlatformSystem$-$PlatformArchitecture$" )
-        ForEach( .Tag in .TargetPlatformRequiredComponents )
+        If ( .Name == .PipelineToolchain )
         {
-            If ( .Tag not in .PlatformSupportedComponents )
+            If ( .ToolchainArchitecture == .SelectedPlatformArchitecture )
             {
-                ^HasAllTags = false
+                ^FoundToolchain = true
+                ^SelectedToolchain = .Toolchain
             }
         }
+    }
 
-        If( .HasAllTags )
+    If ( .FoundPlatform )
+    {
+        If ( .FoundToolchain ) // #TODO: We might want to bump the required FB version at some point.
         {
-            // Iterate over all configurations and create final target configurations
+            Using( .SelectedPlatform )
+            Using( .SelectedToolchain )
+
             ForEach( .Configuration in .ConfigurationList )
             {
                 Using( .Configuration )
 
-                .TargetConfig =
-                [
-                    .ConfigName = .ConfigurationName
-                    .ConfigToolchain = "$ToolchainCompilerFamily$-$ToolchainArchitecture$-$ToolchainToolset$"
-                    .ConfigPlatform = "$PlatformSystem$-$PlatformArchitecture$"
-                    .ConfigFrontend = .'ToolchainFrontend_$ToolchainFrontend$'
-                    .ConfigTags = {
-                        .PlatformSystem
-                        .PlatformArchitecture
-                        .ToolchainCompilerFamily
-                        .ToolchainToolset
-                        .ConfigName
-                    } + .PlatformRequiredSDKs + .PlatformTags
+                .AvailableTags = .PlatformTags + .PlatformRequiredSDKs
+                    + .PlatformSystem
+                    + .ToolchainCompilerFamily
+                    + .ToolchainArchitecture
+                    + .ToolchainToolset
+                    + "$ToolchainCompilerFamily$-$ToolchainArchitecture$-$ToolchainToolset$"
+                    + .ConfigurationName
 
-                    .ConanConfigName = .ConanConfiguration
-
-                    .PlatformInfo = .Platform
-                    .Toolchain = .Toolchain
-                    .Configuration = .Configuration
-                    .SDKProperties = [ ]
-                    ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
+                // We check if this pipeline can be created with the current (Plaform + Toolchain + Config) tripple
+                .HasRequiredTags = true
+                ForEach( .Requirement in .PipelineRequires )
+                {
+                    If ( .Requirement not in .AvailableTags )
                     {
-                        If ( .SDKName in .PlatformRequiredSDKs )
+                        ^HasRequiredTags = false
+                    }
+                }
+
+                // We pre-build a struct task lists for each pipeline step
+                If ( .HasRequiredTags )
+                {
+                    .PipelineStepTasks = [ ]
+                    {
+                        // Tasks check their requirements at a later stage when project info is also available
+                        ForEach( .PipelineStep in .PipelineSteps )
                         {
-                            ^SDKProperties + .SDK
+                            .StepTasks = { }
+                            ForEach( .Task in .PipelineTasks )
+                            {
+                                .TaskRequires = { }
+
+                                Using( .Task )
+
+                                .HasRequiredTags = true
+                                ForEach( .Requirement in .TaskRequires )
+                                {
+                                    If ( .Requirement not in .AvailableTags )
+                                    {
+                                        ^HasRequiredTags = false
+                                    }
+                                }
+
+                                If ( .PipelineStep == .Step )
+                                {
+                                    If ( .HasRequiredTags )
+                                    {
+                                        ^StepTasks + .Task
+                                    }
+                                }
+                            }
+
+                            .PipelineStepTasks_Extension =
+                            [
+                                .'$PipelineStep$_Tasks' = .StepTasks
+                            ]
+                            ^PipelineStepTasks + .PipelineStepTasks_Extension
                         }
                     }
-                    .ConfigProperties = []
-                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$PlatformSystem$_$PlatformArchitecture$'
-                        + .'ToolchainFrontendProperties_$ToolchainFrontend$_$ToolchainArchitecture$_$ToolchainToolset$_$ConfigurationName$'
-                ]
 
-                ^TargetConfigList + .TargetConfig
-            }
+                    .AvailablePipelineConfig =
+                    [
+                        Using( .Pipeline )
 
-        }
-    }
+                        .PipelineStepTasks = .PipelineStepTasks
+                        .PipelinePlatformInfo = .SelectedPlatform
+                        .PipelineRules = .PlatformRules
+                        .PipelineToolchainInfo = .SelectedToolchain
+                        .PipelineToolchainStruct = "$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$"
+                        .PipelineConfig = .ConfigurationName
+                        .PipelineConfigConan = .ConanConfiguration
+                        .PipelineOutputExtensions = .PlatformExtensions
+
+                        .PipelineTags = {
+                            .PlatformSystem
+                            .ToolchainCompilerFamily
+                            .ToolchainArchitecture
+                            .ToolchainToolset
+                            "$ToolchainCompilerFamily$-$ToolchainArchitecture$-$ToolchainToolset$"
+                            .ConfigurationName
+                        } + .PlatformTags
+
+                        .PipelineProperties_SDKs = [ .Defines = { } ]
+                        ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
+                        {
+                            If ( .SDKName in .PlatformRequiredSDKs )
+                            {
+                                ^PipelineProperties_SDKs + .SDK
+                            }
+                        }
+
+                        .PipelineProperties_Toolchain =
+                        [
+                            .Defines = { }
+                            .IncludeDirs = .ToolchainIncludeDirs
+                            .LibDirs = .ToolchainLibDirs
+                            .Libs = .ToolchainLibs
+                        ]
+                    ]
+
+                    ^AvailablePipelines + .AvailablePipelineConfig
+
+                } // If ( .HasRequiredTags )
+            } // ForEach( .Configuration in .ConfigurationList )
+
+        } // .FoundToolchain
+    } // .FoundPlatform
 
 }

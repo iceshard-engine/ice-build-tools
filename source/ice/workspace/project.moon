@@ -116,15 +116,15 @@ install_conan_dependencies = (profile, force_update) ->
 
 generate_fastbuild_variables_script = (profile, locators, output_dir, force_update) ->
 
-    execute_locators = (locator_type, target_array, detected_platforms) ->
+    execute_locators = (locator_type, detected_info) ->
         for locator in *locators[locator_type]
-            results = locator\locate detected_platforms
-            if (type results) == 'table' and #results > 0
-                table.insert target_array, result for result in *results
+            results = locator\locate_internal detected_info
 
-    toolchains = { }
-    platform_sdks = { }
-    additional_sdks = { }
+    detected_info = {
+        toolchains: { }
+        platform_sdks: { }
+        additional_sdks: { }
+    }
 
     if os.iswindows
         compiler_version = tonumber profile.compiler.version
@@ -133,18 +133,21 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
         msvc_toolchains = VsMSVC\detect toolchain_version
         clang_toolchains = VsClang\detect toolchain_version
 
-        table.insert toolchains, toolchain for toolchain in *msvc_toolchains or { }
-        table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
+        table.insert detected_info.toolchains, toolchain for toolchain in *msvc_toolchains or { }
+        table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
 
     if os.isunix
         clang_toolchains = Clang\detect profile
 
-        table.insert toolchains, toolchain for toolchain in *clang_toolchains or { }
+        table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
 
 
     -- execute_locators Locator.Type.Toolchain, toolchains -- Currently unused
-    execute_locators Locator.Type.PlatformSDK, platform_sdks
-    execute_locators Locator.Type.CommonSDK, additional_sdks, platform_sdks
+    execute_locators Locator.Type.PlatformSDK, detected_info
+    execute_locators Locator.Type.CommonSDK, detected_info
+
+    -- Extract variables
+    { :toolchains, :platform_sdks, :additional_sdks } = detected_info
 
     error "No supported toolchain detected!" unless toolchains and #toolchains > 0
     if os.iswindows or os.isunix
@@ -188,9 +191,9 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
                 gen\line!
                 gen\structure sdk.struct_name, (gen) ->
                     gen\variables {
-                        { 'SdkIncludeDirs', sdk.includedirs }
-                        { 'SdkLibDirs', sdk.libdirs }
-                        { 'SdkLibs', sdk.libs }
+                        { 'IncludeDirs', sdk.includedirs }
+                        { 'LibDirs', sdk.libdirs }
+                        { 'Libs', sdk.libs }
                     }
 
                 table.insert sdk_names, sdk.name
@@ -220,9 +223,9 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
                 gen\line!
                 gen\structure sdk.struct_name, (gen) ->
                     gen\variables {
-                        { 'SdkIncludeDirs', sdk.includedirs }
-                        { 'SdkLibDirs', sdk.libdirs }
-                        { 'SdkLibs', sdk.libs }
+                        { 'IncludeDirs', sdk.includedirs }
+                        { 'LibDirs', sdk.libdirs }
+                        { 'Libs', sdk.libs }
                     }
 
                 table.insert sdk_names, sdk.name
@@ -287,9 +290,10 @@ generate_fastbuild_workspace_script = (profile, output, source, project, force_u
 
             gen\line!
             gen\include "#{fbscripts}/base_globals.bff"
-            gen\include "#{fbscripts}/base_toolchains.bff"
+            gen\include "#{fbscripts}/base_compilers.bff"
             gen\include "#{fbscripts}/base_platforms.bff"
             gen\include "#{fbscripts}/base_configurations.bff"
+            gen\include "#{fbscripts}/base_pipelines.bff"
 
             if os.isfile "#{workspace_root}/#{project.hooks_script_location}"
                 gen\line!

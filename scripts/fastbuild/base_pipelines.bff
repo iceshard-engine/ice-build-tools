@@ -1,0 +1,53 @@
+
+.Task_BuildSources =
+[
+    .Step = 'Build'
+    .Type = 'Compile'
+
+    .AllowUnityBuilds = true
+
+    .CompilerInputPattern = { '*.c', '*.cpp', '*.cxx' }
+    .UnityInputPattern = .CompilerInputPattern
+]
+
+.Task_LinkExecutable =
+[
+    .Step = 'Link'
+    .Type = 'Link'
+]
+
+.Task_TestExecutable =
+[
+    .Step = 'Test'
+    .Type = 'Test'
+
+    .TaskRequires = { 'Debug' }
+]
+
+.Pipeline_Windows_x64 =
+[
+    .PipelineName = 'x64'
+    .PipelinePlatform = 'Windows'
+    .PipelineToolchain = 'msvc-x64-v142'
+
+    .PipelineSteps = {
+        'Build'
+        'Link'
+        'Test'
+
+        ; Legacy step, this is here as this corresponds to the previous hard-coded 'Runtime' dependencies
+        'Runtime'
+    }
+
+    .PipelineRequires = { }
+
+    .PipelineTasks = {
+        .Task_BuildSources
+        .Task_LinkExecutable
+        .Task_TestExecutable
+    }
+]
+
+.BuildPipelines = {
+    .Pipeline_Windows_x64
+}

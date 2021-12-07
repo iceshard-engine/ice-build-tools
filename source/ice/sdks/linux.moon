@@ -4,10 +4,8 @@ import Windows from require 'ice.platform.windows'
 class SDK_Linux extends Locator
     new: => super Locator.Type.PlatformSDK, "Linux Platform Locator"
     locate: =>
-        sdk_list = { }
-
         if os.isunix
-            sdk_info = {
+            @\add_result {
                 tags: { 'linux', 'unix' }
                 name: 'SDK-Linux'
                 struct_name: 'SDK_Linux'
@@ -15,8 +13,5 @@ class SDK_Linux extends Locator
                 libdirs: { }
                 libs: { }
             }
-            table.insert sdk_list, sdk_info
-
-        sdk_list
 
 { :SDK_Linux }

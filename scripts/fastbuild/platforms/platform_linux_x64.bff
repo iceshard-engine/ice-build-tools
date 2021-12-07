@@ -1,4 +1,29 @@
 
+
+.PlatformRule_Linux_StaticLib =
+[
+    .Requires = { 'Linux', 'Step-Link', 'StaticLib' }
+    .LinkerOptions = ' -static'
+]
+
+.PlatformRule_Linux_SharedLib =
+[
+    .Requires = { 'Linux', 'Step-Link', 'SharedLib' }
+    .LinkerOptions = ' -shared'
+]
+
+.PlatformRule_Linux_ConsoleApp =
+[
+    .Requires = { 'Linux', 'Step-Link', 'ConsoleApp' }
+    .LinkerOptions = ' -pie'
+]
+
+.PlatformRule_Linux_WindowedApp =
+[
+    .Requires = { 'Linux', 'Step-Link', 'WindowedApp' }
+    .LinkerOptions = ' -pie'
+]
+
 .Platform_Linux_x64 =
 [
     .PlatformSystem = 'Linux'
@@ -7,11 +32,16 @@
     .PlatformRequiredSDKs = {
         'SDK-Linux'
     }
-    .PlatformSupportedToolchains = {
-        'clang-9.0.0'
-        'clang-10.0.0'
-        'clang-11.0.0'
-        'clang-12.0.0'
+    .PlatformSupportedToolchainFamilies = {
+        'clang'
+        'gcc'
+    }
+
+    .PlatformRules = {
+        .PlatformRule_Linux_StaticLib
+        .PlatformRule_Linux_SharedLib
+        .PlatformRule_Linux_ConsoleApp
+        .PlatformRule_Linux_WindowedApp
     }
 
     .PlatformExtensions =
@@ -34,6 +64,7 @@
         .LinkerOptions_ObjectList = ''
     ]
 ]
+
 
 // Platform options depending on the given toolchain
 .ToolchainProperties_clang_x64_900_Linux_x64 =

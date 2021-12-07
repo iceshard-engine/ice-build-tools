@@ -1,0 +1,9 @@
+.DebugTags = { }
+
+#if exists(ICE_BUILD_TOOLS_DEBUG)
+{
+    #import ICE_BUILD_TOOLS_DEBUG
+
+    ^DebugTags = { .ICE_BUILD_TOOLS_DEBUG }
+}
+#endif
