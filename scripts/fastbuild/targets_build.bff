@@ -85,7 +85,7 @@ ForEach( .Pipeline in .AvailablePipelines )
             {
                 If ( .Requirement not in .AvailableTags )
                 {
-                    Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($ConfigPlatform$-$ConfigName$-$ConfigToolchain$)" )
+                    Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
                     ^ProjectRequirementsSatisfied = false
                 }
             }
