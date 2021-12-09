@@ -67,6 +67,7 @@ ForEach( .Pipeline in .AvailablePipelines )
     Using( .Pipeline )
 
     .PipelineTargets = { }
+    .PipelineEnabledProjects = { }
     .PipelineProperties_Public = []
 
     ForEach( .Project in .ProjectsResolved )
@@ -94,6 +95,8 @@ ForEach( .Pipeline in .AvailablePipelines )
         // Build targets for the project
         If ( .ProjectRequirementsSatisfied )
         {
+            ^PipelineEnabledProjects + .ProjectName
+
             .AvailableTags
                 + .ProjectTags
                 + .ProjectKind
@@ -394,8 +397,11 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     ForEach( .Dependency in .'$Step$' )
                     {
-                        .DependencyTargetName = '$Dependency$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
-                        ^StepDependencies + .DependencyTargetName
+                        If ( .Dependency in .PipelineEnabledProjects )
+                        {
+                            .DependencyTargetName = '$Dependency$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                            ^StepDependencies + .DependencyTargetName
+                        }
                     }
                 }
 

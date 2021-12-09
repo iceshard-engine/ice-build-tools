@@ -149,6 +149,21 @@
                 Using( .PipelinePlatformInfo )
                 Using( .PipelineOutputExtensions )
 
+                // Check if we the project has all requirements covered
+                .ProjectRequirementsSatisfied = true
+                {
+                    .AvailableTags = .SDKNames
+                        + .PipelineTags
+
+                    ForEach( .Requirement in .ProjectRequires )
+                    {
+                        If ( .Requirement not in .AvailableTags )
+                        {
+                            ^ProjectRequirementsSatisfied = false
+                        }
+                    }
+                }
+
                 .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
 
                 .OutDirName = .'KindOutDir_$ProjectKind$'
@@ -163,20 +178,27 @@
                 [
                     .Config = '$PipelineConfig$$VSSuffix$'
                     .Platform = .PlatformVSName
-
-                    .Target = .'CompileTarget_$ProjectTarget$'
-
-                    .Output = .TargetOutputName
-                    .OutputDirectory = .TargetOutputDirectory
-                    .IntermediateDirectory = .TargetIntermediateDirectory
-                    .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
-
-                    .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
-                    .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
-
-                    .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
-                    .LocalDebuggerWorkingDirectory = .ProjectDebugDir
                 ]
+
+                If ( .ProjectRequirementsSatisfied )
+                {
+                    .ProjectConfig_Extension =
+                    [
+                        .Target = .'CompileTarget_$ProjectTarget$'
+
+                        .Output = .TargetOutputName
+                        .OutputDirectory = .TargetOutputDirectory
+                        .IntermediateDirectory = .TargetIntermediateDirectory
+                        .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
+
+                        .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
+                        .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
+
+                        .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
+                        .LocalDebuggerWorkingDirectory = .ProjectDebugDir
+                    ]
+                    ^ProjectConfig + .ProjectConfig_Extension
+                }
 
                 If ( .ProjectKind == .Kind_HeaderOnly )
                 {
