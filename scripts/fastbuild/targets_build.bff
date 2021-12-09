@@ -16,12 +16,12 @@
 .TaskType_Compile = 'Compile'
 .TaskType_Link = 'Link'
 .TaskType_Test = 'Test'
-.TaskType_Deploy = 'Deploy'
+.TaskType_Exec = 'Exec'
 .TaskType_ValidList = {
     .TaskType_Compile,
     .TaskType_Link
     .TaskType_Test
-    .TaskType_Deploy
+    .TaskType_Exec
 }
 
 .Piepline_CompileVSTargets =
@@ -52,6 +52,7 @@ ForEach( .GlobalRule in .GlobalRules )
             .BuildOptions = ^BuildOptions
             .Libs = ^Libs
             .LibDirs = ^LibDirs
+            .LinkOptions = ^LinkOptions
         ]
     ]
     ^Final_GlobalRules + .Final_GlobalRule
@@ -372,10 +373,10 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .OutDirName = .'KindOutDir_$ProjectKind$'
                 .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                 .TargetOutputName = "$ProjectName$$TargetExtension$"
                 .TargetList = { }
 
@@ -503,7 +504,6 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                         If( .ProjectKind == .Kind_StaticLib )
                         {
-                            // TODO: Special case clean up?
                             .Const_LinkOptions = 'LinkOptions'
                             If ( .Var == .Const_LinkOptions )
                             {
@@ -540,16 +540,33 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 .PreBuildDependencies = .StepDependencies
                 .PreviousTargets = .'Step_Targets_$Step_Previous$'
+
                 .CurrentTargets = { }
+                .CurrentTargets_Unused = { }
 
                 .TaskIdx = 0
                 .TaskVSTargetSaved = false
 
+                .AllowUnityBuilds = true
+
                 ForEach( .Task in .'$Step$_Tasks' )
                 {
                     .Type = 'Unknown'
+                    .TargetsList = 'CurrentTargets'
+
+                    .TaskUseTargets = true
 
                     Using( .Task )
+
+                    If ( !.TaskUseTargets )
+                    {
+                        ^TargetsList + '_Unused'
+                    }
+
+                    If ( !.PipelineAllowUnityBuilds )
+                    {
+                        ^AllowUnityBuilds = false
+                    }
 
                     If ( !.ProjectAllowUnityBuilds )
                     {
@@ -594,7 +611,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                             }
 
-                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                            ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
 
                             If ( !.TaskVSTargetSaved )
                             {
@@ -619,7 +636,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 .Targets = .PreviousTargets
                             }
 
-                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                            ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
                         }
 
                         // Static Library target
@@ -637,7 +654,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                             }
 
-                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                            ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
                         }
 
                         // Shared Library target
@@ -657,7 +674,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                             }
 
-                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                            ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
                         }
 
                         // Executable targets
@@ -677,7 +694,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                             }
 
-                            ^CurrentTargets + '$ProjectTarget$-$TaskIdx$-$Step$'
+                            ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
                         }
                     }
 
@@ -700,16 +717,17 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     {
                                     }
 
-                                    ^CurrentTargets + '$PreviousTarget$-test'
+                                    ^'$TargetsList$' + '$PreviousTarget$-test'
                                 }
                             }
                         }
                     }
 
-                    If ( .Type == .TaskType_Deploy )
+                    If ( .Type == .TaskType_Exec )
                     {
                         If ( .ProjectKind != .Kind_HeaderOnly )
                         {
+                            // TODO: Make this more generic, as this is explicitly a 'Deploy' step but should be just used for executing various tools
                             ForEach( .DeployEntry in .ProjectStepDeploys )
                             {
                                 .Arguments = ''
@@ -720,7 +738,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                                 If ( .Executable != .EmptyString )
                                 {
-                                    .PreBuildDependencies = .CurrentTargets
+                                    .PreBuildDependencies = .CurrentTargets + .CurrentTargets_Unused
 
                                     Exec( '$ProjectTarget$-$Step$-deploy-$DeployName$' )
                                     {
@@ -739,9 +757,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                         }
                                     }
 
-                                    ^CurrentTargets = {
-                                        '$ProjectTarget$-$Step$-deploy-$DeployName$'
-                                    }
+                                    ^'$TargetsList$' = '$ProjectTarget$-$Step$-deploy-$DeployName$'
                                 }
                             }
                         }
@@ -754,7 +770,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                     .HasTargets = false
                     .HasDependencies = false
 
-                    ForEach ( ._ in .CurrentTargets )
+                    .AllCurrentTargets = .CurrentTargets + .CurrentTargets_Unused
+
+                    ForEach ( ._ in .AllCurrentTargets )
                     {
                         ^HasTargets = true
                     }
@@ -767,7 +785,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         Alias( '$ProjectTarget$-$Step$' )
                         {
-                            .Targets = .CurrentTargets
+                            .Targets = .AllCurrentTargets
                         }
 
                         ^ProjectSubTargets + '$ProjectTarget$-$Step$'

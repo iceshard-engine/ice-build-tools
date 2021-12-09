@@ -154,8 +154,8 @@
                 .OutDirName = .'KindOutDir_$ProjectKind$'
                 .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                 .TargetOutputName = "$ProjectName$$TargetExtension$"
                 .TargetList = { }
 
