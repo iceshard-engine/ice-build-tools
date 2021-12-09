@@ -29,6 +29,7 @@
     .PipelineName = 'x64'
     .PipelinePlatform = 'Windows'
     .PipelineToolchain = 'msvc-x64-v142'
+    .PipelineAllowUnityBuilds = false
 
     .PipelineSteps = {
         'Build'
