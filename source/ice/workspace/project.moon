@@ -196,6 +196,10 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
                         { 'Libs', sdk.libs }
                     }
 
+                    gen\line!
+                    for tool in *sdk.tools or { }
+                        gen\compiler tool
+
                 table.insert sdk_names, sdk.name
                 table.insert sdk_list, sdk.struct_name
 

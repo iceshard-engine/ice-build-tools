@@ -24,6 +24,7 @@ ForEach( .Project in .Projects )
         'private'
     }
     .VStudioPaths = {
+        'resource'
         'natvis'
         'public'
     } + .InputPaths
@@ -91,6 +92,10 @@ ForEach( .Project in .Projects )
             [
                 Using( .Properties )
                 Using( .Private )
+
+                .IncludeResDirs + {
+                    '$ProjectBaseDir$/resource'
+                }
 
                 .CopyModules = ^CopyModules
             ]

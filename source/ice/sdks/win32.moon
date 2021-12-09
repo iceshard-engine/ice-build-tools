@@ -33,6 +33,12 @@ class SDK_Win32 extends Locator
     locate: =>
         if os.iswindows
             if win_sdk = Windows\detect_win10_sdk!
+                resource_compiler = {
+                    name: 'win10-resource-compiler'
+                    executable: "#{win_sdk.directory}bin\\#{win_sdk.version}.0\\x64\\rc.exe"
+                    compiler_family: 'custom'
+                }
+
                 @\add_result {
                     tags: { 'windows', 'windows-10' }
                     name: 'SDK-Windows-10'
@@ -47,6 +53,10 @@ class SDK_Win32 extends Locator
                         "#{win_sdk.directory}Lib\\#{win_sdk.version}.0\\um\\x64"
                     }
                     libs: { }
+
+                    tools: {
+                        resource_compiler
+                    }
                 }
 
                 -- @\add_result {

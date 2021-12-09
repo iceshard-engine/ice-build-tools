@@ -9,37 +9,43 @@
     ]
     .FrontendFlag_IncludeDirs =
     [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = '/I"'
+        .FlagSuffix = '"'
+    ]
+    .FrontendFlag_IncludeResDirs =
+    [
         .FlagVariable = 'CompilerOptions'
         .FlagPrefix = '/I"'
         .FlagSuffix = '"'
     ]
     .FrontendFlag_BuildOptions =
     [
-        .FlagVariable = 'CompilerOptions'
+        .FlagVariable = 'IgnoredOptions'
         .FlagPrefix = ''
         .FlagSuffix = ''
     ]
     .FrontendFlag_Libs =
     [
-        .FlagVariable = 'LinkerOptions'
+        .FlagVariable = 'IgnoredOptions'
         .FlagPrefix = ''
         .FlagSuffix = ''
     ]
     .FrontendFlag_LibDirs =
     [
-        .FlagVariable = 'LinkerOptions'
+        .FlagVariable = 'IgnoredOptions'
         .FlagPrefix = ''
         .FlagSuffix = ''
     ]
     .FrontendFlag_LinkOptions =
     [
-        .FlagVariable = 'LinkerOptions'
+        .FlagVariable = 'IgnoredOptions'
         .FlagPrefix = ''
         .FlagSuffix = ''
     ]
 
     .FrontendProperties =
     [
-        .CompilerOptions + ' /nologo /c "%1" /Fo"%2"'
+        .CompilerOptions + ' /nologo /x /fo"%2"'
     ]
 ]

@@ -37,6 +37,7 @@
     .Modules = { }
     .Defines = { }
     .IncludeDirs = { }
+    .IncludeResDirs = { }
     .BuildOptions = { }
     .Libs = { }
     .LibDirs = { }
@@ -57,6 +58,8 @@
 .IncludeDirs = { }
 .BuildOptions = { }
 
+.IgnoredOptions = ''
+
 .SolutionItems = { }
 
 .EmptyProperties =
@@ -69,6 +72,7 @@
     // Compiler properties
     .Defines = { }
     .IncludeDirs = { }
+    .IncludeResDirs = { }
     .BuildOptions = { }
 
     // Linker properties

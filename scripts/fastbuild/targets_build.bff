@@ -365,8 +365,6 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 Using( .PipelineOutputExtensions )
                 Using( .PipelineToolchainInfo )
-                Using( .'CompilerFrontend_$ToolchainCompilerFamily$' )
-                Using( .FrontendProperties )
 
                 // Print( "Target: $ProjectTarget$" )
 
@@ -435,16 +433,6 @@ ForEach( .Pipeline in .AvailablePipelines )
                             ^ProcessedConanModules + .ConanModule
 
                             Using( .'ConanModule_$ConanModule$' )
-
-                            ForEach( .Var in .'ConanVariables_$ProjectKind$' )
-                            {
-                                Using( .'FrontendFlag_$Var$' )
-                                ForEach( .Value in .'$Var$' )
-                                {
-                                    ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
-                                }
-                            }
-
                             If ( .CopyModules )
                             {
 
@@ -479,43 +467,10 @@ ForEach( .Pipeline in .AvailablePipelines )
                     }
                 }
 
-                // Store all libraries that should be linked in the final executable 'link step'
-                .LibraryTargets = { }
-
                 // Apply link step all flags
                 //--------------------------------------------------------------------------
                 {
                     Using( .FinalProperties )
-
-                    ^LibraryTargets = .LibraryTargets
-
-                    .Variables = {
-                        'IncludeDirs'
-                        'Defines'
-                        'BuildOptions'
-                        'LibDirs'
-                        'Libs'
-                        'LinkOptions'
-                    }
-
-                    ForEach( .Var in .Variables )
-                    {
-                        Using( .'FrontendFlag_$Var$' )
-
-                        If( .ProjectKind == .Kind_StaticLib )
-                        {
-                            .Const_LinkOptions = 'LinkOptions'
-                            If ( .Var == .Const_LinkOptions )
-                            {
-                                ^FlagVariable = 'LibrarianOptions'
-                            }
-                        }
-
-                        ForEach( .Value in .'$Var$' )
-                        {
-                            ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
-                        }
-                    }
 
                     If ( .ProjectKind == .Kind_HeaderOnly )
                     {
@@ -554,7 +509,12 @@ ForEach( .Pipeline in .AvailablePipelines )
                     .Type = 'Unknown'
                     .TargetsList = 'CurrentTargets'
 
+                    .TaskCompiler = .ToolchainCompiler
+                    .TaskCompilerFamily = .ToolchainCompilerFamily
                     .TaskUseTargets = true
+                    .TaskInputAllowNoFiles = false
+                    .TaskInputPattern = { '.cpp', '.cxx' }
+                    .TaskCustomOptions = ''
 
                     Using( .Task )
 
@@ -581,12 +541,53 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     If( .Type == .TaskType_Compile )
                     {
+                        Using( .FinalProperties )
+                        Using( .'CompilerFrontend_$TaskCompilerFamily$' )
+                        Using( .FrontendProperties )
+
+                        {
+                            .Variables = {
+                                'IncludeDirs'
+                                'IncludeResDirs'
+                                'Defines'
+                                'BuildOptions'
+                            }
+
+                            Using( .'ConanModules_$PipelineConfigConan$' )
+                            ForEach( .ConanModule in .ProcessedConanModules )
+                            {
+                                Using( .'ConanModule_$ConanModule$' )
+
+                                ForEach( .Var in .'ConanVariables_$ProjectKind$' )
+                                {
+                                    Using( .'FrontendFlag_$Var$' )
+                                    ForEach( .Value in .'$Var$' )
+                                    {
+                                        ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                                    }
+                                }
+                            }
+
+                            ForEach( .Var in .Variables )
+                            {
+                                Using( .'FrontendFlag_$Var$' )
+
+                                ForEach( .Value in .'$Var$' )
+                                {
+                                    ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                                }
+                            }
+                        }
+
                         If ( .ProjectKind != .Kind_HeaderOnly )
                         {
-                            .Compiler = .ToolchainCompiler
+                            .Compiler = .TaskCompiler
                             .CompilerOutputPath = .TargetIntermediateDirectory
                             .CompilerInputUnity = { }
                             .CompilerInputPath = .ProjectSourcePaths
+                            .CompilerInputPattern = .TaskInputPattern
+                            .CompilerInputAllowNoFiles = .TaskInputAllowNoFiles
+                            .CompilerOptions + .TaskCustomOptions
 
                             // Unity files
                             //--------------------------------------------------------------------------
@@ -595,7 +596,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 Unity( '$ProjectTarget$-$TaskIdx$-unity' )
                                 {
                                     .UnityInputPath = .ProjectSourcePaths
-                                    .UnityInputPattern = { '*.c', '*.cpp', '*.cxx' }
+                                    .UnityInputPattern = .CompilerInputPattern
                                     .UnityOutputPath = .TargetIntermediateDirectory
                                     .UnityOutputPattern = 'unity_$ProjectName$_*.cxx'
                                 }
@@ -628,6 +629,54 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     If( .Type == .TaskType_Link )
                     {
+                        .LibraryTargets = { }
+
+                        Using( .FinalProperties )
+                        Using( .'CompilerFrontend_$TaskCompilerFamily$' )
+                        Using( .FrontendProperties )
+
+                        {
+                            .Variables = {
+                                'LibDirs'
+                                'Libs'
+                                'LinkOptions'
+                            }
+
+                            Using( .'ConanModules_$PipelineConfigConan$' )
+                            ForEach( .ConanModule in .ProcessedConanModules )
+                            {
+                                Using( .'ConanModule_$ConanModule$' )
+
+                                ForEach( .Var in .'ConanVariables_$ProjectKind$' )
+                                {
+                                    Using( .'FrontendFlag_$Var$' )
+                                    ForEach( .Value in .'$Var$' )
+                                    {
+                                        ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                                    }
+                                }
+                            }
+
+                            ForEach( .Var in .Variables )
+                            {
+                                Using( .'FrontendFlag_$Var$' )
+
+                                If( .ProjectKind == .Kind_StaticLib )
+                                {
+                                    .Const_LinkOptions = 'LinkOptions'
+                                    If ( .Var == .Const_LinkOptions )
+                                    {
+                                        ^FlagVariable = 'LibrarianOptions'
+                                    }
+                                }
+
+                                ForEach( .Value in .'$Var$' )
+                                {
+                                    ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                                }
+                            }
+                        }
+
                         // Object List target
                         If ( .ProjectKind == .Kind_ObjectList )
                         {
