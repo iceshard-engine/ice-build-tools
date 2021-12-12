@@ -75,6 +75,30 @@
     ]
 ]
 
+
+.Pipeline_Linux_x64 =
+[
+    .PipelineName = 'x64'
+    .PipelinePlatform = 'Linux'
+    .PipelineToolchain = 'gcc-11.0.0'
+    .PipelineAllowUnityBuilds = false
+
+    .PipelineSteps = {
+        'Build'
+        'Link'
+    }
+
+    .PipelineRequires = {
+        'Unix'
+    }
+
+    .PipelineTasks = {
+        .Task_BuildSources
+        // .Task_LinkExecutable // Still heavy WIP
+    }
+]
+
 .BuildPipelines = {
     .Pipeline_Windows_x64
+    .Pipeline_Linux_x64
 }

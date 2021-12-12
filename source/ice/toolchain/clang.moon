@@ -142,7 +142,7 @@ detect_compilers = (ver_major) ->
             ar_path: Where\path 'ar'
         }
     }
-    return binaries[tostring ver_major]
+    return binaries[tostring ver_major] or { }
 
 class Clang
     @detect: (conan_profile) =>

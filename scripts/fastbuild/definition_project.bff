@@ -54,6 +54,8 @@ ForEach( .Project in .Projects )
         .ProjectKind = .Kind
         .ProjectTags = .Tags
         .ProjectBaseDir = .BaseDir
+
+        // #TODO (#4): https://github.com/iceshard-engine/ice-build-tools/issues/4
         .ProjectRequires = .Requires
         .ProjectGroup = ^Group
         .ProjectDebugDir = .DebugDir

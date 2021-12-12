@@ -3,7 +3,7 @@ import Locator from require 'ice.locator'
 import VsMSVC from require 'ice.toolchain.vs_msvc'
 import VsClang from require 'ice.toolchain.vs_clang'
 import Clang from require 'ice.toolchain.clang'
-
+import Gcc from require 'ice.toolchain.gcc'
 
 import SDK_Vulkan from require 'ice.sdks.vulkan'
 import SDK_DX11 from require 'ice.sdks.dx11'
@@ -137,7 +137,9 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
         table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
 
     if os.isunix
-        clang_toolchains = Clang\detect profile
+        -- #TODO (#6): https://github.com/iceshard-engine/ice-build-tools/issues/6
+        -- clang_toolchains = Clang\detect profile
+        clang_toolchains = Gcc\detect profile
 
         table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
 

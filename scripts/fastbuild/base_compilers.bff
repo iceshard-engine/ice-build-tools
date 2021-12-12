@@ -2,3 +2,4 @@
 #include "compilers/winrc.bff"
 #include "compilers/clang_cl.bff"
 #include "compilers/clang.bff"
+#include "compilers/gcc.bff"

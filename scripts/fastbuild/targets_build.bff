@@ -221,29 +221,52 @@ ForEach( .Pipeline in .AvailablePipelines )
                         }
 
                         Using( .EmptyProperties )
-                        Using( .PipelineProperties_Public )
 
                         .RuleStepProject_FinalProperties_Public =
                         [
                             Using( .RuleProperties_Public )
 
-                            // Gather public uses
+                            // Create empty dependency property structs
+                            .PipelineProperties_Public_Empty = []
                             {
-                                .UsesUnique = .Uses
                                 ForEach( .Dependency in .Uses )
                                 {
                                     .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
-                                    Using( .'$DependencyStruct$' )
+                                    .PipelineProperties_Public_Empty_Extension = 
+                                    [
+                                        .'$DependencyStruct$' = 
+                                        [
+                                            Using( .EmptyProperties )
+                                            .HasLinkTarget = false
+                                            ; .CopyModules = false
+                                        ]
+                                    ]
+                                    ^PipelineProperties_Public_Empty + .PipelineProperties_Public_Empty_Extension
+                                }
+                            }
 
-                                    ForEach( .Value in .Uses )
+                            {
+                                Using( .PipelineProperties_Public_Empty )
+                                Using( .PipelineProperties_Public )
+
+                                // Gather public uses
+                                {
+                                    .UsesUnique = .Uses
+                                    ForEach( .Dependency in .Uses )
                                     {
-                                        If ( .Value not in .UsesUnique )
+                                        .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+                                        Using( .'$DependencyStruct$' )
+
+                                        ForEach( .Value in .Uses )
                                         {
-                                            ^UsesUnique + .Value
+                                            If ( .Value not in .UsesUnique )
+                                            {
+                                                ^UsesUnique + .Value
+                                            }
                                         }
                                     }
+                                    ^Uses = .UsesUnique
                                 }
-                                ^Uses = .UsesUnique
                             }
                         ]
 
@@ -256,23 +279,47 @@ ForEach( .Pipeline in .AvailablePipelines )
                         [
                             Using( .RuleProperties_Private )
 
-                            // Gather public uses
+                            // Create empty dependency property structs
+                            .PipelineProperties_Private_Empty = []
                             {
-                                .UsesUnique = .Uses
                                 ForEach( .Dependency in .Uses )
                                 {
                                     .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
-                                    Using( .'$DependencyStruct$' )
+                                    .PipelineProperties_Private_Empty_Extension = 
+                                    [
+                                        .'$DependencyStruct$' = 
+                                        [
+                                            Using( .EmptyProperties )
+                                            .HasLinkTarget = false
+                                            ; .CopyModules = false
+                                        ]
+                                    ]
+                                    ^PipelineProperties_Private_Empty + .PipelineProperties_Private_Empty_Extension
+                                }
+                            }
 
-                                    ForEach( .Value in .Uses )
+                            {
+                                Using( .PipelineProperties_Private_Empty )
+                                Using( .PipelineProperties_Public )
+
+                                // Gather public uses
+                                {
+                                    .UsesUnique = .Uses
+                                    ForEach( .Dependency in .Uses )
                                     {
-                                        If ( .Value not in .UsesUnique )
+                                        .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+                                        Using( .'$DependencyStruct$' )
+
+                                        ForEach( .Value in .Uses )
                                         {
-                                            ^UsesUnique + .Value
+                                            If ( .Value not in .UsesUnique )
+                                            {
+                                                ^UsesUnique + .Value
+                                            }
                                         }
                                     }
+                                    ^Uses = .UsesUnique
                                 }
-                                ^Uses = .UsesUnique
                             }
                         ]
 
@@ -285,28 +332,52 @@ ForEach( .Pipeline in .AvailablePipelines )
                         [
                             Using( .RuleFinalCombinedProperties )
 
+                            // Create empty dependency property structs
+                            .PipelineProperties_Private_Empty = []
+                            {
+                                ForEach( .Dependency in .Uses )
+                                {
+                                    .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
+                                    .PipelineProperties_Private_Empty_Extension = 
+                                    [
+                                        .'$DependencyStruct$' = 
+                                        [
+                                            Using( .EmptyProperties )
+                                            .HasLinkTarget = false
+                                            ; .CopyModules = false
+                                        ]
+                                    ]
+                                    ^PipelineProperties_Private_Empty + .PipelineProperties_Private_Empty_Extension
+                                }
+                            }
+
                             .LibraryTargets = { }
 
-                            ForEach( .Dependency in .Uses )
                             {
-                                If ( .Dependency not in .GatheredDependencies )
+                                Using( .PipelineProperties_Private_Empty )
+                                Using( .PipelineProperties_Public )
+
+                                ForEach( .Dependency in .Uses )
                                 {
-                                    ^GatheredDependencies + .Dependency
-                                    .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
-
-                                    // Print( "$ProjectName$: Gathering $Dependency$..." )
-
-                                    ForEach( .Property in .GatheredProperties )
+                                    If ( .Dependency not in .GatheredDependencies )
                                     {
-                                        Using( .'$DependencyStruct$' )
-                                        ^'$Property$' + .'$Property$'
-                                    }
+                                        ^GatheredDependencies + .Dependency
+                                        .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
 
-                                    {
-                                        Using( .'$DependencyStruct$' )
-                                        If ( .HasLinkTarget )
+                                        // Print( "$ProjectName$: Gathering $Dependency$..." )
+
+                                        ForEach( .Property in .GatheredProperties )
                                         {
-                                            ^LibraryTargets + .Dependency
+                                            Using( .'$DependencyStruct$' )
+                                            ^'$Property$' + .'$Property$'
+                                        }
+
+                                        {
+                                            Using( .'$DependencyStruct$' )
+                                            If ( .HasLinkTarget )
+                                            {
+                                                ^LibraryTargets + .Dependency
+                                            }
                                         }
                                     }
                                 }
@@ -329,7 +400,6 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 .DeployEntry =
                                 [
                                     .DeployName = .RuleName
-                                    Print( .DeployName )
                                     Using( .RuleDeploy )
                                 ]
                                 ^ProjectStepDeploys + .DeployEntry
@@ -348,6 +418,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 } // ForEach( .Rule in .ProjectPipelineConfigRules )
 
+                // Update the public struct of the project
                 {
                     .PipelineProperties_PublicExtension =
                     [
@@ -363,8 +434,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                         ]
                     ]
                     ^PipelineProperties_Public + .PipelineProperties_PublicExtension
-
-                } // ForEach( .Rule in .ProjectRules )
+                }
 
                 Using( .PipelineOutputExtensions )
                 Using( .PipelineToolchainInfo )
@@ -635,8 +705,6 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     If( .Type == .TaskType_Link )
                     {
-                        .LibraryTargets = { }
-
                         Using( .FinalProperties )
                         Using( .'CompilerFrontend_$TaskCompilerFamily$' )
                         Using( .FrontendProperties )

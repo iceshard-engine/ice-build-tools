@@ -1,33 +1,53 @@
 
 
+.PlatformRule_Linux_PIC =
+[
+    .Name = 'Linux-StaticLib-LinkOptions'
+    .Requires = { 'Linux', 'Step-Build' }
+    .BuildOptions = { 
+        '-fPIC'
+    }
+]
+
 .PlatformRule_Linux_StaticLib =
 [
+    .Name = 'Linux-StaticLib-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'StaticLib' }
-    .LinkerOptions = ' -static'
+    .LinkOptions = { }
 ]
 
 .PlatformRule_Linux_SharedLib =
 [
+    .Name = 'Linux-SharedLib-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'SharedLib' }
-    .LinkerOptions = ' -shared'
+    .LinkOptions = { 
+        '-shared'
+    }
 ]
 
 .PlatformRule_Linux_ConsoleApp =
 [
+    .Name = 'Linux-App-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'ConsoleApp' }
-    .LinkerOptions = ' -pie'
+    .LinkOptions = { 
+        '-pie'
+    }
 ]
 
 .PlatformRule_Linux_WindowedApp =
 [
+    .Name = 'Linux-App-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'WindowedApp' }
-    .LinkerOptions = ' -pie'
+    .LinkOptions = { 
+        '-pie'
+    }
 ]
 
 .Platform_Linux_x64 =
 [
     .PlatformSystem = 'Linux'
     .PlatformArchitecture = 'x64'
+    .PlatformTags = { 'Unix', 'Linux' }
 
     .PlatformRequiredSDKs = {
         'SDK-Linux'
@@ -38,10 +58,11 @@
     }
 
     .PlatformRules = {
-        .PlatformRule_Linux_StaticLib
+        .PlatformRule_Linux_PIC
+        ; .PlatformRule_Linux_StaticLib
         .PlatformRule_Linux_SharedLib
-        .PlatformRule_Linux_ConsoleApp
-        .PlatformRule_Linux_WindowedApp
+        ; .PlatformRule_Linux_ConsoleApp
+        ; .PlatformRule_Linux_WindowedApp
     }
 
     .PlatformExtensions =
@@ -57,47 +78,10 @@
     .PlatformOptions =
     [
         .LinkerOptions_StaticLib = ''
-        .LinkerOptions_SharedLib = ' -shared'
+        .LinkerOptions_SharedLib = ''
         .LinkerOptions_ConsoleApp = ''
         .LinkerOptions_WindowedApp = ''
         .LinkerOptions_HeaderOnly = ''
         .LinkerOptions_ObjectList = ''
     ]
-]
-
-
-// Platform options depending on the given toolchain
-.ToolchainProperties_clang_x64_900_Linux_x64 =
-[
-    .LinkerOptions_StaticLib = ' -static'
-    .LinkerOptions_SharedLib = ' -shared'
-    .LinkerOptions_ConsoleApp = ' -pie'
-    .LinkerOptions_WindowedApp = ' -pie'
-    .LinkerOptions_HeaderOnly = ''
-    .LinkerOptions_ObjectList = ''
-
-    .CompilerOptions
-        + ' -stdlib=libc++'
-        + ' -fPIC'
-
-    .LinkerOptions
-        + ''
-    .LibrarianOptions
-        + ''
-]
-
-.ToolchainProperties_clang_x64_1000_Linux_x64 =
-[
-    Using( .ToolchainProperties_clang_x64_900_Linux_x64 )
-]
-
-.ToolchainProperties_clang_x64_1100_Linux_x64 =
-[
-    Using( .ToolchainProperties_clang_x64_1000_Linux_x64 )
-]
-
-
-.ToolchainProperties_clang_x64_1200_Linux_x64 =
-[
-    Using( .ToolchainProperties_clang_x64_1100_Linux_x64 )
 ]
