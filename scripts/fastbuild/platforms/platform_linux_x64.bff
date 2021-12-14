@@ -4,7 +4,7 @@
 [
     .Name = 'Linux-StaticLib-LinkOptions'
     .Requires = { 'Linux', 'Step-Build' }
-    .BuildOptions = { 
+    .BuildOptions = {
         '-fPIC'
     }
 ]
@@ -20,7 +20,7 @@
 [
     .Name = 'Linux-SharedLib-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'SharedLib' }
-    .LinkOptions = { 
+    .LinkOptions = {
         '-shared'
     }
 ]
@@ -29,7 +29,7 @@
 [
     .Name = 'Linux-App-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'ConsoleApp' }
-    .LinkOptions = { 
+    .LinkOptions = {
         '-pie'
     }
 ]
@@ -38,7 +38,7 @@
 [
     .Name = 'Linux-App-LinkOptions'
     .Requires = { 'Linux', 'Step-Link', 'WindowedApp' }
-    .LinkOptions = { 
+    .LinkOptions = {
         '-pie'
     }
 ]
@@ -47,7 +47,6 @@
 [
     .PlatformSystem = 'Linux'
     .PlatformArchitecture = 'x64'
-    .PlatformTags = { 'Unix', 'Linux' }
 
     .PlatformRequiredSDKs = {
         'SDK-Linux'

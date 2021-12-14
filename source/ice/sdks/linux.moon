@@ -6,7 +6,7 @@ class SDK_Linux extends Locator
     locate: =>
         if os.isunix
             @\add_result {
-                tags: { 'linux', 'unix' }
+                tags: { 'Linux', 'Unix', 'POSIX' }
                 name: 'SDK-Linux'
                 struct_name: 'SDK_Linux'
                 includedirs: { }

@@ -40,7 +40,7 @@ class SDK_Win32 extends Locator
                 }
 
                 @\add_result {
-                    tags: { 'windows', 'windows-10' }
+                    tags: { 'Windows', 'Windows-10', 'DesktopApp' }
                     name: 'SDK-Windows-10'
                     struct_name: 'SDK_Windows_10'
                     includedirs: {

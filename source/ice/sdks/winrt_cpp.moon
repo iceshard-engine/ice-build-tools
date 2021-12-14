@@ -10,7 +10,7 @@ class SDK_Cpp_WinRT extends Locator
 
             if win_sdk and win_sdk_winrt
                 @\add_result {
-                    tags: { 'windows', 'windows-10', 'winrt' }
+                    tags: { 'Windows', 'Windows-10', 'WinRT', 'StoreApp' }
                     name: 'SDK-Windows-10-CXX-WinRT'
                     struct_name: 'SDK_Windows_10_CXX_WinRT'
                     includedirs: {

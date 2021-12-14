@@ -48,12 +48,6 @@
     [
         .CompilerOptions + ' -c "%1" -o "%2" -g'
         .LinkerOptions + ' -Wl,--start-group "%1" -Wl,--end-group -o "%2"'
-            // #TODO (#5): https://github.com/iceshard-engine/ice-build-tools/issues/5
-            + ' -lc'
-            + ' -lm'
-            + ' -lstdc++'
-            + ' -lpthread'
-
         .LibrarianOptions + 'rcs "%2" %1'
     ]
 ]

@@ -13,9 +13,11 @@ ForEach( .PlatformName in .PlatformNames, .Platform in .PlatformList )
     Using( .Platform )
 
     .PlatformAvailable = true
+    .PlatformSDKInfo = []
+
     ForEach ( .Requirement in .PlatformRequiredSDKs )
     {
-        If ( .Requirement not in .SDKNames)
+        If ( .Requirement not in .PlatformSDKNames)
         {
             ^PlatformAvailable = false
         }
@@ -23,7 +25,25 @@ ForEach( .PlatformName in .PlatformNames, .Platform in .PlatformList )
 
     If ( .PlatformAvailable )
     {
-        ^AvailablePlatforms + .Platform
+        .PlatformTags = { }
+        {
+            ForEach( .PlatformSDKName in .PlatformSDKNames, .PlatformSDK in .PlatformSDKList )
+            {
+                If ( .PlatformSDKName in .PlatformRequiredSDKs )
+                {
+                    Using( .PlatformSDK )
+                    ^PlatformTags + .Tags
+                }
+            }
+        }
+
+        .Plaform_Extended =
+        [
+            Using( .Platform )
+            .PlatformTags = .PlatformTags
+        ]
+
+        ^AvailablePlatforms + .Plaform_Extended
         ^AvailablePlatformsNames + .PlatformName
     }
 }
