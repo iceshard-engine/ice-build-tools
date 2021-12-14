@@ -82,6 +82,8 @@ ForEach( .Pipeline in .AvailablePipelines )
         // Check if we the project has all requirements covered
         .ProjectRequirementsSatisfied = true
         {
+            .AvailableTags + .PipelineEnabledProjects
+
             ForEach( .Requirement in .ProjectRequires )
             {
                 If ( .Requirement not in .AvailableTags )
@@ -232,9 +234,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 ForEach( .Dependency in .Uses )
                                 {
                                     .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
-                                    .PipelineProperties_Public_Empty_Extension = 
+                                    .PipelineProperties_Public_Empty_Extension =
                                     [
-                                        .'$DependencyStruct$' = 
+                                        .'$DependencyStruct$' =
                                         [
                                             Using( .EmptyProperties )
                                             .HasLinkTarget = false
@@ -285,9 +287,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 ForEach( .Dependency in .Uses )
                                 {
                                     .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
-                                    .PipelineProperties_Private_Empty_Extension = 
+                                    .PipelineProperties_Private_Empty_Extension =
                                     [
-                                        .'$DependencyStruct$' = 
+                                        .'$DependencyStruct$' =
                                         [
                                             Using( .EmptyProperties )
                                             .HasLinkTarget = false
@@ -338,9 +340,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 ForEach( .Dependency in .Uses )
                                 {
                                     .DependencyStruct = 'PublicProperties_$Step$_$Dependency$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
-                                    .PipelineProperties_Private_Empty_Extension = 
+                                    .PipelineProperties_Private_Empty_Extension =
                                     [
-                                        .'$DependencyStruct$' = 
+                                        .'$DependencyStruct$' =
                                         [
                                             Using( .EmptyProperties )
                                             .HasLinkTarget = false
