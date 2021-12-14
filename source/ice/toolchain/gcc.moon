@@ -33,26 +33,28 @@ toolchain_definitions = {
     }
 }
 
-detect_compilers = (ver_major) ->
+detect_compilers = (ver_major, log_file) ->
     {
-        gcc_path: Where\path 'g++'
-        ar_path: Where\path 'ar'
+        gcc_path: Where\path 'g++', log_file
+        ar_path: Where\path 'ar', log_file
     }
 
 class Gcc
-    @detect: (conan_profile) =>
+    @detect: (conan_profile, log_file) =>
         toolchain_list = { }
 
         if conan_profile and conan_profile.compiler and conan_profile.compiler.version
             ver_major = conan_profile.compiler.version
 
-
-            compiler = detect_compilers ver_major
+            compiler = detect_compilers ver_major, log_file
             if compiler.gcc_path and compiler.ar_path
 
                 gcc_exe = compiler.gcc_path
                 gcc_ver_lines = ((Exec gcc_exe)\lines '--version')
                 gcc_major, gcc_minor, gcc_patch = (gcc_ver_lines[1]\gmatch "(%d+).(%d+).(%d+)")!
+
+                unless gcc_major == ver_major
+                    return
 
                 if toolchain_definition = toolchain_definitions[gcc_major]
                     table.insert toolchain_list, {

@@ -1,7 +1,7 @@
 import Where, Exec from require "ice.tools.exec"
 
 toolchain_definitions = {
-    '9.0.0': {
+    '9': {
         name: 'clang-9.0.0'
         struct_name: 'Toolchain_Clang_x64_900'
         compiler_name: 'compiler-clang-x64-900'
@@ -31,7 +31,7 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
-    '10.0.0': {
+    '10': {
         name: 'clang-10.0.0'
         struct_name: 'Toolchain_Clang_x64_1000'
         compiler_name: 'compiler-clang-x64-1000'
@@ -61,7 +61,7 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
-    '11.0.0': {
+    '11': {
         name: 'clang-11.0.0'
         struct_name: 'Toolchain_Clang_x64_1100'
         compiler_name: 'compiler-clang-x64-1100'
@@ -91,7 +91,7 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
-    '12.0.0': {
+    '12': {
         name: 'clang-12.0.0'
         struct_name: 'Toolchain_Clang_x64_1200'
         compiler_name: 'compiler-clang-x64-1200'
@@ -123,39 +123,39 @@ toolchain_definitions = {
     }
 }
 
-detect_compilers = (ver_major) ->
-    binaries = {
-        '9': {
-            clang_path: Where\path 'clang++-9'
-            ar_path: Where\path 'ar'
-        },
-        '10': {
-            clang_path: Where\path 'clang++-10'
-            ar_path: Where\path 'ar'
-        },
-        '11': {
-            clang_path: Where\path 'clang++-11'
-            ar_path: Where\path 'ar'
-        },
-        '12': {
-            clang_path: Where\path 'clang++-12'
-            ar_path: Where\path 'ar'
-        }
-    }
-    return binaries[tostring ver_major] or { }
+detect_compilers = (ver_major , log_file) ->
+    versions = { '9', '10', '11', '12', '13' }
+    results = { }
+
+    ar_path = Where\path 'ar', log_file
+    unless os.isfile ar_path
+        return { }
+
+    for ver in *versions
+        clang_path = Where\path "clang++#{ver}", log_file
+        if clang_path
+            results[ver] = {
+                :clang_path
+                :ar_path
+            }
+
+    return results[ver_major] or { }
 
 class Clang
-    @detect: (conan_profile) =>
+    @detect: (conan_profile, log_file) =>
         toolchain_list = { }
 
         if conan_profile and conan_profile.compiler and conan_profile.compiler.version
             ver_major = conan_profile.compiler.version
 
-            compiler = detect_compilers ver_major
+            compiler = detect_compilers ver_major, log_file
             if compiler.clang_path and compiler.ar_path
 
                 clang_exe = compiler.clang_path
-                clang_ver = (((Exec clang_exe)\lines '--version')[1]\gmatch "version (%d+.%d+.%d+)")!
+                clang_ver = (((Exec clang_exe)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
+
+                unless clang_ver == ver_major
+                    return
 
                 if toolchain_definition = toolchain_definitions[clang_ver]
                     table.insert toolchain_list, {

@@ -55,7 +55,11 @@ class FastBuildGenerator
         @\line_raw "#include \"#{path}\""
 
     line: (value) =>
-        @file\write "#{@indent}#{value or ''}\n"
+        if value
+            @file\write "#{@indent}#{value or ''}\n"
+        else
+            @file\write '\n'
+
 
     line_raw: (value) =>
         @file\write "#{value or ''}\n"

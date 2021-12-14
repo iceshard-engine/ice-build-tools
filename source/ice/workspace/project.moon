@@ -115,6 +115,9 @@ install_conan_dependencies = (profile, force_update) ->
                 build_policy:'missing'
 
 generate_fastbuild_variables_script = (profile, locators, output_dir, force_update) ->
+    log_file = 'build/compiler_detection.log'
+
+    os.remove log_file
 
     execute_locators = (locator_type, detected_info) ->
         for locator in *locators[locator_type]
@@ -137,11 +140,11 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
         table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
 
     if os.isunix
-        -- #TODO (#6): https://github.com/iceshard-engine/ice-build-tools/issues/6
-        -- clang_toolchains = Clang\detect profile
-        clang_toolchains = Gcc\detect profile
+        clang_toolchains = Clang\detect profile, log_file
+        gcc_toolchains = Gcc\detect profile, log_file
 
         table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
+        table.insert detected_info.toolchains, toolchain for toolchain in *gcc_toolchains or { }
 
 
     -- execute_locators Locator.Type.Toolchain, toolchains -- Currently unused

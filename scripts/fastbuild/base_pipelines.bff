@@ -94,7 +94,7 @@
 
     .PipelineTasks = {
         .Task_BuildSources
-        // .Task_LinkExecutable // Still heavy WIP
+        .Task_LinkExecutable
     }
 ]
 
