@@ -131,10 +131,18 @@ detect_compilers = (ver_major , log_file) ->
     unless os.isfile ar_path
         return { }
 
-    for ver in *versions
-        clang_path = Where\path "clang++#{ver}", log_file
+    for clang_ver in *versions
+        clang_path = Where\path "clang++#{clang_ver}", log_file
         if clang_path
-            results[ver] = {
+            clang_major, clang_minor, clang_patch = (((Exec clang_exe)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
+
+            results[clang_major] = {
+                ver: { major:clang_major, minor:clang_minor, patch:clang_patch }
+                :clang_path
+                :ar_path
+            }
+            results[clang_major .. '.' .. clang_minor] = {
+                ver: { major:clang_major, minor:clang_minor, patch:clang_patch }
                 :clang_path
                 :ar_path
             }
@@ -152,10 +160,7 @@ class Clang
             if compiler.clang_path and compiler.ar_path
 
                 clang_exe = compiler.clang_path
-                clang_ver = (((Exec clang_exe)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
-
-                unless clang_ver == ver_major
-                    return
+                clang_ver = compiler.ver.major
 
                 if toolchain_definition = toolchain_definitions[clang_ver]
                     table.insert toolchain_list, {

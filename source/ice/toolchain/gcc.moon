@@ -34,7 +34,7 @@ toolchain_definitions = {
 }
 
 detect_compilers = (ver_major, log_file) ->
-    execs = { 'g++', 'gcc' }
+    execs = { 'g++', 'gcc', 'gcc-11' }
     results = { }
 
     ar_path = Where\path 'ar', log_file
@@ -44,7 +44,16 @@ detect_compilers = (ver_major, log_file) ->
     for exec in *execs
         gcc_path = Where\path "#{exec}", log_file
         if gcc_path
-            results[ver_major] = {
+            gcc_ver_lines = ((Exec gcc_exe)\lines '--version')
+            gcc_major, gcc_minor, gcc_patch = (gcc_ver_lines[1]\gmatch "(%d+).(%d+).(%d+)")!
+
+            results[gcc_major] = {
+                ver: { major:gcc_major, minor:gcc_minor, patch:gcc_patch }
+                :gcc_path
+                :ar_path
+            }
+            results[gcc_major .. '.' .. gcc_minor] = {
+                ver: { major:gcc_major, minor:gcc_minor, patch:gcc_patch }
                 :gcc_path
                 :ar_path
             }
@@ -62,11 +71,7 @@ class Gcc
             if compiler.gcc_path and compiler.ar_path
 
                 gcc_exe = compiler.gcc_path
-                gcc_ver_lines = ((Exec gcc_exe)\lines '--version')
-                gcc_major, gcc_minor, gcc_patch = (gcc_ver_lines[1]\gmatch "(%d+).(%d+).(%d+)")!
-
-                unless gcc_major == ver_major
-                    return
+                gcc_major = compiler.ver.major
 
                 if toolchain_definition = toolchain_definitions[gcc_major]
                     table.insert toolchain_list, {
