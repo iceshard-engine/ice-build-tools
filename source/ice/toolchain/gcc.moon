@@ -34,10 +34,22 @@ toolchain_definitions = {
 }
 
 detect_compilers = (ver_major, log_file) ->
-    {
-        gcc_path: Where\path 'g++', log_file
-        ar_path: Where\path 'ar', log_file
-    }
+    execs = { 'g++', 'gcc' }
+    results = { }
+
+    ar_path = Where\path 'ar', log_file
+    unless os.isfile ar_path
+        return { }
+
+    for exec in *execs
+        gcc_path = Where\path "#{exec}", log_file
+        if gcc_path
+            results[ver_major] = {
+                :gcc_path
+                :ar_path
+            }
+
+    return results[ver_major] or { }
 
 class Gcc
     @detect: (conan_profile, log_file) =>
