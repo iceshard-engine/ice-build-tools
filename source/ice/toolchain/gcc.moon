@@ -44,7 +44,7 @@ detect_compilers = (ver_major, log_file) ->
     for exec in *execs
         gcc_path = Where\path "#{exec}", log_file
         if gcc_path
-            gcc_ver_lines = ((Exec gcc_exe)\lines '--version')
+            gcc_ver_lines = ((Exec gcc_path)\lines '--version')
             gcc_major, gcc_minor, gcc_patch = (gcc_ver_lines[1]\gmatch "(%d+).(%d+).(%d+)")!
 
             results[gcc_major] = {

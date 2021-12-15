@@ -134,7 +134,7 @@ detect_compilers = (ver_major , log_file) ->
     for clang_ver in *versions
         clang_path = Where\path "clang++#{clang_ver}", log_file
         if clang_path
-            clang_major, clang_minor, clang_patch = (((Exec clang_exe)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
+            clang_major, clang_minor, clang_patch = (((Exec clang_path)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
 
             results[clang_major] = {
                 ver: { major:clang_major, minor:clang_minor, patch:clang_patch }
