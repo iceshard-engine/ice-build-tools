@@ -1,0 +1,25 @@
+name: IceShard Conan Validation
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  validate-windows:
+    name: Validate (Windows)
+    uses: iceshard-engine/.github/.github/workflows/rw_conan_create_package.yaml@main
+    with:
+      host: windows-latest
+      conan_package: 'ice-build-tools/0.7.2@iceshard/stable'
+      conan_config_url: 'https://github.com/iceshard-engine/conan-config.git'
+      conan_options: '-s"build_type=Debug"'
+
+  validate-linux:
+    name: Validate (Linux)
+    uses: iceshard-engine/.github/.github/workflows/rw_conan_create_package.yaml@main
+    with:
+      host: ubuntu-latest
+      conan_package: 'ice-build-tools/0.7.2@iceshard/stable'
+      conan_config_url: 'https://github.com/iceshard-engine/conan-config.git'
+      conan_options: '-s"build_type=Debug"'
+      conan_profile: 'gcc-11.0-linux-x86_64'
