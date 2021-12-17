@@ -12,7 +12,7 @@ jobs:
       host: windows-latest
       conan_package: 'ice-build-tools/0.7.2@iceshard/stable'
       conan_config_url: 'https://github.com/iceshard-engine/conan-config.git'
-      conan_options: '-s"build_type=Debug"'
+      conan_options: '-s"build_type=Debug" --build=moonscript-installer'
 
   validate-linux:
     name: Validate (Linux)
@@ -21,5 +21,5 @@ jobs:
       host: ubuntu-latest
       conan_package: 'ice-build-tools/0.7.2@iceshard/stable'
       conan_config_url: 'https://github.com/iceshard-engine/conan-config.git'
-      conan_options: '-s"build_type=Debug"'
+      conan_options: '-s"build_type=Debug" --build=moonscript-installer'
       conan_profile: 'gcc-11.0-linux-x86_64'
