@@ -12,7 +12,6 @@ class IceBuildToolsConan(ConanFile):
     settings = "os"
     requires = "moonscript-installer/0.5.0@iceshard/stable"
 
-    # Additional exports
     exports_sources = [ "source/*", "scripts/*", "LICENSE" ]
 
     def package_id(self):
