@@ -1,4 +1,4 @@
-name: IceShard Conan Validation
+name: Validation
 
 on:
   push:
