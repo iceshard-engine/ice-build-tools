@@ -18,6 +18,8 @@
     .AllTestsProjectConfigs = { }
     .HasAnyConfig = false
 
+    Print( '[IBT] Creating vstudio targets...' )
+
     ForEach( .Pipeline in .AvailablePipelines )
     {
         .VSSuffix = ''
@@ -118,6 +120,7 @@
         }
 
         .SolutionBuildProject = { 'all-vcxproj' }
+        .PipelineAvailableProjects = [ ]
 
         ForEach( .Project in .ProjectsResolved )
         {
@@ -152,8 +155,14 @@
                 // Check if we the project has all requirements covered
                 .ProjectRequirementsSatisfied = true
                 {
+                    .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                    .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
+
+                    Using( .PipelineAvailableProjects )
+
                     .AvailableTags = .SDKNames
                         + .PipelineTags
+                        + .'PipelineAvailableProjects_$PipelineIdentifier$'
 
                     ForEach( .Requirement in .ProjectRequires )
                     {
@@ -182,6 +191,15 @@
 
                 If ( .ProjectRequirementsSatisfied )
                 {
+                    {
+                        .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                        .PipelineAvailableProjects_Extension =
+                        [
+                            .'PipelineAvailableProjects_$PipelineIdentifier$' = { .ProjectName }
+                        ]
+                        ^PipelineAvailableProjects + .PipelineAvailableProjects_Extension
+                    }
+
                     .ProjectConfig_Extension =
                     [
                         .Target = .'CompileTarget_$ProjectTarget$'
@@ -225,8 +243,6 @@
                             ^AdditionalOptions + '$Value$ '
                         }
                     ]
-
-                    Print( .ProjectConfig_Intellisense )
 
                     ^ProjectConfig + .ProjectConfig_Intellisense
                 }
@@ -294,4 +310,7 @@
             .SolutionOutput = '$WorkspaceRoot$/$UserSolutionName$'
         }
     }
+
+    Print( '[IBT] VStudio targets created.' )
+
 }
