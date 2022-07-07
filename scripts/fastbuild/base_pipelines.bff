@@ -80,7 +80,7 @@
 [
     .PipelineName = 'x64'
     .PipelinePlatform = 'Linux'
-    .PipelineToolchain = 'gcc-11.0.0'
+    .PipelineToolchain = 'gcc-12.0.0'
     .PipelineAllowUnityBuilds = false
 
     .PipelineSteps = {

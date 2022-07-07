@@ -31,10 +31,40 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
+    '12': {
+        name: 'gcc-12.0.0'
+        struct_name: 'Toolchain_gcc_x64_12'
+        compiler_name: 'compiler-gcc-x64-12'
+
+        generate_structure: (gen, gcc_path, ar_path) ->
+            struct_name = 'Toolchain_gcc_x64_12'
+            compiler_name = 'compiler-gcc-x64-12'
+
+            gen\structure struct_name, (gen) ->
+                gen\line!
+                gen\compiler
+                    name: compiler_name
+                    executable: gcc_path
+                    extra_files: { }
+
+                gen\line!
+                gen\variables {
+                    { 'ToolchainCompilerFamily', 'gcc' }
+                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainToolset', '12' }
+                    { 'ToolchainFrontend', 'gcc' }
+                    { 'ToolchainCompiler', compiler_name }
+                    { 'ToolchainLibrarian', ar_path }
+                    { 'ToolchainLinker', gcc_path }
+                    { 'ToolchainIncludeDirs', { } }
+                    { 'ToolchainLibDirs', { } }
+                    { 'ToolchainLibs', { } }
+                }
+    }
 }
 
 detect_compilers = (ver_major, log_file) ->
-    execs = { 'g++', 'gcc', 'gcc-11' }
+    execs = { 'g++', 'gcc', 'gcc-11', 'gcc-12' }
     results = { }
 
     ar_path = Where\path 'ar', log_file
