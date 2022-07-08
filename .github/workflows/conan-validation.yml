@@ -18,7 +18,7 @@ jobs:
     name: Validate (Linux)
     uses: iceshard-engine/.github/.github/workflows/rw_conan_create_package.yaml@main
     with:
-      host: ubuntu-latest
+      host: ubuntu-22.04
       conan_package: 'ice-build-tools/0.8.4@iceshard/stable'
       conan_config_url: 'https://github.com/iceshard-engine/conan-config.git'
       conan_options: '-s"build_type=Debug" --build=moonscript-installer --build=ice-build-tools'
