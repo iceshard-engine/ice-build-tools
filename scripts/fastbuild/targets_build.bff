@@ -28,6 +28,8 @@
 [
 ]
 
+.Projects_SolutionInfo = []
+
 //
 // Prepare global build rules
 //
@@ -562,6 +564,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     .BuildOptions = .BuildOptions
                                 ]
                             ]
+                            ^Projects_SolutionInfo + .'SolutionInfo_$ProjectTarget$'
                         ]
                         ^Piepline_CompileVSTargets + .Piepline_CompileVSTargets_Extension
                     }
@@ -939,12 +942,15 @@ ForEach( .Pipeline in .AvailablePipelines )
 
             } // ForEach( .Step in .PipelineSteps )
 
-            Alias( '$ProjectTarget$' )
+            If ( .ProjectKind != .Kind_HeaderOnly )
             {
-                .Targets = .ProjectSubTargets
-            }
+                Alias( '$ProjectTarget$' )
+                {
+                    .Targets = .ProjectSubTargets
+                }
 
-            ^PipelineTargets + '$ProjectTarget$'
+                ^PipelineTargets + '$ProjectTarget$'
+            }
 
         } // If ( .ProjectRequirementsSatisfied )
     } // ForEach( .Project in .ProjectsResolved )

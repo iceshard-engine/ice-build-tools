@@ -200,22 +200,25 @@
                         ^PipelineAvailableProjects + .PipelineAvailableProjects_Extension
                     }
 
-                    .ProjectConfig_Extension =
-                    [
-                        .Target = .'CompileTarget_$ProjectTarget$'
+                    If ( .ProjectKind != .Kind_HeaderOnly )
+                    {
+                        .ProjectConfig_Extension =
+                        [
+                            .Target = .'CompileTarget_$ProjectTarget$'
 
-                        .Output = .TargetOutputName
-                        .OutputDirectory = .TargetOutputDirectory
-                        .IntermediateDirectory = .TargetIntermediateDirectory
-                        .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
+                            .Output = .TargetOutputName
+                            .OutputDirectory = .TargetOutputDirectory
+                            .IntermediateDirectory = .TargetIntermediateDirectory
+                            .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
 
-                        .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
-                        .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
+                            .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
+                            .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
 
-                        .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
-                        .LocalDebuggerWorkingDirectory = .ProjectDebugDir
-                    ]
-                    ^ProjectConfig + .ProjectConfig_Extension
+                            .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
+                            .LocalDebuggerWorkingDirectory = .ProjectDebugDir
+                        ]
+                        ^ProjectConfig + .ProjectConfig_Extension
+                    }
                 }
 
                 If ( .ProjectKind == .Kind_HeaderOnly )
