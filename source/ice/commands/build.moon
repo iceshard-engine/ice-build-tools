@@ -1,7 +1,8 @@
-import BaseCommand, option, flag from require "ice.commands.base"
+import Command, option, flag from require "ice.command"
+
 import FastBuild from require "ice.tools.fastbuild"
 
-class BuildCommand extends BaseCommand
+class BuildCommand extends Command
     @arguments {
         option 'target',
             name: '-t --target'
@@ -15,6 +16,8 @@ class BuildCommand extends BaseCommand
             name: '-c --clean'
         flag 'verbose',
             name: '-v --verbose'
+        flag 'monitor'
+        flag 'dist'
     }
 
     prepare: (args, project) =>
@@ -25,8 +28,8 @@ class BuildCommand extends BaseCommand
             config:'fbuild.bff'
             target:table.concat args.target, ' '
             clean:args.clean
-            monitor:true
-            distributed:true
+            monitor:args.monitor
+            distributed:args.dist
             summary:args.summary == 'always'
             nosummaryonerror:args.summary == 'success'
             verbose:args.verbose

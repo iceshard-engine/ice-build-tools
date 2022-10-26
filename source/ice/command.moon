@@ -1,6 +1,6 @@
-
-option = (name, tab) -> func:'option', name:name, opts:tab
-flag = (name, tab) -> func:'flag', name:name, opts:tab
+argument = (name, tab) -> func:'argument', name:name, opts:tab or { }
+option = (name, tab) -> func:'option', name:name, opts:tab or { }
+flag = (name, tab) -> func:'flag', name:name, opts:tab or { }
 
 class Command
     @arguments = (defined_args) =>
@@ -19,4 +19,4 @@ class Command
     prepare: => nil
     execute: => true
 
-{ :Command, :option, :flag }
+{ :Command, :argument, :option, :flag }

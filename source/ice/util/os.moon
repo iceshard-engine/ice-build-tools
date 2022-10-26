@@ -88,5 +88,23 @@ os.chdir = (path, fn) ->
 
     result
 
+os.find_files = (path, args = { }) ->
+    return { } unless os.isdir path
+
+    result = { }
+    for file_path, mode in os.listdir path, 'mode'
+        -- Skip current and parent dir values
+        continue if file_path == "." or file_path == ".."
+
+        -- Enter recursive search if requested
+        if mode == 'directory' and args.recursive
+            sub_res = os.find_files "#{path}/#{file_path}", args
+            table.foreach sub_res, (_, v) -> table.insert result, v
+
+        if mode == 'file'
+            full_path = "#{path}/#{file_path}"
+            table.insert result, full_path if not args.filter or args.filter file_path, path
+    result
+
 -- Create an alias for the deprecated name
 os.indir = os.chdir

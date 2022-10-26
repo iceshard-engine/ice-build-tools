@@ -1,4 +1,4 @@
-import Command, option, flag from require "ice.command"
+import Command, argument, option, flag from require "ice.command"
 
 class BaseCommand extends Command
     @arguments { }
@@ -6,4 +6,4 @@ class BaseCommand extends Command
     prepare: (args, project) =>
     execute: (args) =>
 
-{ :BaseCommand, :option, :flag }
+{ :BaseCommand, :argument, :option, :flag }

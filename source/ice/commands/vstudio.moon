@@ -1,9 +1,9 @@
-import BaseCommand, option, flag from require "ice.commands.base"
-import FastBuild from require "ice.tools.fastbuild"
+import Command, option, flag from require "ice.command"
 
+import FastBuild from require "ice.tools.fastbuild"
 import VStudio from require "ice.tools.vswhere"
 
-class VStudioCommand extends BaseCommand
+class VStudioCommand extends Command
     @arguments {
         flag 'start',
             name: '--start'

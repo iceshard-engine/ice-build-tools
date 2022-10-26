@@ -17,7 +17,7 @@ class Application
         @parser\command_target "command"
 
         init_cmd = @parser\command "init", "Used to initialize the workspace for development."
-        init_cmd\option "--update_tools", "Updates the tool dependencies, this might result in a broken workspace description."
+        init_cmd\option "--update-tools", "Updates the tool dependencies."
         init_cmd\option "-p --profile", "A profile that should be used to generate conan profile files. This profile will affect the picked dependencies."
 
         if @@.args
