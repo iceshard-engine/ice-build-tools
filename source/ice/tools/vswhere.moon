@@ -30,14 +30,20 @@ class VSWhere extends Exec
         else
             @\run cmd
 
-        true
+        -- Return empty table
+        { }
 
 class VStudio extends Exec
     new: => super (VSWhere!\find latest:true, properties:{ 'productPath' }).productPath
 
     start: (args = {}) =>
-        cmd = ""
-        cmd ..= " #{args.open}" if (os.isfile args.open) or (os.isdir  args.open)
-        @\run cmd
+        error "The 'VStudio' tool is available only on Windows!" unless os.iswindows
+
+        if os.iswindows
+            cmd = ""
+            cmd ..= " #{args.open}" if (os.isfile args.open) or (os.isdir  args.open)
+
+            -- Use 'start' to not block on the terminal
+            os.execute "start \"{@exec}\" #{cmd}"
 
 { :VSWhere, :VStudio }

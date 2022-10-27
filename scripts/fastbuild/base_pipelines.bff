@@ -53,9 +53,6 @@
         'Build'
         'Link'
         'Test'
-
-        ; Legacy step, this is here as this corresponds to the previous hard-coded 'Runtime' dependencies
-        'Runtime'
     }
 
     .PipelineRequires = { }

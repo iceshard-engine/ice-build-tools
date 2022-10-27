@@ -3,6 +3,11 @@ import Command, option, flag from require "ice.command"
 import FastBuild from require "ice.tools.fastbuild"
 
 class BuildCommand extends Command
+    @settings: {
+        fbuild:
+            config_file: 'fbuild.bff'
+    }
+
     @arguments {
         option 'target',
             name: '-t --target'
@@ -25,7 +30,7 @@ class BuildCommand extends Command
 
     execute: (args) =>
         FastBuild!\build
-            config:'fbuild.bff'
+            config:@@settings.fbuild.config_file
             target:table.concat args.target, ' '
             clean:args.clean
             monitor:args.monitor

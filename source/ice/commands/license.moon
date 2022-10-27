@@ -2,7 +2,7 @@ import Command, argument, option, flag from require "ice.command"
 import Json from require "ice.util.json"
 
 class LicenseCommand extends Command
-    @settings = {
+    @settings: {
         license: nil
         authors: nil
 
