@@ -5,8 +5,8 @@ import BuildCommand from require 'ice.commands.build'
 import VStudioCommand from require 'ice.commands.vstudio'
 
 class ProjectApplication extends Application
-    @name: ''
-    @description: 'Workspace command tool.'
+    @name: 'NewProject'
+    @description: 'Workspace CLI tool'
     @commands: {
         'build': BuildCommand
         'update': UpdateCommand
@@ -15,7 +15,7 @@ class ProjectApplication extends Application
 
     -- Plain call to the application
     execute: (args) =>
-        print "#{@@name} - v0.1-alpha"
+        print "#{@@name} CLI - IBT/1.0.0"
         print ''
         print '> For more options see the -h,--help output.'
 

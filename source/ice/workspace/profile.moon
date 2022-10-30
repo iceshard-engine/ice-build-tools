@@ -61,6 +61,8 @@ class ProfileList
 
     new: (@config_list, @system, @arch) =>
 
+    valid: => @config_list ~= nil and @system ~= nil and @arch ~= nil
+
     prepare_profile: (location, profile_name) =>
         profile_name = @config_list.default if profile_name == nil
         config = @config_list[profile_name]

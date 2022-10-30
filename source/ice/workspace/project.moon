@@ -33,6 +33,8 @@ class Project
         @generator_class = FastBuildGenerator
 
         @conan_profile = 'default'
+        @profile_list = ProfileList!
+
         @solution_name = "#{@name}.sln"
         @locators =
             [Locator.Type.Toolchain]: { }
@@ -71,6 +73,10 @@ class Project
         assert @source_directory ~= nil and @source_directory ~= "", "Invalid value for `sources` => '#{@source_directory}'"
         assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
         assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
+
+        assert @script_location ~= nil and @script_location ~= "", "Invalid value for `fastbuild_script` => '#{@script_location}'"
+        assert (os.isfile @script_location), "Non existing file set in `fastbuild_script` => '#{@script_location}'"
+        assert @profile_list\valid!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
 
         application = @application_class!
 
