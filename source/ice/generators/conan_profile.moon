@@ -50,6 +50,6 @@ class ConanProfileGenerator
             @file\close!
 
         else
-            error "Counln't open file #{output} for generating a Conan profile"
+            error "Couldn't open file #{output} for generating a Conan profile"
 
 { :ConanProfileGenerator }

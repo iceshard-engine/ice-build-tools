@@ -1,7 +1,8 @@
 require "ice.util.os"
 argparse = require "argparse"
-
 package.moonpath ..= ";?.moon;?/init.moon"
+
+import IBT from require "ibt.ibt"
 
 class Application
     @arguments = (defined_args) =>
@@ -45,26 +46,33 @@ class Application
             result = @commands[args.command]\execute args, project
             os.chdir old_dir
         else
-            result = @execute args
+            result = @execute args, project
 
         -- Translate return values to return codes
+        final_result = nil
         if (type result) == "boolean"
-            result = return_code:(result and 0 or -1)
+            final_result = return_code:(result and 0 or -1)
         elseif (type result) == "number"
-            result = return_code:result
+            final_result = return_code:result
         elseif (type result) == "table"
-            result = return_code:0, value:result
+            if result.return_code ~= nil
+                final_result = result
+            else
+                final_result = return_code:0, value:result
         elseif (type result) == "nil"
-            result = return_code:0
+            final_result = return_code:0
 
         -- Handle errors
-        if result.return_code ~= 0
-            print string.format "ERROR: [%d] %s", result.return_code, (result.message or "Unknown error occured!")
+        if final_result.return_code ~= 0
+            print string.format "ERROR: [%d] %s", final_result.return_code, (final_result.message or "Unknown error occured!")
             os.exit 1
 
-        result.value or { }
+        final_result.value or { }
 
-    execute: => true
+    execute: =>
+        print "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel})"
+        print ''
+        print '> For more options see the -h,--help output.'
 
 
 { :Application }

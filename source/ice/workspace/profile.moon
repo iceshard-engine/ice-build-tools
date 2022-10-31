@@ -2,38 +2,27 @@ import Json from require "ice.util.json"
 import ConanProfileGenerator from require "ice.generators.conan_profile"
 
 class Profile
-    new: (@location, @system, @arch, @compiler, @build_types) =>
+    new: (@location, info) =>
+        @id = info.id
+        @compiler = info.compiler
+        @os = info.os
+        @arch = info.arch
+        @build_type = info.build_type
         @profile = ConanProfileGenerator!
-        @profile\set_compiler @compiler.name, (@compiler.conan_version or @compiler.version), @compiler.libcxx
-        @profile\set_system @system
-        @profile\set_architecture @arch
+        @profile\set_compiler info.compiler.name, (info.compiler.conan_version or info.compiler.version), info.compiler.libcxx
+        @profile\set_system info.os
+        @profile\set_architecture info.arch
+        @profile\set_build_type info.build_type
 
-    get_profile_paths: =>
-        profile_paths = { }
-        for build_type in *@build_types
-            profile_path = "conan_#{build_type\lower!}"
-            table.insert profile_paths, profile_path
-        profile_paths
+    get_file: => "#{@get_location!}/conan_profile.txt"
+    get_location: => "#{@location}/conan_#{@id}"
+    get_build_type: => @profile.build_type
 
-    get_profile_pairs: =>
-        profile_pair = { }
-        for build_type in *@build_types
-            profile_path = "conan_#{build_type\lower!}"
-            table.insert profile_pair, { build_type, profile_path }
-        profile_pair
+    generate: =>
+        profile_path = @get_location!
+        os.mkdirs profile_path unless os.isdir profile_path
 
-    generate_conan_profiles: =>
-        profile_paths = { }
-        for build_type in *@build_types
-            profile_path = "#{@location}/conan_#{build_type\lower!}"
-            table.insert profile_paths, profile_path
-
-            os.mkdirs profile_path unless os.isdir profile_path
-
-            @profile\set_build_type build_type
-            @profile\generate "#{profile_path}/conan_profile.txt"
-
-        profile_paths
+        @profile\generate @get_file!
 
 class ProfileList
     @from_file: (path) =>
@@ -46,27 +35,35 @@ class ProfileList
     @from_json: (json_config) =>
         config = Json\decode json_config
 
-        system = nil
-        arch = "x86_64"
-        if os.iswindows
-            config = config.windows
-            system = "Windows"
-        elseif os.isunix
-            config = config.linux
-            system = "Linux"
-        else
-            error "This platform is not supported!"
+        profiles = { }
+        for entry in *config
+            assert entry.os ~= nil, "#{entry.name} is missing 'os' value."
+            assert entry.arch ~= nil, "#{entry.name} is missing 'arch' value."
+            assert entry.compiler ~= nil, "#{entry.name} is missing 'compiler' value."
+            assert entry.build_type ~= nil, "#{entry.name} is missing 'build_type' value."
+            assert entry.id ~= nil, "#{entry.name} is missing 'id' value."
 
-        return ProfileList config, system, arch
+            if os.iswindows
+                table.insert profiles, entry if entry.os\lower! == "windows"
+            else if os.isunix
+                table.insert profiles, entry if entry.os\lower! == "linux"
+            else
+                print "System '#{entry.os}' in profile #{entry.name} is not supported."
 
-    new: (@config_list, @system, @arch) =>
+        profile_map = { }
+        for profile in *profiles
+            assert profile_map[profile.id] == nil
+            profile_map[profile.id] = profile_map
 
-    valid: => @config_list ~= nil and @system ~= nil and @arch ~= nil
+        return ProfileList profiles
 
-    prepare_profile: (location, profile_name) =>
-        profile_name = @config_list.default if profile_name == nil
-        config = @config_list[profile_name]
+    new: (@profiles_list) =>
 
-        Profile location, config.os or @system, config.architecture or @arch, config.compiler, config.build_types
+    has_profiles: => @profiles_list ~= nil and #@profiles_list > 0
+    prepare_profiles: (location) =>
+        profiles = { }
+        for profile_info in *@profiles_list
+            table.insert profiles, Profile location, profile_info
+        profiles
 
 { :ProfileList, :Profile }

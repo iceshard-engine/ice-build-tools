@@ -76,51 +76,54 @@ class Project
 
         assert @script_location ~= nil and @script_location ~= "", "Invalid value for `fastbuild_script` => '#{@script_location}'"
         assert (os.isfile @script_location), "Non existing file set in `fastbuild_script` => '#{@script_location}'"
-        assert @profile_list\valid!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
+        assert @profile_list\has_profiles!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
 
         application = @application_class!
+        selected_profiles = @profile_list\prepare_profiles @output_directory
 
-        selected_profile = @profile_list\prepare_profile @output_directory
-
-        install_conan_dependencies selected_profile, false
-        generate_fastbuild_variables_script selected_profile, @locators, @output_directory, false
-        generate_fastbuild_workspace_script selected_profile, @output_directory, @source_directory, @, false
+        install_conan_dependencies selected_profiles, false
+        generate_fastbuild_variables_script selected_profiles, @locators, @output_directory, false
+        generate_fastbuild_workspace_script selected_profiles, @output_directory, @source_directory, @, false
 
         command_result = application\run
             source_dir: @source_directory
             output_dir: @output_directory
-            conan_profile: @conan_profile
             fastbuild_solution_name: @solution_name
             action: {
-                install_conan_dependencies: -> install_conan_dependencies selected_profile, true
-                generate_fastbuild_variables_script: -> generate_fastbuild_variables_script selected_profile, @locators, @output_directory, true
-                generate_fastbuild_workspace_script: -> generate_fastbuild_workspace_script selected_profile, @output_directory, @source_directory, @, true
+                install_conan_dependencies: -> install_conan_dependencies selected_profiles, true
+                generate_fastbuild_variables_script: -> generate_fastbuild_variables_script selected_profiles, @locators, @output_directory, true
+                generate_fastbuild_workspace_script: -> generate_fastbuild_workspace_script selected_profiles, @output_directory, @source_directory, @, true
             }
 
 
-install_conan_dependencies = (profile, force_update) ->
+install_conan_dependencies = (profiles, force_update) ->
     unless os.isfile 'source/conanfile.txt'
         print "No description for source dependencies found, skipping..." if not same_version
         return
 
-    profile_paths = profile\generate_conan_profiles!
+    for profile in *profiles
+        profile_location = profile\get_location!
+        profile_file = profile\get_file!
+        info_file = "#{profile_location}/conaninfo.txt"
 
-    for profile_path in *profile_paths
-        profile_file = "#{profile_path}/conan_profile.txt"
-        info_file = "#{profile_path}/conaninfo.txt"
+        -- Generate the profile file
+        profile\generate!
 
-        unless os.isfile profile_file
-            error "Generated Conan profile file 'conan_profile.txt' was not found in path #{profile_path}"
-
+        -- Execute conan for the generated profile
         if force_update or not (os.isfile info_file)
             Conan!\install
                 conanfile:'source'
                 update:false,
                 profile:profile_file,
-                install_folder:profile_path
+                install_folder:profile_location
                 build_policy:'missing'
 
-generate_fastbuild_variables_script = (profile, locators, output_dir, force_update) ->
+        -- Check for the new generated file
+        unless os.isfile profile_file
+            error "Generated Conan profile file 'conan_profile.txt' was not found in path #{profile_location}"
+
+
+generate_fastbuild_variables_script = (profiles, locators, output_dir, force_update) ->
     log_file = 'build/compiler_detection.log'
 
     os.remove log_file
@@ -135,23 +138,24 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
         additional_sdks: { }
     }
 
-    if os.iswindows
-        compiler_version = tonumber profile.compiler.version
-        toolchain_version = "[#{compiler_version}.0,#{compiler_version+1}.0)"
+    -- Go over all profiles we have defined and look for their toolchains
+    for profile in *profiles
+        if os.iswindows
+            compiler_version = tonumber profile.compiler.version
+            toolchain_version = "[#{compiler_version}.0,#{compiler_version+1}.0)"
 
-        msvc_toolchains = VsMSVC\detect toolchain_version
-        clang_toolchains = VsClang\detect toolchain_version
+            msvc_toolchains = VsMSVC\detect toolchain_version
+            clang_toolchains = VsClang\detect toolchain_version
 
-        table.insert detected_info.toolchains, toolchain for toolchain in *msvc_toolchains or { }
-        table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
+            table.insert detected_info.toolchains, toolchain for toolchain in *msvc_toolchains or { }
+            table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
 
-    if os.isunix
-        clang_toolchains = Clang\detect profile, log_file
-        gcc_toolchains = Gcc\detect profile, log_file
+        if os.isunix
+            clang_toolchains = Clang\detect profile, log_file
+            gcc_toolchains = Gcc\detect profile, log_file
 
-        table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
-        table.insert detected_info.toolchains, toolchain for toolchain in *gcc_toolchains or { }
-
+            table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
+            table.insert detected_info.toolchains, toolchain for toolchain in *gcc_toolchains or { }
 
     -- execute_locators Locator.Type.Toolchain, toolchains -- Currently unused
     execute_locators Locator.Type.PlatformSDK, detected_info
@@ -172,7 +176,11 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
             toolchain_list = { }
             toolchain_names = { }
 
+            toolchain_generated = {}
             for toolchain in *toolchains
+                continue if toolchain_generated[toolchain.name]
+                toolchain_generated[toolchain.name] = true
+
                 toolchain.generate gen
 
                 table.insert toolchain_names, toolchain.name
@@ -261,7 +269,7 @@ generate_fastbuild_variables_script = (profile, locators, output_dir, force_upda
 
             gen\close!
 
-generate_fastbuild_workspace_script = (profile, output, source, project, force_update) ->
+generate_fastbuild_workspace_script = (profiles, output, source, project, force_update) ->
     assert (os.isdir output), "Directory '#{output}' does not exist!"
 
     workspace_root = os.cwd!\gsub '\\', '/'
@@ -280,16 +288,16 @@ generate_fastbuild_workspace_script = (profile, output, source, project, force_u
 
             gen\line '.ConanBuildTypes = {'
             gen\indented (gen) ->
-                gen\line "'#{build_type}'" for { build_type, _ } in *profile\get_profile_pairs!
+                gen\line "'#{profile.id}'" for profile in *profiles
             gen\line '}'
 
-            for { build_type, profile_path } in *profile\get_profile_pairs!
+            for profile in *profiles
                 gen\line!
-                gen\line ".ConanModules_#{build_type} = [ ]"
+                gen\line ".ConanModules_#{profile.id} = [ ]"
                 gen\line '{'
                 gen\indented (gen) ->
-                    gen\include "#{profile_path}/conan.bff"
-                    gen\line "^ConanModules_#{build_type} = .ConanModules"
+                    gen\include "#{workspace_root}/#{profile\get_location!}/conan.bff"
+                    gen\line "^ConanModules_#{profile.id} = .ConanModules"
                 gen\line '}'
             gen\line!
 

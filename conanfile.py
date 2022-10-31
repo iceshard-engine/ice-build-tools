@@ -4,7 +4,7 @@ import os
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "1.0.0"
+    version = "1.0.1"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
@@ -22,10 +22,26 @@ class IceBuildToolsConan(ConanFile):
         self.copy("*", src="scripts/bootstrap/tools", dst="tools")
 
     def build(self):
+        # Generate IBT moonscript file with IBT metadata
+        os.mkdir("source/ibt")
+        with open("source/ibt/ibt.moon", 'w') as f:
+            f.write("IBT =\n")
+            f.write("  version: '{}'\n".format(self.version))
+            f.write("  conan:\n")
+            f.write("    channel: '{}'\n".format(self.channel))
+            f.write("    user: '{}'\n".format(self.user))
+            f.write("    version: '{}'\n".format(self.version))
+            f.write("\n")
+            f.write("{ :IBT }\n")
+            f.close()
+
+        # Build all moonscript files
         if self.settings.os == "Windows":
             self.run("%MOONC_SCRIPT% source/ice -t build")
+            self.run("%MOONC_SCRIPT% source/ibt -t build")
         if self.settings.os == "Linux":
             self.run("lua $MOONC_SCRIPT source/ice -t build")
+            self.run("lua $MOONC_SCRIPT source/ibt -t build")
 
         # Prepare the directory for tools bootstrap file.
         tools_path = "scripts/bootstrap/tools"
