@@ -121,10 +121,41 @@ toolchain_definitions = {
                     { 'ToolchainLibs', { } }
                 }
     }
+    generated: (ver_major) ->
+        return {
+            name: "clang-#{ver_major}.0.0"
+            struct_name: "Toolchain_Clang_x64_#{ver_major}00"
+            compiler_name: "compiler-clang-x64-#{ver_major}00"
+
+            generate_structure: (gen, clang_path, ar_path) ->
+                struct_name = "Toolchain_Clang_x64_#{ver_major}00"
+                compiler_name = "compiler-clang-x64-#{ver_major}00"
+
+                gen\structure struct_name, (gen) ->
+                    gen\line!
+                    gen\compiler
+                        name: compiler_name
+                        executable: clang_path
+                        extra_files: { }
+
+                    gen\line!
+                    gen\variables {
+                        { 'ToolchainCompilerFamily', 'clang' }
+                        { 'ToolchainArchitecture', 'x64' }
+                        { 'ToolchainToolset', "#{ver_major}00" }
+                        { 'ToolchainFrontend', 'clang' }
+                        { 'ToolchainCompiler', compiler_name }
+                        { 'ToolchainLibrarian', ar_path }
+                        { 'ToolchainLinker', clang_path }
+                        { 'ToolchainIncludeDirs', { } }
+                        { 'ToolchainLibDirs', { } }
+                        { 'ToolchainLibs', { } }
+                    }
+        }
 }
 
 detect_compilers = (ver_major , log_file) ->
-    versions = { '9', '10', '11', '12', '13' }
+    versions = { '9', '10', '11', '12', '13', '14' }
     results = { }
 
     ar_path = Where\path 'ar', log_file
@@ -132,7 +163,7 @@ detect_compilers = (ver_major , log_file) ->
         return { }
 
     for clang_ver in *versions
-        clang_path = Where\path "clang++#{clang_ver}", log_file
+        clang_path = Where\path "clang++-#{clang_ver}", log_file
         if clang_path
             clang_major, clang_minor, clang_patch = (((Exec clang_path)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
 
@@ -153,7 +184,11 @@ class Clang
     @detect: (conan_profile, log_file) =>
         toolchain_list = { }
 
-        if conan_profile and conan_profile.compiler and conan_profile.compiler.version
+        -- Only check for clang compiler versions
+        unless conan_profile and conan_profile.compiler and conan_profile.compiler.name == 'clang'
+            return
+
+        if conan_profile.compiler.version
             ver_major = conan_profile.compiler.version
 
             compiler = detect_compilers ver_major, log_file
@@ -162,13 +197,18 @@ class Clang
                 clang_exe = compiler.clang_path
                 clang_ver = compiler.ver.major
 
-                if toolchain_definition = toolchain_definitions[clang_ver]
-                    table.insert toolchain_list, {
-                        name: toolchain_definition.name
-                        struct_name: toolchain_definition.struct_name
-                        compiler_name: toolchain_definition.compiler_name
-                        generate: (gen) -> toolchain_definition.generate_structure gen, clang_exe, compiler.ar_path
-                    }
+                if toolchain_definition = toolchain_definitions[clang_ver] or toolchain_definitions['generated']
+                    -- If we got a function we try to generate the clang toolchain info
+                    if (type toolchain_definition) == 'function'
+                        toolchain_definition = toolchain_definition clang_ver
+
+                    if toolchain_definition
+                        table.insert toolchain_list, {
+                            name: toolchain_definition.name
+                            struct_name: toolchain_definition.struct_name
+                            compiler_name: toolchain_definition.compiler_name
+                            generate: (gen) -> toolchain_definition.generate_structure gen, clang_exe, compiler.ar_path
+                        }
 
         toolchain_list
 

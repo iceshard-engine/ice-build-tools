@@ -13,6 +13,7 @@ class Profile
         @profile\set_system info.os
         @profile\set_architecture info.arch
         @profile\set_build_type info.build_type
+        @profile\set_envvar name, value for name, value in pairs info.envs or { }
 
     get_file: => "#{@get_location!}/conan_profile.txt"
     get_location: => "#{@location}/conan_#{@id}"

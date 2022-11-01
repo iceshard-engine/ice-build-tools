@@ -24,8 +24,10 @@ class ConanProfileGenerator
         table.insert @env, { :name, :value }
 
     generate: (output) =>
-        sorted_options = table.sort @options, (a, b) -> a.name < b.name
-        sorted_envs = table.sort @env, (a, b) -> a.name < b.name
+        sorted_options = @options
+        sorted_envs = @env
+        table.sort sorted_options, (a, b) -> a.name < b.name
+        table.sort sorted_envs, (a, b) -> a.name < b.name
 
         if @file = io.open output, 'w+'
             line = (value) ->
@@ -42,9 +44,9 @@ class ConanProfileGenerator
             line "compiler.libcxx=#{@settings.compiler.libcxx}" if @settings.compiler.libcxx
             line "build_type=#{@settings.build_type}"
             line "[options]"
-            line "#{name}=#{value}" for name, value in pairs sorted_options or { }
+            line "#{name}=#{value}" for { :name, :value } in *sorted_options or { }
             line "[env]"
-            line "#{name}=#{value}" for name, value in pairs sorted_envs or { }
+            line "#{name}=#{value}" for { :name, :value } in *sorted_envs or { }
             line!
 
             @file\close!
