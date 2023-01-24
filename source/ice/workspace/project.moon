@@ -29,6 +29,7 @@ class Project
     new: (@name) =>
         ProjectApplication.name = @name
 
+        @workspace_root = os.cwd!\gsub '\\', '/'
         @ice_build_tools_version = os.getenv 'ICE_BUILT_TOOLS_VER'
 
         @application_class = ProjectApplication
@@ -104,6 +105,8 @@ class Project
         generate_fastbuild_workspace_script selected_profiles, @output_directory, @source_directory, @, false
 
         command_result = application\run
+            script: @project_script
+            workspace_dir: @workspace_root
             source_dir: @source_directory
             output_dir: @output_directory
             fastbuild_solution_name: @solution_name
@@ -300,12 +303,12 @@ generate_fastbuild_variables_script = (profiles, locators, output_dir, force_upd
 generate_fastbuild_workspace_script = (profiles, output, source, project, force_update) ->
     assert (os.isdir output), "Directory '#{output}' does not exist!"
 
-    workspace_root = os.cwd!\gsub '\\', '/'
-
     os.chdir output, (dir) ->
         if force_update or (not os.isfile "fbuild.bff")
             gen = FastBuildGenerator "fbuild.bff"
             fbscripts = os.getenv 'ICE_FBUILD_SCRIPTS'
+
+            workspace_root = project.workspace_root
 
             gen\variables {
                 { 'WorkspaceRoot', workspace_root }
@@ -372,8 +375,8 @@ generate_fastbuild_workspace_script = (profiles, output, source, project, force_
 
             gen\line!
             gen\include "#{fbscripts}/targets_build.bff"
-            if os.iswindows
-                gen\include "#{fbscripts}/targets_vsproject.bff"
+            gen\include "#{fbscripts}/targets_devenv.bff"
+            gen\include "#{fbscripts}/targets_vsproject.bff" if os.iswindows
             gen\close!
 
 { :Project, :Locator }

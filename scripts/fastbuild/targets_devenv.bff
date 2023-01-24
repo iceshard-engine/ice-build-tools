@@ -1,0 +1,152 @@
+
+// Minium required version
+.BFFVersion_TextFile = 100
+
+If ( ._FASTBUILD_VERSION_ < .BFFVersion_TextFile )
+{
+    Print( "[IBT] DevEnv targets are not available. Missing 'TextFile' function introduced in version: $BFFVersion_TextFile$." )
+}
+
+If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
+{
+    .SolutionConfigs = { }
+
+    .ProjectConfigs = { }
+    .AllProjectConfigs = { }
+    .HasAnyConfig = false
+
+    Print( '[IBT] Creating devenv targets...' )
+
+    ForEach( .Pipeline in .AvailablePipelines )
+    {
+        Using( .Pipeline )
+        Using( .PipelinePlatformInfo )
+
+        .AllProjectConfig =
+        [
+            .Config = .PipelineConfig
+            .Platform = .PipelinePlatform
+            .PipelineName = .PipelineName
+            .Target = 'all-$PipelineName$-$PipelineConfig$'
+        ]
+        ^AllProjectConfigs + .AllProjectConfig
+
+        ^HasAnyConfig = true
+    }
+
+    If ( .HasAnyConfig )
+    {
+        .SolutionHasAppProjects = false
+        .PipelineAvailableProjects = [ ]
+
+        ForEach( .Project in .ProjectsResolved )
+        {
+            Using( .Project )
+
+            If ( .ProjectKind in .Kind_Applications )
+            {
+                .ProjectBasePath = .ProjectBaseDir
+
+                ForEach( .Pipeline in .AvailablePipelines )
+                {
+                    .VSSuffix = ''
+                    .VSEnabled = false
+
+                    Using( .Pipeline )
+                    Using( .PipelineVSInfo )
+                    Using( .PipelinePlatformInfo )
+                    Using( .PipelineOutputExtensions )
+
+                    // Check if we the project has all requirements covered
+                    .ProjectRequirementsSatisfied = true
+                    {
+                        .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                        .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
+
+                        Using( .PipelineAvailableProjects )
+
+                        .AvailableTags = .SDKNames
+                            + .PipelineTags
+                            + .'PipelineAvailableProjects_$PipelineIdentifier$'
+
+                        ForEach( .Requirement in .ProjectRequires )
+                        {
+                            If ( .Requirement not in .AvailableTags )
+                            {
+                                ^ProjectRequirementsSatisfied = false
+                            }
+                        }
+                    }
+
+                    .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+
+                    .OutDirName = .'KindOutDir_$ProjectKind$'
+                    .TargetExtension = .'OutputExtension_$ProjectKind$'
+
+                    .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    .TargetOutputName = "$ProjectName$$TargetExtension$"
+
+                    .ProjectConfig =
+                    [
+                        .Name = .ProjectName
+                        .Config = .PipelineConfig
+                        .Platform = .PipelinePlatform
+                        .PipelineName = .PipelineName
+                        .Target = .ProjectTarget
+
+                        .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
+                        .DebugWorkingDir = .ProjectDebugDir
+                    ]
+
+                    ^ProjectConfigs + .ProjectConfig
+                }
+            }
+        }
+
+        .BuildTargetsLines = { }
+        .RunTargetsLines = { }
+        .DetailTargetLines = { }
+
+        ForEach( .Config in .AllProjectConfigs )
+        {
+            Using( .Config )
+            ^BuildTargetsLines
+                + .Target
+        }
+
+        ForEach( .Config in .ProjectConfigs )
+        {
+            Using( .Config )
+            ^BuildTargetsLines
+                + .Target
+            ^RunTargetsLines
+                + .Target
+            ^DetailTargetLines
+                + ' '
+                + '[$Target$]'
+                + 'executable=$Executable$'
+                + 'working_dir=$DebugWorkingDir$'
+                + 'platform=$Platform$'
+                + 'config=$Config$'
+                + 'pipeline=$PipelineName$'
+                + 'name=$Name$'
+        }
+
+        TextFile( 'devenv-targets' )
+        {
+            .TextFileOutput = '$WorkspaceBuildDir$/devenv_targets.txt'
+            .TextFileAlways = false
+
+            .TextFileInputStrings = { ':: IBT Generated File ::' }
+                + ' '
+                + '[build_targets]'
+                + .BuildTargetsLines
+                + ' '
+                + '[run_targets]'
+                + .RunTargetsLines
+                + ' '
+                + .DetailTargetLines
+        }
+    }
+}

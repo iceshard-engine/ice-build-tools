@@ -23,6 +23,12 @@ class FastBuild extends Exec
     cache_trim: (args) =>
         @\cache action:'trim', config:args.config, trim_size:args.trim_size
 
+    list_targets: (args) =>
+        cmd = ""
+        cmd ..= " -showtargets"
+
+        @\capture cmd
+
     build: (args) =>
         cmd = string.format " %s", (args and args.target) or "all"
         cmd ..= " -config #{args.config}" if args.config
@@ -34,6 +40,7 @@ class FastBuild extends Exec
         cmd ..= " -dist" if args.distributed
         cmd ..= " -cache" if args.cache
         cmd ..= " -verbose" if args.verbose
+        cmd ..= " -compdb" if args.compilation_database or args.compdb
 
         @\run cmd
 

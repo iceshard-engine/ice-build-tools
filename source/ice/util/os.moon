@@ -115,5 +115,34 @@ os.find_files = (path, args = { }) ->
             table.insert result, full_path if not args.filter or args.filter file_path, path
     result
 
+os.move_file =  (old_path, new_path, args = { }) ->
+    if os.isfile new_path
+        return false unless args.force
+        os.remove new_path
+
+    if out_file = io.open new_path, 'wb+'
+        if in_file = io.open old_path, 'rb'
+            out_file\write in_file\read '*a'
+            in_file\close!
+
+            -- Delete the old path
+            os.remove old_path
+        out_file\close!
+
+    return (os.isfile old_path) == false
+
+os.copy_file =  (path, new_path, args = { }) ->
+    if os.isfile new_path
+        return false unless args.force
+        os.remove new_path
+
+    if out_file = io.open new_path, 'wb+'
+        if in_file = io.open path, 'rb'
+            out_file\write in_file\read '*a'
+            in_file\close!
+        out_file\close!
+
+    return (os.isfile new_path)
+
 -- Create an alias for the deprecated name
 os.indir = os.chdir

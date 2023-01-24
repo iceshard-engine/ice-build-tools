@@ -10,6 +10,7 @@
         '/EHsc'
         '/Od'
         '/MDd'
+        '/Z7'
     }
     .Defines = {
         '_DEBUG'
@@ -35,6 +36,7 @@
         '/EHsc'
         '/O2'
         '/MD'
+        '/Z7'
     }
 ]
 
