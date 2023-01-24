@@ -6,6 +6,13 @@
 .KindOutDir_HeaderOnly = 'inc'
 .KindOutDir_ObjectList = ''
 
+.KindTags_StaticLib = { 'Library' }
+.KindTags_SharedLib = { 'Library', 'Binary' }
+.KindTags_ConsoleApp = { 'App', 'Binary', 'Console' }
+.KindTags_WindowedApp = { 'App', 'Binary', 'Windowed' }
+.KindTags_HeaderOnly = { }
+.KindTags_ObjectList = { 'Library' }
+
 .ConanVariables_StaticLib = { 'IncludeDirs', 'Defines' }
 .ConanVariables_SharedLib = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
 .ConanVariables_ConsoleApp = { 'IncludeDirs', 'Defines', 'LibDirs', 'Libs' }
@@ -34,6 +41,8 @@
 // Prepare global build rules
 //
 .Final_GlobalRules = { }
+.Final_AliasList = { }
+
 ForEach( .GlobalRule in .GlobalRules )
 {
     Using( .EmptyProperties )
@@ -170,7 +179,8 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 ForEach( .Rule in .StepRules )
                 {
-                    .RuleRequirementsSatisfied = true
+                    // Append tags for the current project kind
+                    .AvailableTags + .'KindTags_$ProjectKind$'
 
                     // Check if we ment the rule requirements
                     .Name = "<null>"
@@ -184,6 +194,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                         ^RuleRequires + '$Dependency$-$PipelineName$-$ConfigPlatform$-$ConfigName$'
                     }
 
+                    .RuleRequirementsSatisfied = true
                     ForEach( .Requirement in .RuleRequires )
                     {
                         If ( .Requirement not in .AvailableTags )
@@ -451,6 +462,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                 .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                 .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                .TargetTaskOutputDirectory = '$WorkspaceBuildDir$/tasks/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                 .TargetOutputName = "$ProjectName$$TargetExtension$"
                 .TargetList = { }
 
@@ -589,14 +601,27 @@ ForEach( .Pipeline in .AvailablePipelines )
                     .Type = 'Unknown'
                     .TargetsList = 'CurrentTargets'
 
+                    // // 'Compile' and 'Execute' Task default values
+                    // .TaskID = ''
                     .TaskCompiler = .ToolchainCompiler
                     .TaskCompilerFamily = .ToolchainCompilerFamily
                     .TaskUseTargets = true
                     .TaskInputAllowNoFiles = false
                     .TaskInputPattern = { '.cpp', '.cxx' }
                     .TaskCustomOptions = ''
+                    // .TaskExecutable = ''
+                    // .TaskRunAlways = false
+                    // .TaskPreBuildDirectory = false
+                    // .TaskUsePreviousTargets = false
+                    // .TaskOutputFolder = ''
 
                     Using( .Task )
+
+                    // // Set the taskID as the type
+                    // If ( .TaskID == .EmptyString )
+                    // {
+                    //     ^TaskID = .Type
+                    // }
 
                     If ( !.TaskUseTargets )
                     {
@@ -618,6 +643,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         Error( "Task has a unknown type: $Type$" )
                     }
+
+                    // Hide all targets defined in this scope or lower that can be hidden
+                    .Hidden = true
 
                     If( .Type == .TaskType_Compile )
                     {
@@ -852,8 +880,75 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     If ( .Type == .TaskType_Exec )
                     {
+                        // .SDKToolNames = { }
+                        // Using( .PipelineProperties_SDKs )
+
+                        // If ( .TaskExecutable not in .SDKToolNames )
+                        // {
+                        //     ^TaskExecutable = ''
+                        // }
+
+                        // // Run the task executable
+                        // If ( .TaskExecutable != .EmptyString )
+                        // {
+                        //     .ExecExecutable = .'$TaskExecutable$'
+                        //     .ExecInputPath = .ProjectResourcePaths
+                        //     .ExecInputPattern = .TaskInputPattern
+                        //     .ExecArguments + .TaskCustomOptions
+                        //     .ExecAlways = .TaskRunAlways
+                        //     .ExecUseStdOutAsOutput = false
+                        //     .ExecOutput = ''
+
+                        //     .PreBuildDependencies = .PreviousTargets + .CurrentTargets + .CurrentTargets_Unused
+
+                        //     If ( .TaskOutputFolder != .EmptyString )
+                        //     {
+                        //         // TODO:
+                        //         ^ExecOutput = '$TargetTaskOutputDirectory$/$TaskID$/priconfig.xml'
+                        //     }
+
+                        //     If ( .ExecOutput == .EmptyString )
+                        //     {
+                        //         ^ExecAlways = true
+                        //         ^ExecUseStdOutAsOutput = true
+                        //         ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_$Step$_$TaskID$_log.txt'
+                        //         ^TaskPreBuildDirectory = false
+                        //     }
+
+                        //     If ( .TaskUsePreviousTargets )
+                        //     {
+                        //         .ExecInput = .PreviousTargets
+                        //     }
+
+                        //     If ( .TaskPreBuildDirectory )
+                        //     {
+                        //         TextFile( '$ProjectTarget$-$Step$-$TaskID$-prebuild-dir' )
+                        //         {
+                        //             .TextFileOutput = '$ExecOutput$.readme.txt'
+                        //             .TextFileInputStrings = { 'Directory creation for task: $ProjectTarget$-$Step$-$TaskID$' }
+                        //         }
+
+                        //         ^PreBuildDependencies = { '$ProjectTarget$-$Step$-$TaskID$-prebuild-dir' }
+                        //     }
+
+                        //     Exec( '$ProjectTarget$-$Step$-$TaskID$' )
+                        //     {
+                        //     }
+
+                        //     ^'$TargetsList$' = '$ProjectTarget$-$Step$-$TaskID$'
+
+                        //     // ForEach( .DeployEntry in .ProjectStepDeploys )
+                        //     // {
+                        //     //     Print( "WARNING: Deploy entries for project $ProjectName$ are not supported along with 'Execute' tasks" )
+                        //     //     Print( .DeployEntry )
+                        //     // }
+                        // }
+
                         If ( .ProjectKind != .Kind_HeaderOnly )
                         {
+
+                            // If ( .TaskExecutable == .EmptyString ) // The whole ForEach
+
                             // TODO: Make this more generic, as this is explicitly a 'Deploy' step but should be just used for executing various tools
                             ForEach( .DeployEntry in .ProjectStepDeploys )
                             {
@@ -964,13 +1059,33 @@ ForEach( .Pipeline in .AvailablePipelines )
 
         If ( .HasTargets )
         {
-            Alias( 'all-$PipelineName$-$PipelineConfig$' )
+            .Target = 'all-$PipelineName$-$PipelineConfig$'
+
+            Alias( .Target )
             {
                 .Targets = .PipelineTargets
             }
+
+            ^Final_AliasList + .Target
         }
     }
 
 } // ForEach( .Pipeline in .AvailablePipelines )
+
+{
+    .HasTargets = false
+    ForEach ( ._ in .Final_AliasList )
+    {
+        ^HasTargets = true
+    }
+
+    If ( .HasTargets )
+    {
+        Alias( 'all' )
+        {
+            .Targets = .Final_AliasList
+        }
+    }
+}
 
 Print( '[IBT] Build targets created.' )

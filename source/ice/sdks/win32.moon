@@ -54,7 +54,7 @@ class SDK_Win32 extends Locator
                     }
                     libs: { }
 
-                    tools: {
+                    compilers: {
                         resource_compiler
                     }
                 }

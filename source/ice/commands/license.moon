@@ -10,6 +10,17 @@ class LicenseCommand extends Command
             details_file: 'thirdparty/details.json'
             generate_location: 'thirdparty'
 
+        source_extensions: (args) -> {
+            ".bff": true
+            ".hxx": true
+            ".cxx": true
+            ".hpp": true
+            ".cpp": true
+            ".inl": true
+            ".h": true
+            ".c": true
+        }
+
         source_headers:
             pattern_find:
                 args: { 'year_created', 'year_modified', 'authors', 'license' }
@@ -39,6 +50,10 @@ class LicenseCommand extends Command
 
     prepare: (args, project) =>
         @current_dir = os.cwd!
+
+        if args.generate
+            error "Missing value for 'license' property to continue. Set using 'LicenseCommand.settings.license' " if not @@settings.license
+            error "Missing value for 'authors' property to continue. Set using 'LicenseCommand.settings.authors' " if not @@settings.authors
 
         if args.mode == '3rdparty'
             @details = {}
@@ -143,17 +158,7 @@ class LicenseCommand extends Command
             print "Failed to open file #{file}"
 
     search_dir: (dir, args) =>
-        sdpx_extensions = {
-            ".hxx": true
-            ".cxx": true
-            ".bff": true
-            ".inl": true
-            -- We check additional source files only during 'check' runs
-            ".h": not args.generate
-            ".c": not args.generate
-            ".hpp": not args.generate
-            ".cpp": not args.generate
-        }
+        sdpx_extensions = @@settings.source_extensions args
 
         -- Find matching files
         files = os.find_files dir, recursive:true, filter: (file_name) ->

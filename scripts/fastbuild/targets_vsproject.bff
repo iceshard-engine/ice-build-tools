@@ -119,6 +119,7 @@
             }
         }
 
+        .SolutionHasAppProjects = false
         .SolutionBuildProject = { 'all-vcxproj' }
         .PipelineAvailableProjects = [ ]
 
@@ -260,6 +261,7 @@
             If ( .ProjectKind in .Kind_Applications )
             {
                 ^SolutionBuildProjectDependencies + '$ProjectName$-vcxproj'
+                ^SolutionHasAppProjects = true
             }
 
             If ( .ProjectGroup not in .SolutionFolderGroupNames )
@@ -305,10 +307,16 @@
         [
             .Dependencies = { 'all-vcxproj' }
             .Projects = .SolutionBuildProjectDependencies
+
+            ; If no application project is part of this solution set dependencies on all other projects
+            If ( !.SolutionHasAppProjects )
+            {
+                ^Projects = .SolutionFolderCurrentProjects
+            }
         ]
         .SolutionDependencies = { .SolutionDependency }
 
-        VSSolution( 'solution' )
+        VSSolution( 'vstudio' )
         {
             .SolutionOutput = '$WorkspaceRoot$/$UserSolutionName$'
         }

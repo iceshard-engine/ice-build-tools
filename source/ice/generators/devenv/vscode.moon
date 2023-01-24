@@ -1,0 +1,5 @@
+
+class VSCodeProjectGen
+    new: =>
+
+{ :VSCodeProjectGen }

@@ -1,0 +1,71 @@
+
+
+; Basic command line options for Debug (MSVC)
+.Rule_MSVC_Debug =
+[
+    .Name = 'Debug (MSVC)'
+    .Requires = { 'Debug', 'MSVC' }
+    .BuildOptions = {
+        '/permissive-'
+        '/EHsc'
+        '/Od'
+        '/MDd'
+    }
+    .Defines = {
+        '_DEBUG'
+    }
+]
+
+.Rule_MSVC_Debug_Binary =
+[
+    .Name = 'Debug (MSVC)'
+    .Requires = { 'Debug', 'Binary' }
+    .LinkOptions = {
+        '/DEBUG'
+    }
+]
+
+; Basic command line options for Release (MSVC)
+.Rule_MSVC_Release =
+[
+    .Name = 'Release (MSVC)'
+    .Requires = { 'Release', 'MSVC' }
+    .BuildOptions = {
+        '/permissive-'
+        '/EHsc'
+        '/O2'
+        '/MD'
+    }
+]
+
+; Basic command line options for Debug (MSVC)
+.Rule_GCC_Debug =
+[
+    .Name = 'Debug (GCC)'
+    .Requires = { 'Debug', 'gcc' }
+    .BuildOptions = {
+        '-Od'
+    }
+    .Defines = {
+        '_DEBUG'
+    }
+]
+
+; Basic command line options for Release (MSVC)
+.Rule_GCC_Release =
+[
+    .Name = 'Release (GCC)'
+    .Requires = { 'Release', 'gcc' }
+    .BuildOptions = {
+        '-O2'
+    }
+]
+
+; A list of rules (configurations) that will be applied to matching targets
+^GlobalRules = {
+    .Rule_MSVC_Debug
+    .Rule_MSVC_Debug_Binary
+    .Rule_MSVC_Release
+    .Rule_GCC_Debug
+    .Rule_GCC_Release
+}

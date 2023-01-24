@@ -9,6 +9,9 @@ class Command
             opts.name = opts.name or "--#{name}"
             @.args[name] = { :func, :name, :opts }
 
+    @argument_options = (name) =>
+        @.args[name].opts
+
     new: (@parser) =>
         @init! if @init
 

@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Debug",
+    "id": "Debug",
+    "os": "Windows",
+    "arch": "x86_64",
+    "build_type": "Debug",
+    "compiler": {
+      "name": "Visual Studio",
+      "version": "17"
+    }
+  },
+  {
+    "name": "Release",
+    "id": "Release",
+    "os": "Windows",
+    "arch": "x86_64",
+    "build_type": "Release",
+    "compiler": {
+      "name": "Visual Studio",
+      "version": "17"
+    }
+  }
+]

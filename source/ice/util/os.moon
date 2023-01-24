@@ -18,6 +18,15 @@ os.iswindows = detected_host_system == 'windows'
 os.isunix = detected_host_system == 'unix'
 os.ismacos = detected_host_system == 'macos'
 
+-- Returns the value from the map that is representing the current OS ibt is running on
+os.osselect = (osmap) ->
+    if os.iswindows
+        return osmap.windows or osmap.win
+    elseif os.ismacos
+        return osmap.macos or osmap.mac or osmap.osx or osmap.unix
+    elseif os.isunix
+        return osmap.linux or osmap.unix
+
 -- Returns true if the path is a directory
 os.isfile = (path) -> (lfs.attributes path, 'mode') == 'file'
 

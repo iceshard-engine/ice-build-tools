@@ -3,7 +3,7 @@ import Application from require 'ice.application'
 import BuildCommand from require 'ice.commands.build'
 import UpdateCommand from require 'ice.commands.update'
 import LicenseCommand from require 'ice.commands.license'
-import VStudioCommand from require 'ice.commands.vstudio'
+import DevenvCommand from require 'ice.commands.devenv'
 
 class ProjectApplication extends Application
     @name: 'NewProject'
@@ -12,7 +12,7 @@ class ProjectApplication extends Application
         'update': UpdateCommand
         'build': BuildCommand
         'license': LicenseCommand
-        'vstudio': VStudioCommand
+        'devenv': DevenvCommand
     }
 
     -- Plain call to the application

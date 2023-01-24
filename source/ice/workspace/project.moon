@@ -18,6 +18,8 @@ import FastBuildGenerator from require 'ice.generators.fastbuild'
 import ProfileList, Profile from require 'ice.workspace.profile'
 import ProjectApplication from require 'ice.workspace.application'
 
+import Json from require 'ice.util.json'
+
 -- import install_conan_tools, install_conan_source_dependencies from require 'ice.workspace.util.conan_install_helpers'
 install_conan_dependencies = ->
 generate_fastbuild_variables_script = ->
@@ -50,6 +52,22 @@ class Project
         @add_locator SDK_Vulkan!
 
     script: (@project_script) =>
+
+    load_settings: (settings_path, file_format = "settings_{os}.json") =>
+        os_name = "linux" if os.isunix
+        os_name = "macos" if os.ismacos
+        os_name = "windows" if os.iswindows
+
+        settings_file = file_format\gsub "{os}", os_name
+        @project_settings_file = "#{settings_path}/#{settings_file}"
+
+        @project_settings = { }
+        if file = io.open @project_settings_file
+            @project_settings = Json\decode file\read '*a'
+            file\close!
+
+        @project_script = @project_settings.script_file
+
     application: (@application_class) =>
     profiles: (profiles_file) =>
         @profile_list = ProfileList\from_file profiles_file
@@ -216,10 +234,20 @@ generate_fastbuild_variables_script = (profiles, locators, output_dir, force_upd
                         { 'Libs', sdk.libs }
                     }
 
+                    unless not sdk.compilers
+                        gen\line!
+                        for compiler in *(sdk.compilers or { })
+                            gen\compiler compiler
+
+                    tool_names = { }
                     unless not sdk.tools
                         gen\line!
                         for tool in *(sdk.tools or { })
-                            gen\compiler tool
+                            gen\line ".#{tool.name} = '#{tool.path}'"
+                            table.insert tool_names, tool.name
+
+                    gen\line!
+                    gen\variables { { 'SDKToolNames', tool_names } }
 
                 table.insert sdk_names, sdk.name
                 table.insert sdk_list, sdk.struct_name

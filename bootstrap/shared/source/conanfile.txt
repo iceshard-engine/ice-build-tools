@@ -1,0 +1,10 @@
+[requires]
+
+[build_requires]
+fastbuild-generator/0.3.0@iceshard/stable
+
+[options]
+
+[generators]
+fastbuild
+json

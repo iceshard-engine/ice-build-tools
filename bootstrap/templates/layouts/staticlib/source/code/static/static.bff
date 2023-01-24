@@ -1,0 +1,9 @@
+.Project =
+[
+    .Name = 'lib'
+    .Kind = .Kind_StaticLib
+    .Group = 'Example'
+
+    .BaseDir = '$WorkspaceCodeDir$/static'
+]
+.Projects + .Project

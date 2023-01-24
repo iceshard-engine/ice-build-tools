@@ -3,7 +3,7 @@ import ProjectApplication from require 'ice.workspace.application'
 
 with Project "NewProject"
     \application ProjectApplication
-    \script "ibt.bat"
+    \load_settings "tools" --, "settings_{os}.json"
 
     -- Source settings
     \sources "source/code"

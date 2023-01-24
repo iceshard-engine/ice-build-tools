@@ -1,14 +1,15 @@
 #include "platforms/platform_windows_x64.bff"
-// #include "platforms/platform_windows_x64_uwp.bff"
+#include "platforms/platform_windows_x64_uwp.bff"
 #include "platforms/platform_linux_x64.bff"
 
 .PlatformList = {
     .Platform_Windows_x64
-    // .Platform_Windows_x64_UWP
+    .Platform_Windows_x64_UWP
     .Platform_Linux_x64
 }
 
 .PlatformNames = {
     'Windows'
+    'UWP'
     'Linux'
 }

@@ -1,15 +1,74 @@
 
+.PlatformRule_Windows_x64 =
+[
+    .Name = 'Win-x64-Generic-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'x64' }
+
+    .LinkOptions = {
+        '/MACHINE:x64'
+    }
+]
+
+.PlatformRule_Windows_StaticLib =
+[
+    .Name = 'Win-StaticLib-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'StaticLib' }
+]
+
+.PlatformRule_Windows_SharedLib =
+[
+    .Name = 'Win-SharedLib-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'SharedLib' }
+    .LinkOptions = {
+        '/DLL'
+        '/DYNAMICBASE'
+        '/NXCOMPAT'
+    }
+]
+
+.PlatformRule_Windows_ConsoleApp =
+[
+    .Name = 'Win-ConsoleApp-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'ConsoleApp' }
+    .LinkOptions = {
+        '/SUBSYSTEM:CONSOLE'
+        '/DYNAMICBASE'
+        '/NXCOMPAT'
+    }
+]
+
+.PlatformRule_Windows_WindowedApp =
+[
+    .Name = 'Win-WindowedApp-LinkOptions'
+    .Requires = { 'Windows', 'Step-Link', 'WindowedApp' }
+    .LinkOptions = {
+        '/SUBSYSTEM:WINDOWS'
+        '/DYNAMICBASE'
+        '/NXCOMPAT'
+    }
+]
+
 .Platform_Windows_x64_UWP =
 [
     .PlatformSystem = 'UWP'
     .PlatformArchitecture = 'x64'
+    .PlatformVSName = 'UWP'
 
     .PlatformRequiredSDKs = {
+        'SDK-Windows-10'
         'SDK-Windows-10-CXX-WinRT'
     }
     .PlatformSupportedToolchainFamilies = {
         'msvc'
         'winrc'
+    }
+
+    .PlatformRules = {
+        .PlatformRule_Windows_x64
+        .PlatformRule_Windows_StaticLib
+        .PlatformRule_Windows_SharedLib
+        .PlatformRule_Windows_ConsoleApp
+        .PlatformRule_Windows_WindowedApp
     }
 
     .PlatformExtensions =
@@ -22,3 +81,41 @@
         .OutputExtension_HeaderOnly = ''
     ]
 ]
+
+// Platform specific pipeline tasks
+
+// .Task_UWP_CreatePriConfig =
+// [
+//     .Step = 'Package-Prepare'
+//     .Type = 'Exec'
+
+//     .TaskID = 'CreatePriConfig'
+//     .TaskRequires = { 'SDK-Windows-10-CXX-WinRT' }
+
+//     .TaskExecutable = 'WinSDK_MakePri'
+//     // .TaskInputPattern = { 'appxmanifest.xml' }
+//     .TaskInputAllowNoFiles = true
+//     .TaskPreBuildDirectory = true
+
+//     .ExecArguments = ' createconfig /cf %2 /dq en-US'
+//     .ExecUseStdOutAsOutput = false
+//     .ExecInputPathRecurse = false
+// ]
+
+// .Task_UWP_MakePri =
+// [
+//     .Step = 'Package-Prepare'
+//     .Type = 'Exec'
+
+//     .TaskID = 'MakePri'
+//     .TaskRequires = { 'SDK-Windows-10-CXX-WinRT' }
+
+//     .TaskExecutable = 'WinSDK_MakePri'
+//     // .TaskInputPattern = { 'appxmanifest.xml' }
+//     .TaskInputAllowNoFiles = false
+//     .TaskPreviousTaskInputs = true
+
+//     .ExecArguments = ' new /pr %2 /cf %1'
+//     .ExecUseStdOutAsOutput = false
+//     .ExecInputPathRecurse = false
+// ]

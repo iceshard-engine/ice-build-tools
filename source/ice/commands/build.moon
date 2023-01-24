@@ -6,13 +6,14 @@ class BuildCommand extends Command
     @settings: {
         fbuild:
             config_file: 'fbuild.bff'
+        default_target: 'all-x64-Release'
     }
 
     @arguments {
         option 'target',
             name: '-t --target'
             count: '*'
-            default: 'all-x64-Develop'
+            default: @settings.default_target
         option 'summary',
             name: '-s --summary'
             choices: { "off", "success", "always" }
@@ -24,6 +25,13 @@ class BuildCommand extends Command
         flag 'monitor'
         flag 'dist'
     }
+
+    new: (...) =>
+        -- Update the default target again if it was changed in a user workspace
+        (@@argument_options 'target').default = @@settings.default_target
+
+        -- Call the parent ctor
+        super ...
 
     prepare: (args, project) =>
         os.chdir project.output_dir

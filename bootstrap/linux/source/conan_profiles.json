@@ -1,0 +1,26 @@
+[
+  {
+    "id": "Debug",
+    "name": "Linux-GCC",
+    "os": "Linux",
+    "arch": "x86_64",
+    "compiler": {
+        "name": "gcc",
+        "version": "12",
+        "libcxx": "libstdc++"
+    },
+    "build_type": "Debug"
+  },
+  {
+    "id": "Release",
+    "name": "Linux-GCC",
+    "os": "Linux",
+    "arch": "x86_64",
+    "compiler": {
+        "name": "gcc",
+        "version": "12",
+        "libcxx": "libstdc++"
+    },
+    "build_type": "Release"
+  }
+]

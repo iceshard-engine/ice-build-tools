@@ -1,0 +1,9 @@
+.Project =
+[
+    .Name = 'app'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Example'
+
+    .BaseDir = '$WorkspaceCodeDir$/app'
+]
+.Projects + .Project

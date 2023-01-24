@@ -1,0 +1,7 @@
+; NOTE: Projects need to be included in-order of their dependencies.
+;   For example if 'Proj_A' depends on 'Proj_B' we need to include 'Proj_B' first
+;   - #include "Proj_B/Proj_B.bff"
+;   - #include "Proj_A/Proj_A.bff"
+
+; Include the BFF project file of the static library
+#include "shared/shared.bff"

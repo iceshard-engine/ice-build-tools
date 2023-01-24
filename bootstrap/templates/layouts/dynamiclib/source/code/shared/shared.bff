@@ -1,0 +1,9 @@
+.Project =
+[
+    .Name = 'shared'
+    .Kind = .Kind_SharedLib
+    .Group = 'Example'
+
+    .BaseDir = '$WorkspaceCodeDir$/shared'
+]
+.Projects + .Project
