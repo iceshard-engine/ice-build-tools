@@ -9,13 +9,6 @@
     }
 ]
 
-.PlatformRule_Linux_StaticLib =
-[
-    .Name = 'Linux-StaticLib-LinkOptions'
-    .Requires = { 'Linux', 'Step-Link', 'StaticLib' }
-    .LinkOptions = { }
-]
-
 .PlatformRule_Linux_SharedLib =
 [
     .Name = 'Linux-SharedLib-LinkOptions'
@@ -25,19 +18,10 @@
     }
 ]
 
-.PlatformRule_Linux_ConsoleApp =
+.PlatformRule_Linux_App =
 [
     .Name = 'Linux-App-LinkOptions'
-    .Requires = { 'Linux', 'Step-Link', 'ConsoleApp' }
-    .LinkOptions = {
-        '-pie'
-    }
-]
-
-.PlatformRule_Linux_WindowedApp =
-[
-    .Name = 'Linux-App-LinkOptions'
-    .Requires = { 'Linux', 'Step-Link', 'WindowedApp' }
+    .Requires = { 'Linux', 'Step-Link', 'App' }
     .LinkOptions = {
         '-pie'
     }
@@ -46,22 +30,17 @@
 .Platform_Linux_x64 =
 [
     .PlatformSystem = 'Linux'
-    .PlatformArchitecture = 'x64'
+    .PlatformSupportedArchitectures = { 'x64' }
+    .PlatformSupportedToolchainFamilies = { 'clang', 'gcc' }
 
     .PlatformRequiredSDKs = {
         'SDK-Linux'
     }
-    .PlatformSupportedToolchainFamilies = {
-        'clang'
-        'gcc'
-    }
 
     .PlatformRules = {
         .PlatformRule_Linux_PIC
-        ; .PlatformRule_Linux_StaticLib
         .PlatformRule_Linux_SharedLib
-        ; .PlatformRule_Linux_ConsoleApp
-        ; .PlatformRule_Linux_WindowedApp
+        .PlatformRule_Linux_App
     }
 
     .PlatformExtensions =
@@ -72,15 +51,5 @@
         .OutputExtension_WindowedApp = ''
         .OutputExtension_HeaderOnly = ''
         .OutputExtension_ObjectList = ''
-    ]
-
-    .PlatformOptions =
-    [
-        .LinkerOptions_StaticLib = ''
-        .LinkerOptions_SharedLib = ''
-        .LinkerOptions_ConsoleApp = ''
-        .LinkerOptions_WindowedApp = ''
-        .LinkerOptions_HeaderOnly = ''
-        .LinkerOptions_ObjectList = ''
     ]
 ]

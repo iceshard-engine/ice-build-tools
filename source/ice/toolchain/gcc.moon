@@ -3,12 +3,12 @@ import Where, Exec from require "ice.tools.exec"
 toolchain_definitions = {
     '11': {
         name: 'gcc-11.0.0'
-        struct_name: 'Toolchain_gcc_x64_11'
-        compiler_name: 'compiler-gcc-x64-11'
+        struct_name: 'Toolchain_gcc_11'
+        compiler_name: 'compiler-gcc-11'
 
         generate_structure: (gen, gcc_path, ar_path) ->
-            struct_name = 'Toolchain_gcc_x64_11'
-            compiler_name = 'compiler-gcc-x64-11'
+            struct_name = 'Toolchain_gcc_11'
+            compiler_name = 'compiler-gcc-11'
 
             gen\structure struct_name, (gen) ->
                 gen\line!
@@ -20,9 +20,9 @@ toolchain_definitions = {
                 gen\line!
                 gen\variables {
                     { 'ToolchainCompilerFamily', 'gcc' }
-                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainSupportedArchitectures', { 'x64' } }
                     { 'ToolchainToolset', '11' }
-                    { 'ToolchainFrontend', 'gcc' }
+                    { 'ToolchainFrontend', 'GCC' }
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', ar_path }
                     { 'ToolchainLinker', gcc_path }
@@ -33,12 +33,12 @@ toolchain_definitions = {
     }
     '12': {
         name: 'gcc-12.0.0'
-        struct_name: 'Toolchain_gcc_x64_12'
-        compiler_name: 'compiler-gcc-x64-12'
+        struct_name: 'Toolchain_gcc_12'
+        compiler_name: 'compiler-gcc-12'
 
         generate_structure: (gen, gcc_path, ar_path) ->
-            struct_name = 'Toolchain_gcc_x64_12'
-            compiler_name = 'compiler-gcc-x64-12'
+            struct_name = 'Toolchain_gcc_12'
+            compiler_name = 'compiler-gcc-12'
 
             gen\structure struct_name, (gen) ->
                 gen\line!
@@ -50,7 +50,7 @@ toolchain_definitions = {
                 gen\line!
                 gen\variables {
                     { 'ToolchainCompilerFamily', 'gcc' }
-                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainSupportedArchitectures', { 'x64' } }
                     { 'ToolchainToolset', '12' }
                     { 'ToolchainFrontend', 'gcc' }
                     { 'ToolchainCompiler', compiler_name }

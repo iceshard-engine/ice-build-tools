@@ -1,15 +1,15 @@
 import VSWhere from require "ice.tools.vswhere"
 
 toolchain_definitions = {
-    --[[ Toolchain: MSVC - x64 - v142 ]]
+    --[[ Toolchain: MSVC - v142 ]]
     msvc_x64_v142: {
         name: 'msvc-x64-v142'
-        struct_name: 'Toolchain_MSVC_x64_v142'
-        compiler_name: 'compiler-msvc-x64-v142'
+        struct_name: 'Toolchain_MSVC_v142'
+        compiler_name: 'compiler-msvc-v142'
 
         generate_structure: (gen, toolchain_bin_dir, toolchain_dir, tools_version) ->
-            struct_name = 'Toolchain_MSVC_x64_v142'
-            compiler_name = 'compiler-msvc-x64-v142'
+            struct_name = 'Toolchain_MSVC_v142'
+            compiler_name = 'compiler-msvc-v142'
 
             gen\structure struct_name, (gen) ->
                 gen\variables { { 'ToolchainPath', toolchain_bin_dir } }
@@ -37,8 +37,8 @@ toolchain_definitions = {
 
                 gen\line!
                 gen\variables {
-                    { 'ToolchainCompilerFamily', 'MSVC' }
-                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainCompilerFamily', 'msvc' }
+                    { 'ToolchainSupportedArchitectures', { 'x64' } }
                     { 'ToolchainToolset', 'v142' }
                     { 'ToolchainFrontend', 'MSVC' }
                     { 'ToolchainCompiler', compiler_name }
@@ -73,15 +73,15 @@ toolchain_definitions = {
                     } }
                 }
     }
-    --[[ Toolchain: MSVC - x64 - v143 ]]
+    --[[ Toolchain: MSVC - v143 ]]
     msvc_x64_v143: {
         name: 'msvc-x64-v143'
-        struct_name: 'Toolchain_MSVC_x64_v143'
-        compiler_name: 'compiler-msvc-x64-v143'
+        struct_name: 'Toolchain_MSVC_v143'
+        compiler_name: 'compiler-msvc-v143'
 
         generate_structure: (gen, toolchain_bin_dir, toolchain_dir, tools_version) ->
-            struct_name = 'Toolchain_MSVC_x64_v143'
-            compiler_name = 'compiler-msvc-x64-v143'
+            struct_name = 'Toolchain_MSVC_v143'
+            compiler_name = 'compiler-msvc-v143'
 
             gen\structure struct_name, (gen) ->
                 gen\variables { { 'ToolchainPath', toolchain_bin_dir } }
@@ -109,8 +109,8 @@ toolchain_definitions = {
 
                 gen\line!
                 gen\variables {
-                    { 'ToolchainCompilerFamily', 'MSVC' }
-                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainCompilerFamily', 'msvc' }
+                    { 'ToolchainSupportedArchitectures', { 'x64' } }
                     { 'ToolchainToolset', 'v143' }
                     { 'ToolchainFrontend', 'MSVC' }
                     { 'ToolchainCompiler', compiler_name }

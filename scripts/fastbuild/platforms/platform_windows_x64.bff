@@ -51,8 +51,8 @@
 .Platform_Windows_x64 =
 [
     .PlatformSystem = 'Windows'
-    .PlatformArchitecture = 'x64'
-    .PlatformVSName = 'x64'
+    .PlatformSupportedArchitectures = { 'x64' } // x86, arm64
+    .PlatformSupportedToolchainFamilies = { 'msvc', 'clang' }
 
     .PlatformRequiredSDKs = {
         'SDK-Windows-10'
@@ -74,5 +74,12 @@
         .OutputExtension_WindowedApp = '.exe'
         .OutputExtension_ObjectList = ''
         .OutputExtension_HeaderOnly = ''
+    ]
+
+    .PlatformVSInfo =
+    [
+        .VSEnabled = true
+        // Set name for each arch defined. Is specific arch unsupported by VS set EmptyString
+        .VSArch_x64 = 'x64'
     ]
 ]

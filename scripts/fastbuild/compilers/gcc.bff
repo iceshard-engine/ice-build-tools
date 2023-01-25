@@ -1,5 +1,5 @@
 
-.CompilerFrontend_gcc =
+.CompilerFrontend_GCC =
 [
     .FrontendFlag_Defines =
     [

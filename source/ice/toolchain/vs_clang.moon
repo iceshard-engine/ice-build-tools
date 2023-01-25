@@ -4,12 +4,12 @@ toolchain_definitions = {
     --[[ Toolchain: Clang 10 - x64 - ]]
     clang_x64_1000: {
         name: 'clang-10.0.0'
-        struct_name: 'Toolchain_Clang_x64_1000'
-        compiler_name: 'compiler-clang-x64-1000'
+        struct_name: 'Toolchain_Clang_1000'
+        compiler_name: 'compiler-clang-1000'
 
         generate_structure: (gen, toolchain_bin_dir, toolchain_dir, clang_version, tools_version) ->
-            struct_name = 'Toolchain_Clang_x64_1000'
-            compiler_name = 'compiler-clang-x64-1000'
+            struct_name = 'Toolchain_Clang_1000'
+            compiler_name = 'compiler-clang-1000'
 
             gen\structure struct_name, (gen) ->
                 gen\variables { { 'ToolchainPath', toolchain_bin_dir } }
@@ -24,9 +24,9 @@ toolchain_definitions = {
                 gen\line!
                 gen\variables {
                     { 'ToolchainCompilerFamily', 'clang' }
-                    { 'ToolchainArchitecture', 'x64' }
+                    { 'ToolchainSupportedArchitectures', { 'x64' } }
                     { 'ToolchainToolset', '1000' }
-                    { 'ToolchainFrontend', 'clang_cl' }
+                    { 'ToolchainFrontend', 'MSVC' }
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', "$ToolchainPath$\\llvm-lib.exe" }
                     { 'ToolchainLinker', "$ToolchainPath$\\lld-link.exe" }

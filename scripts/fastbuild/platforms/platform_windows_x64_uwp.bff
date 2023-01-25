@@ -18,7 +18,7 @@
 .PlatformRule_Windows_SharedLib =
 [
     .Name = 'Win-SharedLib-LinkOptions'
-    .Requires = { 'Windows', 'Step-Link', 'SharedLib' }
+    .Requires = { 'Windows', 'Step-Link', 'SharedLib', 'MSVC-Frontend' }
     .LinkOptions = {
         '/DLL'
         '/DYNAMICBASE'
@@ -29,7 +29,7 @@
 .PlatformRule_Windows_ConsoleApp =
 [
     .Name = 'Win-ConsoleApp-LinkOptions'
-    .Requires = { 'Windows', 'Step-Link', 'ConsoleApp' }
+    .Requires = { 'Windows', 'Step-Link', 'ConsoleApp', 'MSVC-Frontend' }
     .LinkOptions = {
         '/SUBSYSTEM:CONSOLE'
         '/DYNAMICBASE'
@@ -40,7 +40,7 @@
 .PlatformRule_Windows_WindowedApp =
 [
     .Name = 'Win-WindowedApp-LinkOptions'
-    .Requires = { 'Windows', 'Step-Link', 'WindowedApp' }
+    .Requires = { 'Windows', 'Step-Link', 'WindowedApp', 'MSVC-Frontend' }
     .LinkOptions = {
         '/SUBSYSTEM:WINDOWS'
         '/DYNAMICBASE'
@@ -51,16 +51,12 @@
 .Platform_Windows_x64_UWP =
 [
     .PlatformSystem = 'UWP'
-    .PlatformArchitecture = 'x64'
-    .PlatformVSName = 'UWP'
+    .PlatformSupportedArchitectures = { 'x64' } // x86, arm64
+    .PlatformSupportedToolchainFamilies = { 'msvc' }
 
     .PlatformRequiredSDKs = {
         'SDK-Windows-10'
         'SDK-Windows-10-CXX-WinRT'
-    }
-    .PlatformSupportedToolchainFamilies = {
-        'msvc'
-        'winrc'
     }
 
     .PlatformRules = {
@@ -79,6 +75,13 @@
         .OutputExtension_WindowedApp = '.exe'
         .OutputExtension_ObjectList = ''
         .OutputExtension_HeaderOnly = ''
+    ]
+
+    .PlatformVSInfo =
+    [
+        .VSEnabled = true
+        // Set name for each arch defined. Is specific arch unsupported by VS set EmptyString
+        .VSArch_x64 = 'x64'
     ]
 ]
 

@@ -147,8 +147,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                 + .ProjectRules
                 + .Final_GlobalRules
 
+            .TargetTriple = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$'
             // .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelineConfig$'
-            .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+            .ProjectTarget = '$ProjectName$-$TargetTriple$-$PipelineToolchain$'
             .ProjectStruct = '$ProjectName$_$PipelineName$_$PipelinePlatform$_$PipelineConfig$_$PipelineToolchainStruct$'
             .ProjectSubTargets = { }
 
@@ -484,7 +485,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         If ( .Dependency in .PipelineEnabledProjects )
                         {
-                            .DependencyTargetName = '$Dependency$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$-$Step$'
+                            .DependencyTargetName = '$Dependency$-$TargetTriple$-$PipelineToolchain$-$Step$'
                             ^StepDependencies + .DependencyTargetName
                         }
                     }
@@ -604,7 +605,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     // // 'Compile' and 'Execute' Task default values
                     // .TaskID = ''
                     .TaskCompiler = .ToolchainCompiler
-                    .TaskCompilerFamily = .ToolchainCompilerFamily
+                    .TaskCompilerFrontend = .ToolchainFrontend
                     .TaskUseTargets = true
                     .TaskInputAllowNoFiles = false
                     .TaskInputPattern = { '.cpp', '.cxx' }
@@ -650,7 +651,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     If( .Type == .TaskType_Compile )
                     {
                         Using( .FinalProperties )
-                        Using( .'CompilerFrontend_$TaskCompilerFamily$' )
+                        Using( .'CompilerFrontend_$TaskCompilerFrontend$' )
                         Using( .FrontendProperties )
 
                         {
@@ -738,7 +739,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     If( .Type == .TaskType_Link )
                     {
                         Using( .FinalProperties )
-                        Using( .'CompilerFrontend_$TaskCompilerFamily$' )
+                        Using( .'CompilerFrontend_$TaskCompilerFrontend$' )
                         Using( .FrontendProperties )
 
                         {
@@ -819,7 +820,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             .Libraries = .PreviousTargets
                             ForEach( .Library in .LibraryTargets )
                             {
-                                ^Libraries + '$Library$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$-$Step$'
+                                ^Libraries + '$Library$-$TargetTriple$-$PipelineToolchain$-$Step$'
                             }
 
                             .Linker = .ToolchainLinker
@@ -839,7 +840,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             .Libraries = .PreviousTargets
                             ForEach( .Library in .LibraryTargets )
                             {
-                                ^Libraries + '$Library$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$-$Step$'
+                                ^Libraries + '$Library$-$TargetTriple$-$PipelineToolchain$-$Step$'
                             }
 
                             .Linker = .ToolchainLinker
