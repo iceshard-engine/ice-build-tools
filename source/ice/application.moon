@@ -14,6 +14,7 @@ class Application
     new: =>
         @script_file = arg[1]
         @parser = argparse @@name, @@description, @@epilog
+        @parser\add_help_command!
         @parser\require_command false
         @parser\command_target "command"
 

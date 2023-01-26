@@ -5,9 +5,12 @@ flag = (name, tab) -> func:'flag', name:name, opts:tab or { }
 class Command
     @arguments = (defined_args) =>
         @.args = { }
+        @.ordered_args = { }
         for { :func, :name, :opts } in *defined_args
-            opts.name = opts.name or "--#{name}"
+            opts.name = opts.name or (func == 'argument' and name) or "--#{name}"
+
             @.args[name] = { :func, :name, :opts }
+            table.insert @.ordered_args, @.args[name]
 
     @argument_options = (name) =>
         @.args[name].opts
@@ -15,8 +18,8 @@ class Command
     new: (@parser) =>
         @init! if @init
 
-        if @@.args
-            for _, { :func, :opts } in pairs @@.args
+        if @@.ordered_args
+            for { :func, :opts } in *@@.ordered_args
                 @parser[func] @parser, opts
 
     prepare: => nil
