@@ -4,7 +4,7 @@
 .Rule_MSVC_Debug =
 [
     .Name = 'Debug (MSVC)'
-    .Requires = { 'Debug', 'MSVC' }
+    .Requires = { 'Debug', 'MSVC-Frontend' }
     .BuildOptions = {
         '/permissive-'
         '/EHsc'
@@ -20,7 +20,7 @@
 .Rule_MSVC_Debug_Binary =
 [
     .Name = 'Debug (MSVC)'
-    .Requires = { 'Debug', 'Binary' }
+    .Requires = { 'Debug', 'Binary', 'MSVC-Frontend' }
     .LinkOptions = {
         '/DEBUG'
     }
@@ -30,7 +30,7 @@
 .Rule_MSVC_Release =
 [
     .Name = 'Release (MSVC)'
-    .Requires = { 'Release', 'MSVC' }
+    .Requires = { 'Release', 'MSVC-Frontend' }
     .BuildOptions = {
         '/permissive-'
         '/EHsc'
@@ -44,7 +44,7 @@
 .Rule_GCC_Debug =
 [
     .Name = 'Debug (GCC)'
-    .Requires = { 'Debug', 'gcc' }
+    .Requires = { 'Debug', 'GCC-Frontend' }
     .BuildOptions = {
         '-Od'
     }
@@ -57,7 +57,7 @@
 .Rule_GCC_Release =
 [
     .Name = 'Release (GCC)'
-    .Requires = { 'Release', 'gcc' }
+    .Requires = { 'Release', 'GCC-Frontend' }
     .BuildOptions = {
         '-O2'
     }
