@@ -4,6 +4,27 @@ package.moonpath ..= ";?.moon;?/init.moon"
 
 import IBT from require "ibt.ibt"
 
+handle_result_value = (result, table_only) ->
+    final_result = nil
+    if (type result) == "boolean"
+        final_result = return_code:(result and 0 or -1)
+    elseif (type result) == "number"
+        final_result = return_code:result
+    elseif (type result) == "table"
+        if result.return_code ~= nil
+            final_result = result
+        else
+            final_result = return_code:0, value:result
+    elseif (type result) == "nil"
+        final_result = return_code:0
+
+    -- Handle errors
+    if final_result.return_code ~= 0
+        print string.format "ERROR: [%d] %s", final_result.return_code, (final_result.message or "Unknown error occured!")
+        os.exit 1
+
+    final_result.value or table_only
+
 class Application
     @arguments = (defined_args) =>
         @.args = { }
@@ -43,32 +64,14 @@ class Application
         if args.command
             old_dir = os.cwd!
 
-            @commands[args.command]\prepare args, project
-            result = @commands[args.command]\execute args, project
+            if handle_result_value (@commands[args.command]\prepare args, project), true
+                result = handle_result_value (@commands[args.command]\execute args, project)
             os.chdir old_dir
         else
             result = @execute args, project
 
         -- Translate return values to return codes
-        final_result = nil
-        if (type result) == "boolean"
-            final_result = return_code:(result and 0 or -1)
-        elseif (type result) == "number"
-            final_result = return_code:result
-        elseif (type result) == "table"
-            if result.return_code ~= nil
-                final_result = result
-            else
-                final_result = return_code:0, value:result
-        elseif (type result) == "nil"
-            final_result = return_code:0
-
-        -- Handle errors
-        if final_result.return_code ~= 0
-            print string.format "ERROR: [%d] %s", final_result.return_code, (final_result.message or "Unknown error occured!")
-            os.exit 1
-
-        final_result.value or { }
+        result or { }
 
     execute: =>
         print "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel})"

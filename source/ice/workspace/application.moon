@@ -5,6 +5,7 @@ import UpdateCommand from require 'ice.commands.update'
 import LicenseCommand from require 'ice.commands.license'
 import DevenvCommand from require 'ice.commands.devenv'
 import ExecCommand from require 'ice.commands.exec'
+import ScriptCommand from require 'ice.commands.script'
 
 class ProjectApplication extends Application
     @name: 'NewProject'
@@ -15,6 +16,7 @@ class ProjectApplication extends Application
         'license': LicenseCommand
         'devenv': DevenvCommand
         'exec': ExecCommand
+        'script': ScriptCommand
     }
 
     -- Plain call to the application
