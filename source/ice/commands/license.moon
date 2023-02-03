@@ -57,7 +57,7 @@ class LicenseCommand extends Command
             @fail "Missing value for setting '#{@@settings.license.authors.key}'" unless @settings.license.authors
 
         if args.mode == '3rdparty'
-            @details = File\contents @settings.thirdparty.details_file, parser:Json\decode
+            @details = File\contents @settings.license.thirdparty.details_file, parser:Json\decode
 
     execute: (args, project) =>
         return @execute_mode_sources args, project if args.mode == 'sources'
@@ -76,14 +76,14 @@ class LicenseCommand extends Command
         line_count = 0
 
         contents = File\contents file, limit: 500, mode:'rb'
-        Log\warning "Failed to read file: '#{file}'" if not contents or contents == ""
+        @log\warning "Failed to read file: '#{file}'" if not contents or contents == ""
 
         results = { }
         header_size = 0
         for pat_line in *lic_patterns
             file_line, cr, nl = contents\match "([^\n\r]+)(\r?)(\n)"
             if nl ~= '\n'
-                Log\verbose "Skipping empty file #{file}" if args.verbose == 2
+                @log\verbose "Skipping empty file #{file}" if args.verbose == 2
                 return
             elseif cr == '\r'
                 newline = "\r\n"
@@ -102,11 +102,11 @@ class LicenseCommand extends Command
 
         -- Send missing message (always shown)
         if line_count == 0
-            Log\verbose "Skipping empty file #{file}" if args.verbose == 2
+            @log\verbose "Skipping empty file #{file}" if args.verbose == 2
             return
 
         if #results ~= #lic_pattern_args
-            Log\warning "Missing copyright and/or SPDX header in file: #{file}"
+            @log\warning "Missing copyright and/or SPDX header in file: #{file}"
             header_size = 0
             contents = nil
 
@@ -127,11 +127,11 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            Log\verbose "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified if args.verbose
+            @log\verbose "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified if args.verbose
         elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
-            Log\info "Modification of authors or license values in #{file}", r.authors, r.license
-            Log\verbose "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors and args.verbose == 2
-            Log\verbose "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx and args.verbose == 2
+            @log\info "Modification of authors or license values in #{file}", r.authors, r.license
+            @log\verbose "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors and args.verbose == 2
+            @log\verbose "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx and args.verbose == 2
 
             -- Let's don't end up reversing years...
             r.file_modified = r.year_modified
@@ -153,7 +153,7 @@ class LicenseCommand extends Command
             r.license = lic_spdx if r.license ~= lic_spdx
             final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
 
-            Log\info "Generating copyright and SPDX header in file: #{file}"
+            @log\info "Generating copyright and SPDX header in file: #{file}"
             contents = File\contents file, mode:'rb' unless contents
             contents = final_header .. contents
 
@@ -161,7 +161,10 @@ class LicenseCommand extends Command
                 f\write contents
                 f\close!
             else
-                Log\warning "Failed to update file #{file}"
+                @log\warning "Failed to update file #{file}"
+        elseif args.generate
+            @log\verbose "No updated required for file #{file}"
+
 
     search_dir: (dir, args) =>
         sdpx_extensions = @settings.license.mode_sources.file_extensions
@@ -175,11 +178,11 @@ class LicenseCommand extends Command
 
 
     execute_mode_sources: (args, project) =>
-        Log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
-        Log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
+        @log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
+        @log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
 
         @search_dir "#{os.cwd!}/#{project.source_dir}", args
-        Log\info "Checks finished." if args.check
+        @log\info "Checks finished." if args.check
         return true
 
     --[[ 3rd party licensing tools ]]
@@ -196,7 +199,7 @@ class LicenseCommand extends Command
 
         found_license = false
         if Dir\exists (Path\join rootpath, dir)
-            for candidate_file, mode in Dir\find_files (Path\join rootpath, dir)
+            for candidate_file, mode in *Dir\find_files (Path\join rootpath, dir)
                 if dir == "."
                     if known_license_files[candidate_file\lower!] ~= nil
                         table.insert out_license_files, Path\join rootpath, candidate_file
@@ -245,10 +248,10 @@ class LicenseCommand extends Command
                                     selected_license = license_file
 
                         if selected_license == nil
-                            Log\warning "Packge '#{dependency.name}' contains more than one license file."
-                            Log\warning "> Please select the desired license file in 'thirdparty/details.json'."
+                            @log\warning "Packge '#{dependency.name}' contains more than one license file."
+                            @log\warning "> Please select the desired license file in 'thirdparty/details.json'."
                             for license_file in *found_license_files
-                                Log\warning "- #{license_file}"
+                                @log\warning "- #{license_file}"
                             continue
 
                     table.insert license_files, {
@@ -258,7 +261,7 @@ class LicenseCommand extends Command
                     }
 
                 else
-                    Log\warning "Packge '#{dependency.name}' is missing license file..."
+                    @log\warning "Packge '#{dependency.name}' is missing license file..."
 
         if license_files and #license_files > 0
 
@@ -302,7 +305,7 @@ class LicenseCommand extends Command
 
                     readme\close!
 
-        Log\info "Checks finished." if args.check
+        @log\info "Checks finished." if args.check
         true
 
 
