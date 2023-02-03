@@ -1,65 +1,63 @@
-import Command, argument, option, flag from require "ice.command"
+import Command, Setting, argument, option, flag from require "ice.command"
 import Json from require "ice.util.json"
 
+import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
+import Path, File, Dir from require "ice.core.fs"
+
 class LicenseCommand extends Command
-    @settings: {
-        license: nil
-        authors: nil
+    @settings {
+        Setting 'license.spdx', required:true
+        Setting 'license.authors', required:true
 
-        info_3rdparty:
-            details_file: 'thirdparty/details.json'
-            generate_location: 'thirdparty'
+        -- 'Mode: Thirdparty settings'
+        Setting 'license.thirdparty.details_file', required:true, default:'thirdparty/details.json'
+        Setting 'license.thirdparty.generate_location', required:true, default:'thirdparty'
 
-        source_extensions: (args) -> {
-            ".bff": true
-            ".hxx": true
-            ".cxx": true
-            ".hpp": true
-            ".cpp": true
-            ".inl": true
-            ".h": true
-            ".c": true
+        -- 'Mode: Sources settings'
+        Setting 'license.mode_sources.file_extensions', required:true, default:{
+            ".bff": true, ".inl": true
+            ".h": true, ".c": true
+            ".hxx": true, ".cxx": true
+            ".hpp": true, ".cpp": true
         }
-
-        source_headers:
-            pattern_find:
-                args: { 'year_created', 'year_modified', 'authors', 'license' }
-                lines: {
-                    '[/!*]+ Copyright (%d+) %- (%d+), ([%s%S]+)'
-                    '[/!*]+ SPDX%-License%-Identifier: (%w+)'
-                }
-            generate_lines: {
-                "/// Copyright %d - %d, %s"
-                "/// SPDX-License-Identifier: %s"
-            }
+        Setting 'license.mode_sources.spdx_headers.match_pattern.args', required:true, default:{
+            'year_created', 'year_modified', 'authors', 'license'
+        }
+        Setting 'license.mode_sources.spdx_headers.match_pattern.lines', required:true, default:{
+            '^[/!*]+ Copyright (%d+) %- (%d+), (.+)$'
+            '^[/!*]+ SPDX%-License%-Identifier: (.+)$'
+        }
+        Setting 'license.mode_sources.spdx_headers.generate', required:true, default:{
+            "/// Copyright %d - %d, %s"
+            "/// SPDX-License-Identifier: %s"
+        }
     }
 
     @arguments {
         argument 'mode',
+            description: 'Selects the process that this command should run.\n- \'sources\' checks for SPDX headers.\n- \'3rdparty\' searches dependencies for license information.\n'
             name: 'mode'
             choices: { 'sources', '3rdparty' }
             default: 'sources'
         flag 'generate',
+            description: 'Runs generation step for the selected mode.\n- \'sources\' generates SPDX file headers.\n- \'3rdparty\' generates readme and license files.'
             name: '-g --generate'
-            description: 'Generates 3rd-party readme and license files or file headers.'
         flag 'verbose',
-            name: '-v --verbose'
             description: 'Increases verbosity of the output. Can be used up to two times.'
+            name: '-v --verbose'
             count: '0-2'
     }
 
     prepare: (args, project) =>
-        @current_dir = os.cwd!
+        @current_dir = Dir\current!
 
         if args.generate
-            error "Missing value for 'license' property to continue. Set using 'LicenseCommand.settings.license' " if not @@settings.license
-            error "Missing value for 'authors' property to continue. Set using 'LicenseCommand.settings.authors' " if not @@settings.authors
+            @fail "Missing value for setting '#{@@settings.license.spdx.key}'" unless @settings.license.spdx
+            @fail "Missing value for setting '#{@@settings.license.authors.key}'" unless @settings.license.authors
 
         if args.mode == '3rdparty'
-            @details = {}
-            if file = io.open @@settings.info_3rdparty.details_file
-                @details = Json\decode file\read '*a'
-                file\close!
+            @details = File\contents @settings.thirdparty.details_file, parser:Json\decode
 
     execute: (args, project) =>
         return @execute_mode_sources args, project if args.mode == 'sources'
@@ -68,113 +66,120 @@ class LicenseCommand extends Command
     --[[ source code licensing tools ]]
 
     check_license_header: (file, args) =>
-        newline = os.iswindows and "\r\n" or "\n"
+        lic_spdx = @settings.license.spdx
+        lic_authors = @settings.license.authors
+        lic_patterns = @settings.license.mode_sources.spdx_headers.match_pattern.lines
+        lic_pattern_args = @settings.license.mode_sources.spdx_headers.match_pattern.args
+        lic_generate = @settings.license.mode_sources.spdx_headers.generate
+
+        newline = "\n"
         line_count = 0
-        if f = io.open file
-            lines_it = f\lines!
 
-            results = { }
-            header_size = 0
-            for pat_line in *@@settings.source_headers.pattern_find.lines
-                file_line = lines_it!
-                break unless file_line
+        contents = File\contents file, limit: 500, mode:'rb'
+        Log\warning "Failed to read file: '#{file}'" if not contents or contents == ""
 
-                line_count += 1
-                header_size += #file_line + #newline
-
-                line_results = { file_line\match pat_line }
-                if #line_results == 0
-                    f\close!
-                    break
-
-                -- Append results
-                table.foreach line_results, (_, v) -> table.insert results, v
-
-            -- Send missing message (always shown)
-            if line_count == 0
-                print "Skipping empty file #{file}" if args.verbose == 2
+        results = { }
+        header_size = 0
+        for pat_line in *lic_patterns
+            file_line, cr, nl = contents\match "([^\n\r]+)(\r?)(\n)"
+            if nl ~= '\n'
+                Log\verbose "Skipping empty file #{file}" if args.verbose == 2
                 return
+            elseif cr == '\r'
+                newline = "\r\n"
 
-            if #results ~= #@@settings.source_headers.pattern_find.args
-                print "Missing copyright and/or SPDX header in file: #{file}"
-                header_size = 0
+            line_count += 1
+            line_size = #file_line + 1 + (cr == '\r' and 1 or 0)
 
-            -- Name the results
-            r = { year_created:0, year_modified:0 }
-            for idx, val in pairs results
-                arg_name = @@settings.source_headers.pattern_find.args[idx]
+            line_results = { file_line\match pat_line }
+            break if #line_results == 0
 
-                if arg_name == 'year_created' or arg_name == 'year_modified'
-                    val = val and tonumber val
+            header_size += line_size
+            contents = contents\sub line_size + 1
 
-                r[arg_name] = val
+            -- Append results
+            table.foreach line_results, (_, v) -> table.insert results, v
 
-            file_info = lfs.attributes file
-            r.file_modified = os.date("*t", file_info.modification).year
-            -- This is just an approximate
-            r.file_created = os.date("*t", file_info.change).year
+        -- Send missing message (always shown)
+        if line_count == 0
+            Log\verbose "Skipping empty file #{file}" if args.verbose == 2
+            return
 
-            requires_update = true
-            if r.year_modified < r.file_modified and r.year_modified > 0
-                print (string.format "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified) if args.verbose
-            elseif header_size > 0 and (r.authors ~= @@settings.authors or r.license ~= @@settings.license)
-                print (string.format "Modification of authors or license values in #{file}", r.authors, r.license)
-                print (string.format "- [authors] old: '%s', new: '%s'", r.authors, @@settings.authors) if r.authors ~= @@settings.authors and args.verbose == 2
-                print (string.format "- [license] old: '%s', new: '%s'", r.license, @@settings.license) if r.license ~= @@settings.license and args.verbose == 2
+        if #results ~= #lic_pattern_args
+            Log\warning "Missing copyright and/or SPDX header in file: #{file}"
+            header_size = 0
+            contents = nil
 
-                -- Let's don't end up reversing years...
-                r.file_modified = r.year_modified
-            elseif header_size == 0
-                r.year_created = r.file_created
-            else
-                requires_update = false
+        -- Name the results
+        r = { year_created:0, year_modified:0 }
+        for idx, val in pairs results
+            arg_name = lic_pattern_args[idx]
 
-            -- Apply changes
-            if args.generate and requires_update
-                final_header = ""
-                for line in *@@settings.source_headers.generate_lines
-                    final_header ..= line .. newline
+            if arg_name == 'year_created' or arg_name == 'year_modified'
+                val = tonumber val
 
-                final_header ..= newline if header_size == 0
+            r[arg_name] = val
 
-                -- Apply formatting
-                r.authors = @@settings.authors if r.authors ~= @@settings.authors
-                r.license = @@settings.license if r.license ~= @@settings.license
-                final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
+        file_info = Path\info file
+        r.file_modified = os.date("*t", file_info.modification).year
+        -- This is just an approximate
+        r.file_created = os.date("*t", file_info.change).year
 
-                print "Generating copyright and SPDX header in file: #{file}"
-                if f = io.open file, "rb"
-                    contents = f\read "*a"
-                    contents = final_header .. (contents\sub header_size + (#newline - 1))
-                    f\close!
+        requires_update = true
+        if r.year_modified < r.file_modified and r.year_modified > 0
+            Log\verbose "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified if args.verbose
+        elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
+            Log\info "Modification of authors or license values in #{file}", r.authors, r.license
+            Log\verbose "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors and args.verbose == 2
+            Log\verbose "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx and args.verbose == 2
 
-                    if f = io.open file, "wb"
-                        f\write contents
-                        f\close!
-                    else
-                        print "Failed to update file #{file}"
-
+            -- Let's don't end up reversing years...
+            r.file_modified = r.year_modified
+        elseif header_size == 0
+            r.year_created = r.file_created
         else
-            print "Failed to open file #{file}"
+            requires_update = false
+
+        -- Apply changes
+        if args.generate and requires_update
+            final_header = ""
+            for line in *lic_generate
+                final_header ..= line .. newline
+
+            final_header ..= newline if header_size == 0
+
+            -- Apply formatting
+            r.authors = lic_authors if r.authors ~= lic_authors
+            r.license = lic_spdx if r.license ~= lic_spdx
+            final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
+
+            Log\info "Generating copyright and SPDX header in file: #{file}"
+            contents = File\contents file, mode:'rb' unless contents
+            contents = final_header .. contents
+
+            if f = File\open file, mode:"wb"
+                f\write contents
+                f\close!
+            else
+                Log\warning "Failed to update file #{file}"
 
     search_dir: (dir, args) =>
-        sdpx_extensions = @@settings.source_extensions args
+        sdpx_extensions = @settings.license.mode_sources.file_extensions
 
         -- Find matching files
-        files = os.find_files dir, recursive:true, filter: (file_name) ->
-            file_ext = file_name\sub (file_name\find "%."), file_name_len
-            sdpx_extensions[file_ext]
+        files = Dir\find_files dir, recursive:true, filter: (filename) ->
+            sdpx_extensions[Path\extension filename]
 
         for file in *files
             @check_license_header file, args
 
 
     execute_mode_sources: (args, project) =>
-        print "Warning: Flag '--clean' has no effect in 'source' mode." if args.clean
-        print "Warning: Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
+        Log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
+        Log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
 
         @search_dir "#{os.cwd!}/#{project.source_dir}", args
-        print "Checks finished." if args.check
+        Log\info "Checks finished." if args.check
         return true
 
     --[[ 3rd party licensing tools ]]
@@ -190,16 +195,14 @@ class LicenseCommand extends Command
         }
 
         found_license = false
-        if os.isdir "#{rootpath}/#{dir}"
-            for candidate_file, mode in os.listdir "#{rootpath}/#{dir}", 'mode'
-                continue if mode ~= 'file'
-
+        if Dir\exists (Path\join rootpath, dir)
+            for candidate_file, mode in Dir\find_files (Path\join rootpath, dir)
                 if dir == "."
                     if known_license_files[candidate_file\lower!] ~= nil
-                        table.insert out_license_files, "#{rootpath}/#{candidate_file}"
+                        table.insert out_license_files, Path\join rootpath, candidate_file
                         found_license = true
                 else
-                    table.insert out_license_files, "#{rootpath}/#{dir}/#{candidate_file}"
+                    table.insert out_license_files, Path\join rootpath, dir, candidate_file
                     found_license = true
         found_license
 
@@ -213,7 +216,7 @@ class LicenseCommand extends Command
         }
 
         result = { }
-        if file = io.open conanfile, "rb+"
+        if file = File\open conanfile, mode:'rb'
             contents = file\read "*a"
             for field, value in contents\gmatch "(%w*) = \"([^\\\"]*)\""
                 result[field] = value if allowed_fields[field]
@@ -222,63 +225,58 @@ class LicenseCommand extends Command
 
     execute_mode_3rdparty: (args, project) =>
         license_files = {}
-        with file = io.open 'build/conan_debug/conanbuildinfo.json'
 
-            if buildinfo = Json\decode file\read '*a'
+        if buildinfo = File\contents 'build/conan_debug/conanbuildinfo.json', parser:Json\decode
+            for dependency in *buildinfo.dependencies
+                found_license_files = { }
+                for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
+                    if not @search_for_license_files found_license_files, dependency.rootpath, subdir
+                        @search_for_license_files found_license_files, dependency.rootpath, subdir\lower!
 
-                for dependency in *buildinfo.dependencies
+                -- Gather license files
+                if #found_license_files > 0
+                    selected_license = nil
 
-                    found_license_files = { }
-                    for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
-                        if not @search_for_license_files found_license_files, dependency.rootpath, subdir
-                            @search_for_license_files found_license_files, dependency.rootpath, subdir\lower!
+                    if #found_license_files > 1
 
-                    -- Gather license files
-                    if #found_license_files > 0
-                        selected_license = nil
+                        if @details[dependency.name] and @details[dependency.name].license_file
+                            for license_file in *found_license_files
+                                if license_file\lower!\match @details[dependency.name].license_file\lower!
+                                    selected_license = license_file
 
-                        if #found_license_files > 1
+                        if selected_license == nil
+                            Log\warning "Packge '#{dependency.name}' contains more than one license file."
+                            Log\warning "> Please select the desired license file in 'thirdparty/details.json'."
+                            for license_file in *found_license_files
+                                Log\warning "- #{license_file}"
+                            continue
 
-                            if @details[dependency.name] and @details[dependency.name].license_file
-                                for license_file in *found_license_files
-                                    if license_file\lower!\match @details[dependency.name].license_file\lower!
-                                        selected_license = license_file
+                    table.insert license_files, {
+                        dependency,
+                        "#{dependency.rootpath}/../../export/conanfile.py",
+                        selected_license or found_license_files[1]
+                    }
 
-                            if selected_license == nil
-                                print "Packge '#{dependency.name}' contains more than one license file."
-                                print "> Please select the desired license file in 'thirdparty/details.json'."
-                                for license_file in *found_license_files
-                                    print "- #{license_file}"
-                                continue
-
-                        table.insert license_files, {
-                            dependency,
-                            "#{dependency.rootpath}/../../export/conanfile.py",
-                            selected_license or found_license_files[1]
-                        }
-
-                    else
-                        print "Packge '#{dependency.name}' is missing license file..."
-
-            file\close!
+                else
+                    Log\warning "Packge '#{dependency.name}' is missing license file..."
 
         if license_files and #license_files > 0
 
             if args.generate
-                gen_dir = "#{@current_dir}/#{@@settings.info_3rdparty.generate_location}"
-                os.mkdir gen_dir unless os.isdir gen_dir
+                gen_dir = "#{@current_dir}/#{@settings.license.thirdparty.generate_location}"
+                Dir\create gen_dir
 
-                if licenses = io.open "#{gen_dir}/LICENSES.txt", "wb+"
+                if licenses = File\open "#{gen_dir}/LICENSES.txt", mode:"wb+"
                     for { dep, _, license_file } in *license_files
                         licenses\write "\n-------------------- START '#{dep.name\lower!}' --------------------\n"
-                        if license_file_handle = io.open license_file, "rb+"
+                        if license_file_handle = File\open license_file, mode:"rb+"
                             for line in license_file_handle\lines!
                                 licenses\write "    #{line}\n"
                             license_file_handle\close!
                         licenses\write "-------------------- END '#{dep.name\lower!}' --------------------\n\n"
                     licenses\close!
 
-                if readme = io.open "#{gen_dir}/README.md", "wb+"
+                if readme = File\open "#{gen_dir}/README.md", mode:"wb+"
 
                     readme\write "# Third Party Libraries\n\n"
                     readme\write "A file generated from all in-used conan dependencies.\n"
@@ -304,7 +302,7 @@ class LicenseCommand extends Command
 
                     readme\close!
 
-        print "Checks finished." if args.check
+        Log\info "Checks finished." if args.check
         true
 
 

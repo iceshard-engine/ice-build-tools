@@ -1,4 +1,4 @@
-import BaseCommand, argument, option, flag from require 'ice.commands.base'
+import BaseCommand, argument, option, flag from require "ice.commands.base"
 
 class ExecCommand extends BaseCommand
     @settings: { }
@@ -9,10 +9,9 @@ class ExecCommand extends BaseCommand
             args: '*'
     }
 
-    new: (parser) =>
+    init: (parser) =>
         parser\handle_options false
         parser\add_help false
-        super parser
 
     execute: (args, project) =>
         cmdline = table.concat args.cmdline, ' '

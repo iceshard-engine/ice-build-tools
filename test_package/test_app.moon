@@ -25,4 +25,5 @@ class TestApp extends Application
 
 
 
-TestApp!\run!
+with TestApp { }
+    \run!

@@ -1,12 +1,14 @@
 
+import File from require "ice.core.fs"
+import Log from require "ice.core.logger"
+
 class INIConfig
     @open = (path, args) =>
-        if file = io.open path, 'rb'
+        if file = File\open path, 'rb'
             return INIConfig file, args
 
     new: (@file, args) =>
-        @dbg_print = (msg) =>
-            print msg if args.debug
+        @dbg_print = args.debug or false
 
         @sections = { default:{} }
         @sections_meta = { }
@@ -31,23 +33,23 @@ class INIConfig
     section_type: (name) => @sections_meta[name].type
 
     new_section: (name) =>
-        @dbg_print "New section: #{name}"
+        Log\debug "New section: #{name}"
         @sections[name] = @sections[name] or { }
         @sections_meta[name] = @sections_meta[name] or { }
         @current_section = name
 
     new_entry: (key, value) =>
-        @dbg_print "New entry: #{key}=#{value}"
+        Log\debug "New entry: #{key}=#{value}"
         section, meta = @\section @current_section
-        error "Section #{@current_section} was initialized with array elements" if meta.type == 'array'
+        Log\error "Section #{@current_section} was initialized with array elements" if meta.type == 'array'
 
         section[key] = value
         meta.type = 'map'
 
     new_value: (value) =>
-        @dbg_print "New value: #{value}"
+        Log\debug "New value: #{value}"
         section, meta = @\section @current_section
-        error "Section #{@current_section} was initialized with key-value pairs" if meta.type == 'map'
+        Log\error "Section #{@current_section} was initialized with key-value pairs" if meta.type == 'map'
 
         table.insert section, value
         meta.type = 'array'

@@ -1,4 +1,5 @@
 import Exec, Where from require "ice.tools.exec"
+import Validation from require "ice.core.validation"
 
 class FastBuild extends Exec
     new: (path) => super path or (os.iswindows and Where\path "fbuild.exe") or Where\path "fbuild"
@@ -6,8 +7,8 @@ class FastBuild extends Exec
     help: => @\run '-help'
 
     cache: (args) =>
-        error "ERROR: Missig cache action!" unless args.action
-        error "ERROR: Unknown cache action '#{args.action}'" unless args.action == 'info' or args.action == 'trim'
+        return unless Validation\ensure args.action, "Missig cache action parameter!"
+        return unless Validation\ensure args.action == 'info' or args.action == 'trim', "Unknown cache action '#{args.action}'"
 
         cmd = ""
         cmd ..= " -config #{args.config}" if args.config

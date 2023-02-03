@@ -1,53 +1,54 @@
-import Command, option, flag from require "ice.command"
+import Command, Setting, option, flag, group from require "ice.command"
 
 import BuildCommand from require "ice.commands.build"
 import FastBuild from require "ice.tools.fastbuild"
-import VStudio from require "ice.tools.vswhere"
+import VStudio, VSCode from require "ice.tools.vswhere"
 
-import VSCodeProjectGen from require 'ice.generators.devenv.vscode'
+import VSCodeProjectGen from require "ice.generators.devenv.vscode"
+import INIConfig from require "ice.util.iniconfig"
 
-import INIConfig from require 'ice.util.iniconfig'
+import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
+import Path, File, Dir from require "ice.core.fs"
 
 class DevenvCommand extends Command
-    @settings: {
-        fbuild:
-            config_file: BuildCommand.settings.fbuild.config_file
-            default_target: os.osselect win:'vstudio', mac:'xcode', unix: 'vscode'
+    @settings {
+        Setting 'devenv.default_environment', default:(os.osselect win:'vstudio', mac:'xcode', unix: 'vscode'), required:true
     }
 
     @arguments {
-        flag 'start',
-            name: '--start'
-            description: 'Launches the specified IDE for the generated workspace.'
+        group 'generation', description: 'DevEnv/IDE environment generation'
+        option 'devenv',
+            description: 'Selects the environment for which to generate files.'
+            group: 'generation'
+            name: '--devenv --ide'
+            choices: { 'vstudio', 'vscode' }
+            default: Setting\ref 'devenv.default_environment'
         option 'update',
+            description: 'Updates or replaces previously generated environment files.'
+            group: 'generation'
             name: '--update -u'
-            description: 'Overwrites existing devenv files. Renames previous files in the process.'
+            argname: '<behavior>'
             choices: { 'replace', 'modify' }
             default: 'modify'
             defmode: 'arg'
-        option 'ide',
-            name: '--devenv --ide'
-            description: 'The IDE for which to generate workspace files.'
-            choices: { 'vstudio', 'vscode' }
-            default: @@settings.fbuild.default_target
+
+        flag 'start',
+            description: 'Tries to launch the selected IDE.'
+            name: '--start'
     }
 
-    new: (...) =>
-        -- Update the default target again if it was changed in a user workspace
-        (@@argument_options 'ide').default = @@settings.fbuild.default_target
-
-        -- Call the parent ctor
-        super ...
-
     prepare: (args, project) =>
-        os.chdir project.output_dir
+        Dir\enter project.output_dir
 
     execute: (args, project) =>
-        error "The 'xcode' target is not yet implemented" if args.devenv == 'xcode'
+        @fail "The 'xcode' target is not yet implemented" if args.devenv == 'xcode'
+
+        config_file = Setting\get 'build.fbuild_config_file'
 
         if args.devenv == 'vscode'
             FastBuild!\build
-                config:@@settings.fbuild.config_file
+                config:config_file
                 target:'devenv-targets'
                 clean:args.update ~= nil
 
@@ -55,68 +56,68 @@ class DevenvCommand extends Command
             with config = INIConfig\open "devenv_targets.txt", debug: false
                 build_targets = \section 'build_targets', 'array'
                 run_targets = \section 'run_targets', 'array'
-                vscode_gen = VSCodeProjectGen project, exe:FastBuild!.exec, script:"#{project.output_dir}/#{@@settings.fbuild.config_file}"
+                vscode_gen = VSCodeProjectGen project, exe:FastBuild!.exec, script:(Path\join project.output_dir, config_file)
 
                 -- Known VSCode workspace files
-                vscode_dir = "#{project.workspace_dir}/.vscode"
-                os.mkdirs vscode_dir unless os.isdir vscode_dir
+                vscode_dir = Path\join project.workspace_dir, ".vscode"
+                @fail "Failed to create required directory: '#{vscode_dir}'" unless (Dir\create vscode_dir)
 
-                tasks_file = "#{vscode_dir}/tasks.json"
-                tasks_file_exists = os.isfile tasks_file
-                launch_file = "#{vscode_dir}/launch.json"
-                launch_file_exists = os.isfile launch_file
+                tasks_file = Path\join vscode_dir, "tasks.json"
+                tasks_file_exists = File\exists tasks_file
+                launch_file = Path\join vscode_dir, "launch.json"
+                launch_file_exists = File\exists launch_file
 
                 if args.update or (not tasks_file_exists)
                     if tasks_file_exists
                         if args.update == 'modify'
-                            unless os.copy_file tasks_file, "#{tasks_file}.backup", force:true
-                                error "Failed to create backup file for #{tasks_file}"
+                            unless File\copy tasks_file, "#{tasks_file}.backup", force:true
+                                @fail "Failed to create backup file for #{tasks_file}"
+
                         if args.update == 'replace'
-                            unless os.move_file tasks_file, "#{tasks_file}.backup", force:true
-                                error "Failed to create backup file for #{tasks_file}"
+                            unless File\move tasks_file, "#{tasks_file}.backup", force:true
+                                @fail "Failed to create backup file for #{tasks_file}"
 
                     -- Generate the file
                     if vscode_gen\create_tasks_file tasks_file, build_targets, update:args.update == 'modify'
-                        print "Generated file: #{tasks_file}"
+                        Log\info "Generated file: #{tasks_file}"
                     else
-                        error "Failed to generate file: #{launch_file}"
+                        @fail "Failed to generate file: #{tasks_file}"
 
                 if args.update or (not launch_file_exists)
                     if launch_file_exists
                         if args.update == 'modify'
                             unless os.copy_file launch_file, "#{launch_file}.backup", force:true
-                                error "Failed to create backup file for #{launch_file}"
+                                @fail "Failed to create backup file for #{launch_file}"
+
                         if args.update == 'replace'
                             unless os.move_file launch_file, "#{launch_file}.backup", force:true
-                                error "Failed to create backup file for #{launch_file}"
+                                @fail "Failed to create backup file for #{launch_file}"
 
                     launch_targets = { }
                     for target in *run_targets
                         table.insert launch_targets, (config\section target, 'map')
 
                     if vscode_gen\create_launch_file launch_file, launch_targets, update:args.update == 'modify'
-                        print "Generated file: #{launch_file}"
+                        Log\info "Generated file: #{launch_file}"
                     else
-                        error "Failed to generate file: #{launch_file}"
+                        @fail "Failed to generate file: #{launch_file}"
 
                 \close!
 
-        else
+            -- Run Visual Studio Code
+            VSCode!\start open:Path\join Dir\current!, ".." if args.start
+
+        elseif args.devenv == 'vstudio'
             if args.update == 'modify'
-                print "[WARNING] The 'modify' value for '--update' behaves as 'replace' for vstuido"
+                Log\warning "The 'modify' behaves like 'replace' for the Visual Studio enviroment."
                 args.update = 'replace'
 
             FastBuild!\build
-                config:@@settings.fbuild.config_file
-                target:args.devenv
+                config:config_file
+                target:'vstudio'
                 clean:args.update ~= nil
 
             -- Run Visual Studio
-            if args.devenv == 'vstudio' and args.start
-                unless os.iswindows
-                    error "The 'VStudio' tool is available only on Windows!"
-                else
-                    VStudio!\start open:"../#{project.fastbuild_solution_name}"
-            true
+            VStudio!\start open:"../#{project.fastbuild_solution_name}" if args.start
 
 { :DevenvCommand }

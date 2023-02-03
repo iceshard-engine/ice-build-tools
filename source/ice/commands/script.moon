@@ -1,8 +1,16 @@
-import BaseCommand, argument, option, flag from require 'ice.commands.base'
-moonscript = require 'moonscript'
+import Command, Setting, argument, option, flag from require "ice.command"
+import Path, File, Dir from require "ice.core.fs"
+import Log from require "ice.core.logger"
 
-class ScriptCommand extends BaseCommand
-    @settings: { }
+moonscript = require "moonscript"
+
+class ScriptCommand extends Command
+    @settings {
+        Setting 'script.directory',
+            default:'./tools/scripts'
+            required:true
+            predicate:(path) -> (Dir\exists path) or false, "The setting 'script.directory' points to a invalid location: '#{path}'"
+    }
     @arguments {
         argument 'script',
             description: 'Searches for the given script file and tries to execute it.'
@@ -13,39 +21,46 @@ class ScriptCommand extends BaseCommand
             name: '-f --folder'
             argname: 'scripts folder'
             description: 'The location where to look for script files.'
-            default: './tools/scripts'
+            default: Setting\ref 'script.directory'
     }
 
-
     prepare: (args, project) =>
-        args.folder = args.folder\sub 3 if args.folder\match "^%.[\\/]"
-        cwd = os.cwd!
-        cwd = (cwd\gsub '\\', '/') if os.iswindows
+        args.folder = Path\normalize args.folder
+        final_path = Path\join Dir\current!, args.folder
 
-        final_path = "#{cwd}/#{args.folder}"
-        if os.isdir final_path
-            os.chdir final_path
-        else
-            return {
-                return_code: -1
-                message: "Script folder #{final_path} does not exist"
-            }
+        -- Ensure the path exists
+        unless Dir\exists final_path
+            @fail "Script folder '#{final_path}' does not exist"
+
+        -- Enter the directory
+        Dir\enter final_path
 
     execute: (args, project) =>
-        loaded_script, errors = moonscript.loadfile "#{args.script}.moon" if os.isfile "#{args.script}.moon"
-        loaded_script, errors = loadfile "#{args.script}.lua" if os.isfile "#{args.script}.lua"
-        unless loaded_script
-            return {
-                return_code:-1
-                message:"Failed to load script '#{args.script}' with errors:\n#{errors}"
-            }
+        local loaded_script
+
+        errors = { }
+        moon_file = "#{args.script}.moon"
+        lua_file = "#{args.script}.lua"
+
+        if File\exists moon_file
+            lua_file = nil
+            loaded_script, errors = moonscript.loadfile moon_file
+
+        elseif File\exists lua_file
+            moon_file = nil
+            loaded_script, errors = loadfile lua_file
+        else
+            errors = { "Neither '#{moon_file}' nor '#{lua_file}' exist in the '#{Dir\current!}' script directory."}
+
+        if loaded_script == nil
+            @fail "Failed to load script '#{moon_file or lua_file}' with errors:\n#{table.concat errors, ', '}"
 
         -- Hide the original arguments
         local_arg = arg
         export arg = args.script_args
 
         -- Execute the script
-        print "Executing script '#{args.script}' ..."
+        Log\info "Executing script '#{moon_file or lua_file}' ..."
         success, error = pcall loaded_script
 
         -- Restore the original arguments
@@ -57,6 +72,8 @@ class ScriptCommand extends BaseCommand
                 return_code:-1
                 message:"Script '#{args.script}' failed execution with '#{error}'"
             }
+
+        return true
 
 
 { :ScriptCommand }

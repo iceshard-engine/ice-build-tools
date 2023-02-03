@@ -1,5 +1,5 @@
-import Project from require 'ice.workspace.project'
-import ProjectApplication from require 'ice.workspace.application'
+import Project from require "ice.workspace.project"
+import ProjectApplication from require "ice.workspace.application"
 
 with Project "NewProject"
     \application ProjectApplication

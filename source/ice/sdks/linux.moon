@@ -1,5 +1,5 @@
-import Locator from require 'ice.locator'
-import Windows from require 'ice.platform.windows'
+import Locator from require "ice.locator"
+import Windows from require "ice.platform.windows"
 
 class SDK_Linux extends Locator
     new: => super Locator.Type.PlatformSDK, "Linux Platform Locator"

@@ -1,5 +1,5 @@
 
-import Json from require 'ice.util.json'
+import Json from require "ice.util.json"
 
 class VSCodeProjectGen
     new: (@project, @fbuild) =>

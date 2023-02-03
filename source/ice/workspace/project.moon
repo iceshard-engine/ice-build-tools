@@ -1,26 +1,29 @@
-import Locator from require 'ice.locator'
+import Locator from require "ice.locator"
 
-import VsMSVC from require 'ice.toolchain.vs_msvc'
-import VsClang from require 'ice.toolchain.vs_clang'
-import Clang from require 'ice.toolchain.clang'
-import Gcc from require 'ice.toolchain.gcc'
+import VsMSVC from require "ice.toolchain.vs_msvc"
+import VsClang from require "ice.toolchain.vs_clang"
+import Clang from require "ice.toolchain.clang"
+import Gcc from require "ice.toolchain.gcc"
 
-import SDK_Vulkan from require 'ice.sdks.vulkan'
-import SDK_DX11 from require 'ice.sdks.dx11'
-import SDK_DX12 from require 'ice.sdks.dx12'
-import SDK_Win32 from require 'ice.sdks.win32'
-import SDK_Linux from require 'ice.sdks.linux'
-import SDK_Cpp_WinRT from require 'ice.sdks.winrt_cpp'
+import SDK_Vulkan from require "ice.sdks.vulkan"
+import SDK_DX11 from require "ice.sdks.dx11"
+import SDK_DX12 from require "ice.sdks.dx12"
+import SDK_Win32 from require "ice.sdks.win32"
+import SDK_Linux from require "ice.sdks.linux"
+import SDK_Cpp_WinRT from require "ice.sdks.winrt_cpp"
 
-import Conan from require 'ice.tools.conan'
-import FastBuildGenerator from require 'ice.generators.fastbuild'
+import Conan from require "ice.tools.conan"
+import FastBuildGenerator from require "ice.generators.fastbuild"
 
-import ProfileList, Profile from require 'ice.workspace.profile'
-import ProjectApplication from require 'ice.workspace.application'
+import ProfileList, Profile from require "ice.workspace.profile"
+import ProjectApplication from require "ice.workspace.application"
 
-import Json from require 'ice.util.json'
+import Path, File from require "ice.core.fs"
+import Json from require "ice.util.json"
+import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
 
--- import install_conan_tools, install_conan_source_dependencies from require 'ice.workspace.util.conan_install_helpers'
+-- import install_conan_tools, install_conan_source_dependencies from require "ice.workspace.util.conan_install_helpers"
 install_conan_dependencies = ->
 generate_fastbuild_variables_script = ->
 generate_fastbuild_workspace_script = ->
@@ -54,18 +57,13 @@ class Project
 
     script: (@project_script) =>
 
-    load_settings: (settings_path, file_format = "settings_{os}.json") =>
-        os_name = "linux" if os.isunix
-        os_name = "macos" if os.ismacos
-        os_name = "windows" if os.iswindows
+    load_settings: (settings_path, settings_file = "settings.json") =>
+        @project_settings_file = Path\join settings_path, settings_file
+        @project_settings = File\contents @project_settings_file, mode:'r', parser:Json\decode
 
-        settings_file = file_format\gsub "{os}", os_name
-        @project_settings_file = "#{settings_path}/#{settings_file}"
-
-        @project_settings = { }
-        if file = io.open @project_settings_file
-            @project_settings = Json\decode file\read '*a'
-            file\close!
+        -- Override settings with their os overrides
+        for key, value in pairs (@project_settings[os.osname] or { })
+            @project_settings[key] = value
 
         @project_script = @project_settings.script_file
 
@@ -88,16 +86,16 @@ class Project
     working_dir: (@working_directory) =>
 
     finish: (force_detect) =>
-        assert @output_directory ~= nil and @output_directory ~= "", "Invalid value for `output` => '#{@output_directory}'"
-        assert @source_directory ~= nil and @source_directory ~= "", "Invalid value for `sources` => '#{@source_directory}'"
-        assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
-        assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
+        Validation\assert @output_directory ~= nil and @output_directory ~= "", "Invalid value for `output` => '#{@output_directory}'"
+        Validation\assert @source_directory ~= nil and @source_directory ~= "", "Invalid value for `sources` => '#{@source_directory}'"
+        Validation\assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
+        Validation\assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
-        assert @script_location ~= nil and @script_location ~= "", "Invalid value for `fastbuild_script` => '#{@script_location}'"
-        assert (os.isfile @script_location), "Non existing file set in `fastbuild_script` => '#{@script_location}'"
-        assert @profile_list\has_profiles!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
+        Validation\assert @script_location ~= nil and @script_location ~= "", "Invalid value for `fastbuild_script` => '#{@script_location}'"
+        Validation\assert (os.isfile @script_location), "Non existing file set in `fastbuild_script` => '#{@script_location}'"
+        Validation\assert @profile_list\has_profiles!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
 
-        application = @application_class!
+        application = @['application_class'] @project_settings
         selected_profiles = @profile_list\prepare_profiles @output_directory
 
         install_conan_dependencies selected_profiles, false
@@ -118,14 +116,14 @@ class Project
 
 
 install_conan_dependencies = (profiles, force_update) ->
-    unless os.isfile 'source/conanfile.txt'
-        print "No description for source dependencies found, skipping..." if not same_version
+    unless File\exists 'source/conanfile.txt'
+        Log\info "No description for source dependencies found, skipping..." if not same_version
         return
 
     for profile in *profiles
         profile_location = profile\get_location!
         profile_file = profile\get_file!
-        info_file = "#{profile_location}/conaninfo.txt"
+        info_file = Path\join profile_location, "conaninfo.txt"
 
         -- Generate the profile file
         profile\generate!
@@ -146,8 +144,7 @@ install_conan_dependencies = (profiles, force_update) ->
 
 generate_fastbuild_variables_script = (profiles, locators, output_dir, force_update) ->
     log_file = 'build/compiler_detection.log'
-
-    os.remove log_file
+    File\delete log_file
 
     execute_locators = (locator_type, detected_info) ->
         for locator in *locators[locator_type]

@@ -3,6 +3,7 @@ argparse = require "argparse"
 package.moonpath ..= ";?.moon;?/init.moon"
 
 import IBT from require "ibt.ibt"
+import Logger, LogCategory, Log from require "ice.core.logger"
 
 handle_result_value = (result, table_only) ->
     final_result = nil
@@ -20,7 +21,7 @@ handle_result_value = (result, table_only) ->
 
     -- Handle errors
     if final_result.return_code ~= 0
-        print string.format "ERROR: [%d] %s", final_result.return_code, (final_result.message or "Unknown error occured!")
+        -- print string.format "ERROR: [%d] %s", final_result.return_code, (final_result.message or "Unknown error occured!")
         os.exit 1
 
     final_result.value or table_only
@@ -32,10 +33,9 @@ class Application
             opts.name = opts.name or "--#{name}"
             @.args[name] = { :func, :name, :opts }
 
-    new: =>
+    new: (settings) =>
         @script_file = arg[1]
         @parser = argparse @@name, @@description, @@epilog
-        @parser\add_help_command!
         @parser\require_command false
         @parser\command_target "command"
 
@@ -50,10 +50,17 @@ class Application
         -- Go through all defined actions (table values)
         @commands = { }
         for name, command_clazz in pairs @@commands or { }
-            command = command_clazz @parser\command name, command_clazz.description, command_clazz.epilog
+            command_object = @parser\command name, command_clazz.description, command_clazz.epilog
+            command_object\help_max_width 80
 
             -- Save the object
-            @commands[name] = command
+            @commands[name] = command_clazz command_object, settings
+            @commands[name].log = Logger\create (LogCategory command_clazz.logtag or name)
+
+        for name, command in pairs @commands
+            command\init_internal!
+        @parser\add_help_command!
+
         @args = @parser\parse arg
 
     run: (project) =>
@@ -64,8 +71,14 @@ class Application
         if args.command
             old_dir = os.cwd!
 
-            if handle_result_value (@commands[args.command]\prepare args, project), true
-                result = handle_result_value (@commands[args.command]\execute args, project)
+            -- We only validate setting for the current command to avoid setting everything when not necessary!
+            errors = @commands[args.command]\validate_settings!
+            for errmsg in *errors
+                Log\error errmsg if errmsg ~= ""
+            return if #errors > 0
+
+            if handle_result_value (@commands[args.command]\run_prepare args, project), true
+                result = handle_result_value (@commands[args.command]\run_execute args, project)
             os.chdir old_dir
         else
             result = @execute args, project
@@ -74,9 +87,8 @@ class Application
         result or { }
 
     execute: =>
-        print "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel})"
-        print ''
-        print '> For more options see the -h,--help output.'
+        Log\info "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel}"
+        Log.raw\info '\nFor more options see the -h,--help output.'
 
 
 { :Application }

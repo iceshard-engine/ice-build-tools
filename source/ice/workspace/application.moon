@@ -1,11 +1,11 @@
-import Application from require 'ice.application'
+import Application from require "ice.application"
 
-import BuildCommand from require 'ice.commands.build'
-import UpdateCommand from require 'ice.commands.update'
-import LicenseCommand from require 'ice.commands.license'
-import DevenvCommand from require 'ice.commands.devenv'
-import ExecCommand from require 'ice.commands.exec'
-import ScriptCommand from require 'ice.commands.script'
+import BuildCommand from require "ice.commands.build"
+import UpdateCommand from require "ice.commands.update"
+import LicenseCommand from require "ice.commands.license"
+import DevenvCommand from require "ice.commands.devenv"
+import ExecCommand from require "ice.commands.exec"
+import ScriptCommand from require "ice.commands.script"
 
 class ProjectApplication extends Application
     @name: 'NewProject'

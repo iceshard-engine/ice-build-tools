@@ -1,9 +1,11 @@
 require "ice.util.os"
 
+import Log from require "ice.core.logger"
+import File from require "ice.core.fs"
 
 class Exec
     new: (@exec) =>
-        print "WARNING: #{@exec} does not exist!" unless os.isfile @exec
+        Log\warning "#{@exec} does not exist!" unless File\exists @exec
 
     run: (arguments) =>
         os.execute "\"#{@exec}\" #{arguments or ''}"

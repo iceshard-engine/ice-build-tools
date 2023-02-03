@@ -1,4 +1,4 @@
-import Locator from require 'ice.locator'
+import Locator from require "ice.locator"
 
 class SDK_DX11 extends Locator
     new: => super Locator.Type.CommonSDK, "DirectX 11 Locator"

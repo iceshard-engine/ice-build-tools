@@ -1,6 +1,9 @@
 import Json from require "ice.util.json"
 import ConanProfileGenerator from require "ice.generators.conan_profile"
 
+import Path, File, Dir from require "ice.core.fs"
+import Validation from require "ice.core.validation"
+
 class Profile
     new: (@location, info) =>
         @id = info.id
@@ -15,45 +18,44 @@ class Profile
         @profile\set_build_type info.build_type
         @profile\set_envvar name, value for name, value in pairs info.envs or { }
 
-    get_file: => "#{@get_location!}/conan_profile.txt"
-    get_location: => "#{@location}/conan_#{@id}"
+    get_file: => Path\join @get_location!, "conan_profile.txt"
+    get_location: => Path\join @location, "conan_#{@id}"
     get_build_type: => @profile.build_type
 
     generate: =>
         profile_path = @get_location!
-        os.mkdirs profile_path unless os.isdir profile_path
+        Dir\create profile_path
 
         @profile\generate @get_file!
 
 class ProfileList
     @from_file: (path) =>
-        result = nil
-        if file = io.open path, "rb"
-            result = @from_json file\read "*all"
-            file\close!
-        result
+        @from_string File\contents path, mode:'r'
 
-    @from_json: (json_config) =>
-        config = Json\decode json_config
+    @from_string = (string) =>
+        @from_json Json\decode string if string ~= ""
+
+    @from_json: (config) =>
+        return unless Validation\ensure config ~= nil, "Cannot't parse profile from 'nil', Json object expected!"
 
         profiles = { }
         for entry in *config
-            assert entry.os ~= nil, "#{entry.name} is missing 'os' value."
-            assert entry.arch ~= nil, "#{entry.name} is missing 'arch' value."
-            assert entry.compiler ~= nil, "#{entry.name} is missing 'compiler' value."
-            assert entry.build_type ~= nil, "#{entry.name} is missing 'build_type' value."
-            assert entry.id ~= nil, "#{entry.name} is missing 'id' value."
+            Validation\assert entry.os ~= nil, "#{entry.name} is missing 'os' value."
+            Validation\assert entry.arch ~= nil, "#{entry.name} is missing 'arch' value."
+            Validation\assert entry.compiler ~= nil, "#{entry.name} is missing 'compiler' value."
+            Validation\assert entry.build_type ~= nil, "#{entry.name} is missing 'build_type' value."
+            Validation\assert entry.id ~= nil, "#{entry.name} is missing 'id' value."
 
             if os.iswindows
                 table.insert profiles, entry if entry.os\lower! == "windows"
             else if os.isunix
                 table.insert profiles, entry if entry.os\lower! == "linux"
             else
-                print "System '#{entry.os}' in profile #{entry.name} is not supported."
+                Log\error "System '#{entry.os}' in profile '#{entry.name}' is not supported."
 
         profile_map = { }
         for profile in *profiles
-            assert profile_map[profile.id] == nil
+            Validation\assert profile_map[profile.id] == nil
             profile_map[profile.id] = profile_map
 
         return ProfileList profiles

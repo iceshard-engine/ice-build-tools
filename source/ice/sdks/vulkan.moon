@@ -1,4 +1,4 @@
-import Locator from require 'ice.locator'
+import Locator from require "ice.locator"
 
 class SDK_Vulkan extends Locator
     new: => super Locator.Type.CommonSDK, "Vulkan SDK Locator"

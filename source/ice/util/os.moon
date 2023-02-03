@@ -1,4 +1,4 @@
-lfs = require 'lfs'
+lfs = require "lfs"
 
 -- Get the host system value on first run
 extension_to_system = dll:'windows', dylib:'macos', so:'unix'
@@ -26,6 +26,8 @@ os.osselect = (osmap) ->
         return osmap.macos or osmap.mac or osmap.osx or osmap.unix
     elseif os.isunix
         return osmap.linux or osmap.unix
+
+os.osname = os.osselect win:'windows', macos:'macos', linux:'linux'
 
 -- Returns true if the path is a directory
 os.isfile = (path) -> (lfs.attributes path, 'mode') == 'file'

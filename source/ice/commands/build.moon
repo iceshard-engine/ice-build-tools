@@ -1,47 +1,62 @@
-import Command, option, flag from require "ice.command"
-
+import Command, Setting, option, flag, group from require "ice.command"
 import FastBuild from require "ice.tools.fastbuild"
 
+import Validation from require "ice.core.validation"
+import Log from require "ice.core.logger"
+import Dir from require "ice.core.fs"
+
 class BuildCommand extends Command
-    @settings: {
-        fbuild:
-            config_file: 'fbuild.bff'
-        default_target: 'all-x64-Release'
+    @settings {
+        Setting 'build.fbuild_config_file', required:true, default:'fbuild.bff'
+        Setting 'build.default_target', required:true, default:'all'
     }
 
     @arguments {
+        group 'build', description: "Configuring build behavior"
         option 'target',
+            description: 'One or more targets to build.'
+            group: 'build'
             name: '-t --target'
             count: '*'
-            default: @settings.default_target
+            default: Setting\ref 'build.default_target'
+        flag 'match',
+            description: 'Enables simple matching for target selection.'
+            group: 'build'
+            name: '-m --match'
+        flag 'clean',
+            description: 'Builds the targets as if everything is out-of-date.'
+            group: 'build'
+            name: '-c --clean'
+        flag 'dist'
+            description: 'Enables distributed compilation if available.'
+            group: 'build'
+
+        group 'additional', description:'Configuring build progress feedback'
+        option 'summary',
+            description: 'Shows a summary of the build when it ends.'
+            group: 'additional'
+            name: '-s --summary'
+            choices: { 'off', 'success', 'always' }
+            default: 'off'
+        flag 'monitor'
+            description: 'Enables FastBuild monitoring using 3rdParty applications.'
+            group: 'additional'
+
+        group 'targets', description:'Working with build targets'
         option 'list_targets',
+            description: 'Lists available build targets that match the pattern.'
+            group: 'targets'
             name: '-l --list-targets'
             default: '*'
             defmode: 'arg'
-        option 'summary',
-            name: '-s --summary'
-            choices: { "off", "success", "always" }
-            default: 'off'
-        flag 'clean',
-            name: '-c --clean'
+
         flag 'verbose',
+            description: 'Enables verbose output of the build system.'
             name: '-v --verbose'
-        flag 'match',
-            name: '-m --match'
-            description: 'Enables IBT to match targets based on the values passed to \'--target\'. Use \'--list-targets\' to explore targets.'
-        flag 'monitor'
-        flag 'dist'
     }
 
-    new: (...) =>
-        -- Update the default target again if it was changed in a user workspace
-        (@@argument_options 'target').default = @@settings.default_target
-
-        -- Call the parent ctor
-        super ...
-
     prepare: (args, project) =>
-        os.chdir project.output_dir
+        Validation\ensure (Dir\enter project.output_dir), "Missing output directory '#{project.output_dir}'..."
 
     execute: (args) =>
         -- Remove lines we don't want
@@ -58,8 +73,8 @@ class BuildCommand extends Command
             pattern = args.list_targets\gsub '*', '%.*'
             targets = @gather_targets pattern, bad_matches
 
-            print "List of targets matching the pattern '#{args.list_targets}'"
-            print target for target in *targets
+            Log\info "List of targets matching the pattern '#{args.list_targets}'"
+            Log.raw\info target for target in *targets
 
         else
             if args.match
@@ -69,7 +84,7 @@ class BuildCommand extends Command
                 args.target = new_targets
 
             FastBuild!\build
-                config:@@settings.fbuild.config_file
+                config:@settings.build.fbuild_config_file
                 target:table.concat args.target, ' '
                 clean:args.clean
                 monitor:args.monitor

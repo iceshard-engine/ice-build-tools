@@ -1,0 +1,5 @@
+{
+  "linux": {
+    "script_file": "ibt.sh"
+  }
+}
