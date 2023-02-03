@@ -86,11 +86,11 @@ class DevenvCommand extends Command
                 if args.update or (not launch_file_exists)
                     if launch_file_exists
                         if args.update == 'modify'
-                            unless os.copy_file launch_file, "#{launch_file}.backup", force:true
+                            unless File\copy launch_file, "#{launch_file}.backup", force:true
                                 @fail "Failed to create backup file for #{launch_file}"
 
                         if args.update == 'replace'
-                            unless os.move_file launch_file, "#{launch_file}.backup", force:true
+                            unless File\move launch_file, "#{launch_file}.backup", force:true
                                 @fail "Failed to create backup file for #{launch_file}"
 
                     launch_targets = { }

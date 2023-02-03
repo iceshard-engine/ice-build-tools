@@ -67,7 +67,7 @@ class Dir
             for name in path\gmatch '[^/\\]+'
                 partial ..= "#{name}/"
                 unless os.isdir partial
-                    result and= (os.mkdir partial) ~= nil
+                    result and= (lfs.mkdir partial) ~= nil
         result
 
     @delete = (path, args = { with_files:true }) =>
@@ -79,8 +79,8 @@ class Dir
                 entry_path = "#{path}/#{name}"
 
                 -- Delete file nodes
-                result and= os.remove entry_path if mode == 'file'
-                result and= os.rmdir_with_files entry_path if mode == 'directory'
+                result and= File\delete entry_path if mode == 'file'
+                result and= Dir\delete entry_path, with_files:true if mode == 'directory'
 
         -- Delete this path
         lfs.rmdir path if result
