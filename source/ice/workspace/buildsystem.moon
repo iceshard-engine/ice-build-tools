@@ -222,9 +222,6 @@ class FastBuildBuildSystem extends BuildSystem
             gen\line '}'
         gen\line!
 
-        for k, v in pairs generated
-            print k, v
-
         gen\include Path.Unix\join @workspace_dir, generated.toolchains
         gen\include Path.Unix\join @workspace_dir, generated.platforms
         gen\include Path.Unix\join @workspace_dir, generated.sdks
