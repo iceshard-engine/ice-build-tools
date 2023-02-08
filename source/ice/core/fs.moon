@@ -1,3 +1,4 @@
+require "ice.util.os"
 lfs = require "lfs"
 
 import Log from require "ice.core.logger"
@@ -49,7 +50,12 @@ class Path
             return internal_join "#{trimed}/#{trim_separators r}", ... unless sep
             return internal_join "#{trimed}#{trim_separators r}", ...
 
-        Path\normalize internal_join left, right, ...
+        @\normalize internal_join left, right, ...
+
+Path.Unix = class extends Path
+    @separator = '/'
+Path.Windows = class extends Path
+    @separator = '\\'
 
 class Dir
     @current = => lfs.currentdir!

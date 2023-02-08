@@ -4,6 +4,9 @@ package.moonpath ..= ";?.moon;?/init.moon"
 
 import IBT from require "ibt.ibt"
 import Logger, LogCategory, Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
+
+import Dir from require "ice.core.fs"
 
 handle_result_value = (result, table_only) ->
     final_result = nil
@@ -34,6 +37,8 @@ class Application
             @.args[name] = { :func, :name, :opts }
 
     new: (settings) =>
+        Validation\assert (Dir\exists IBT.fbuild_scripts), "IBT.fbuild_scripts (#{IBT.fbuild_scripts}) does not exist! Are you running IBT in a proper conan environment?"
+
         @script_file = arg[1]
         @parser = argparse @@name, @@description, @@epilog
         @parser\require_command false

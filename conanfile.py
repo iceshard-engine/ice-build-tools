@@ -9,7 +9,7 @@ import json
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "1.2.0"
+    version = "1.2.1"
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
@@ -138,6 +138,7 @@ class IceBuildToolsConan(ConanFile):
             f.write("    channel: '{}'\n".format(self.channel))
             f.write("    user: '{}'\n".format(self.user))
             f.write("    version: '{}'\n".format(self.version))
+            f.write("  fbuild_scripts: os.getenv 'ICE_FBUILD_SCRIPTS'\n")
             f.write("\n")
             f.write("{ :IBT }\n")
             f.close()

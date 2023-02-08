@@ -1,5 +1,6 @@
 import Exec, Where from require "ice.tools.exec"
 import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
 
 class Conan extends Exec
     new: (path) => super path or (os.iswindows and Where\path "conan.exe") or Where\path "conan"
