@@ -55,7 +55,7 @@ class Project
 
     load_settings: (settings_path, settings_file = "settings.json") =>
         @project_settings_file = Path\join settings_path, settings_file
-        @project_settings = File\contents @project_settings_file, mode:'r', parser:Json\decode
+        @project_settings = File\load @project_settings_file, mode:'r', parser:Json\decode
 
         -- Override settings with their os overrides
         for key, value in pairs (@project_settings[os.osname] or { })

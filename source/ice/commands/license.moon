@@ -57,7 +57,7 @@ class LicenseCommand extends Command
             @fail "Missing value for setting '#{@@settings.license.authors.key}'" unless @settings.license.authors
 
         if args.mode == '3rdparty'
-            @details = File\contents @settings.license.thirdparty.details_file, parser:Json\decode
+            @details = File\load @settings.license.thirdparty.details_file, parser:Json\decode
 
     execute: (args, project) =>
         return @execute_mode_sources args, project if args.mode == 'sources'
@@ -75,7 +75,7 @@ class LicenseCommand extends Command
         newline = "\n"
         line_count = 0
 
-        contents = File\contents file, limit: 500, mode:'rb'
+        contents = File\load file, limit: 500, mode:'rb'
         @log\warning "Failed to read file: '#{file}'" if not contents or contents == ""
 
         results = { }
@@ -154,7 +154,7 @@ class LicenseCommand extends Command
             final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
 
             @log\info "Generating copyright and SPDX header in file: #{file}"
-            contents = File\contents file, mode:'rb' unless contents
+            contents = File\load file, mode:'rb' unless contents
             contents = final_header .. contents
 
             if f = File\open file, mode:"wb"
@@ -229,7 +229,7 @@ class LicenseCommand extends Command
     execute_mode_3rdparty: (args, project) =>
         license_files = {}
 
-        if buildinfo = File\contents 'build/conan_debug/conanbuildinfo.json', parser:Json\decode
+        if buildinfo = File\load 'build/conan_debug/conanbuildinfo.json', parser:Json\decode
             for dependency in *buildinfo.dependencies
                 found_license_files = { }
                 for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }

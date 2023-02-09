@@ -218,9 +218,10 @@ class File
 
     @open = (path, args = { }) => io.open path, args.mode
     @lines = (path) => io.lines path
-    @contents = (path, args = { limit:0, mode:'r' }) =>
+
+    @load = (path, args = { limit:0, mode:'r' }) =>
         result = ""
-        if f = File\open path, args.mode or 'r'
+        if f = File\open path, mode:args.mode or 'r'
             if args.limit and args.limit > 0
                 result = f\read args.limit
             else
@@ -230,5 +231,12 @@ class File
         -- Run the contents through a parser return the result
         return args.parser result if result and result ~= "" and args.parser
         result -- else return the raw contents
+
+    @save = (path, contents, args = { mode:'w+' }) =>
+        if f = File\open path, mode:args.mode or 'w+'
+            f\write contents
+            f\close!
+            return true
+        return false
 
 { :Path, :Dir, :File }

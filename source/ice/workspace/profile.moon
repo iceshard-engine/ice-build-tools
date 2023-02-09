@@ -30,7 +30,7 @@ class Profile
 
 class ProfileList
     @from_file: (path) =>
-        @from_string File\contents path, mode:'r'
+        @from_string File\load path, mode:'r'
 
     @from_string = (string) =>
         @from_json Json\decode string if string ~= ""
