@@ -92,7 +92,7 @@ class Sink
 deep_copy = (t) ->
     result = { }
     for k, v in pairs t
-        if (type v) == 'table'
+        if (type v) == 'table' and v.__class == nil
             result[k] = deep_copy v
         else
             result[k] = v
@@ -164,6 +164,8 @@ class Logger
     error: (msg, ...) => @\log msg, @category, LogLevel.Error, ...
 
     @init = (args, raw_logger) =>
+        return if global_instance.logger ~= nil
+
         -- If a logger instance is passed we assign it directly
         if (type args) == Logger
             global_instance.logger = args

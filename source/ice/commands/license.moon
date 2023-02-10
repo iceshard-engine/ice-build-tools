@@ -1,4 +1,5 @@
-import Command, Setting, argument, option, flag from require "ice.command"
+import Command, argument, option, flag from require "ice.command"
+import Setting from require "ice.settings"
 import Json from require "ice.util.json"
 
 import Log from require "ice.core.logger"

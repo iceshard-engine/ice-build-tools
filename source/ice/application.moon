@@ -37,6 +37,9 @@ class Application
             @.args[name] = { :func, :name, :opts }
 
     new: (settings) =>
+        -- Initialize global logger if it wasn't done yet
+        Logger\init { }
+
         Validation\assert (Dir\exists IBT.fbuild_scripts), "IBT.fbuild_scripts (#{IBT.fbuild_scripts}) does not exist! Are you running IBT in a proper conan environment?"
 
         @script_file = arg[1]
@@ -92,7 +95,7 @@ class Application
         result or { }
 
     execute: =>
-        Log\info "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel}"
+        Log\info "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel})"
         Log.raw\info '\nFor more options see the -h,--help output.'
 
 

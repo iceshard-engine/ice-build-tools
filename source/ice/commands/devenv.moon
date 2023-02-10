@@ -1,4 +1,5 @@
-import Command, Setting, option, flag, group from require "ice.command"
+import Command, option, flag, group from require "ice.command"
+import Setting from require "ice.settings"
 
 import BuildCommand from require "ice.commands.build"
 import FastBuild from require "ice.tools.fastbuild"
@@ -108,6 +109,9 @@ class DevenvCommand extends Command
             VSCode!\start open:Path\join Dir\current!, ".." if args.start
 
         elseif args.devenv == 'vstudio'
+            solution_file = Setting\get 'project.fbuild.vstudio_solution_file'
+            @fail "'vstudio' ide requires the 'project.fbuild.vstudio_solution_file' to be set." unless solution_file and solution_file ~= ''
+
             if args.update == 'modify'
                 Log\warning "The 'modify' behaves like 'replace' for the Visual Studio enviroment."
                 args.update = 'replace'

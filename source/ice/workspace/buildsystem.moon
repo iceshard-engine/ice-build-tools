@@ -231,7 +231,7 @@ class FastBuildBuildSystem extends BuildSystem
         gen\line '.SDKNames + .PlatformSDKNames'
 
         gen\line!
-        gen\line ".UserSolutionName = '#{@files.solution_name}'"
+        gen\line ".UserSolutionName = '#{@files.solution_name}'" if @files.solution_name
         gen\line ".UserScriptFile = '#{@files.ibt}'"
 
 
@@ -269,7 +269,7 @@ class FastBuildBuildSystem extends BuildSystem
         gen\line!
         gen\include Path.Unix\join fbscripts, "targets_build.bff"
         gen\include Path.Unix\join fbscripts, "targets_devenv.bff"
-        gen\include Path.Unix\join fbscripts, "targets_vsproject.bff" if os.iswindows
+        gen\include Path.Unix\join fbscripts, "targets_vsproject.bff" if os.iswindows and @files.solution_name
         gen\close!
 
 { :FastBuildBuildSystem }

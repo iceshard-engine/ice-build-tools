@@ -1,4 +1,5 @@
-import Command, Setting, option, flag, group from require "ice.command"
+import Command, option, flag, group from require "ice.command"
+import Setting from require "ice.settings"
 import FastBuild from require "ice.tools.fastbuild"
 
 import Validation from require "ice.core.validation"

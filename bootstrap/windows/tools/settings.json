@@ -1,5 +1,7 @@
 {
   "windows": {
-    "script_file": "ibt.bat"
+    "project": {
+      "script_file": "ibt.bat"
+    }
   }
 }

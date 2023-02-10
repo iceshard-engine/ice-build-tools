@@ -1,5 +1,7 @@
 {
   "linux": {
-    "script_file": "ibt.sh"
+    "project": {
+      "script_file": "ibt.sh"
+    }
   }
 }

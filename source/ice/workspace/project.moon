@@ -8,13 +8,13 @@ import SDK_Linux from require "ice.sdks.linux"
 import SDK_Cpp_WinRT from require "ice.sdks.winrt_cpp"
 
 import Conan from require "ice.tools.conan"
-import FastBuildGenerator from require "ice.generators.fastbuild"
 import FastBuildBuildSystem from require "ice.workspace.buildsystem"
 
 import ProfileList, Profile from require "ice.workspace.profile"
 import ProjectApplication from require "ice.workspace.application"
 
-import Path, File from require "ice.core.fs"
+import Setting, Settings from require "ice.settings"
+import Path, File, Dir from require "ice.core.fs"
 import Json from require "ice.util.json"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
@@ -24,17 +24,22 @@ install_conan_dependencies = ->
 generate_fastbuild_variables_script = ->
 generate_fastbuild_workspace_script = ->
 
+project_settings = {
+    Setting 'project.script_file', required:true, predicate:File\exists
+    Setting 'project.source_dir', required:true, default:'source/code', predicate:Dir\create
+    Setting 'project.output_dir', required:true, default:'build', predicate:Dir\create
+    Setting 'project.conan.profiles_file', required:true, default:'source/conan_profiles.json', predicate:File\exists
+    Setting 'project.fbuild.config_file', required:true, default:'source/fbuild.bff', predicate:File\exists
+    Setting 'project.fbuild.vstudio_solution_file', predicate:(v) -> (type v) == 'string'
+}
+
 class Project
     new: (@name) =>
         ProjectApplication.name = @name
 
         @workspace_root = os.cwd!\gsub '\\', '/'
-        @ice_build_tools_version = os.getenv 'ICE_BUILT_TOOLS_VER'
 
         @application_class = ProjectApplication
-        @generator_class = FastBuildGenerator
-
-        @conan_profile = 'default'
         @profile_list = ProfileList!
 
         @solution_name = "#{@name}.sln"
@@ -51,47 +56,74 @@ class Project
         @add_locator SDK_DX12!
         @add_locator SDK_Vulkan!
 
-    script: (@project_script) =>
+        @_load_settings 'tools/settings.json'
 
-    load_settings: (settings_path, settings_file = "settings.json") =>
-        @project_settings_file = Path\join settings_path, settings_file
-        @project_settings = File\load @project_settings_file, mode:'r', parser:Json\decode
+    _load_settings: (@project_settings_file) =>
+        Validation\assert File\exists @project_settings_file, "Settings file does not exist: #{@project_settings_file}"
+
+        @raw_settings = File\load @project_settings_file, mode:'r', parser:Json\decode
+
+        override_values = (src_tab, target_tab) ->
+            for key, value in pairs src_tab
+                if target_tab[key] ~= nil and (type src_tab[key]) != (type target_tab[key])
+                    Log\error "Mismatched types when applying '#{os.osname}' settings."
+                elseif (type target_tab[key]) == 'table'
+                    override_values src_tab[key], target_tab[key]
+                else
+                    target_tab[key] = src_tab[key]
 
         -- Override settings with their os overrides
-        for key, value in pairs (@project_settings[os.osname] or { })
-            @project_settings[key] = value
+        override_values @raw_settings[os.osname], @raw_settings
 
-        @project_script = @project_settings.script_file
+        @settings = { }
+        for setting in *project_settings
+            setting\deserialize @raw_settings, @settings
 
     application: (@application_class) =>
+    add_locator: (locator) => table.insert @locators[locator.type], locator
+
+    set: (setting, value) => Settings\set setting, value
+
     profiles: (profiles_file) =>
-        @profile_list = ProfileList\from_file profiles_file
+        Log\warning "The 'Project::profiles_file' method is deprecated.\nPlease use 'Project::set \"project.conan.profiles_file\", <value>' instead or the 'settings.json' file."
+        Settings\set 'project.conan.profiles_file', profiles_file
 
-    fastbuild_hooks_script: (@hooks_script_location) =>
-    fastbuild_alias_script: (@alias_script_location) =>
+    fastbuild_script: (script_location) =>
+        Log\warning "The 'Project::fastbuild_script' method is deprecated.\nPlease use 'Project::set \"project.fbuild.config_file\", <value>' instead or the 'settings.json' file."
+        Settings\set 'project.fbuild.config_file', script_location
 
-    fastbuild_script: (@script_location) =>
     fastbuild_vstudio_solution: (name) =>
-        @solution_name = "#{name}.sln"
+        Log\warning "The 'Project::fastbuild_vstudio_solution' method is deprecated.\nPlease use 'Project::set \"project.fbuild.vstudio_solution_file\", <value>' instead or the 'settings.json' file."
+        Settings\set 'project.fbuild.vstudio_solution_file', "#{name}.sln"
 
-    add_locator: (locator) =>
-        table.insert @locators[locator.type], locator
+    sources: (source_directory) =>
+        Log\warning "The 'Project::sources' method is deprecated.\nPlease use 'Project::set \"project.source_dir\", <value>' instead or the 'settings.json' file."
+        Settings\set 'project.source_dir', source_directory
 
-    sources: (@source_directory) =>
-    output: (@output_directory) =>
-    working_dir: (@working_directory) =>
+    output: (output_directory) =>
+        Log\warning "The 'Project::sources' method is deprecated.\nPlease use 'Project::set \"project.output_dir\", <value>' instead or the 'settings.json' file."
+        Settings\set 'project.output_dir', output_directory
+
+    load_settings: =>  Log\warning "The 'Project::load_settings' method is deprecated and can be safely removed."
+    working_dir: => Log\warning "The 'Project::working_dir' method is deprecated and can be safely removed."
 
     finish: (force_detect) =>
+        @profile_list = ProfileList\from_file @settings.project.conan.profiles_file
+
+        @project_script = Setting\get 'project.script_file'
+        @output_directory = Setting\get 'project.output_dir'
+        @source_directory = Setting\get 'project.source_dir'
+        @script_location = Setting\get 'project.fbuild.config_file'
+
         Validation\assert @output_directory ~= nil and @output_directory ~= "", "Invalid value for `output` => '#{@output_directory}'"
         Validation\assert @source_directory ~= nil and @source_directory ~= "", "Invalid value for `sources` => '#{@source_directory}'"
-        Validation\assert @working_directory ~= nil and @working_directory ~= "", "Invalid value for `working_dir` => '#{@working_directory}'"
         Validation\assert @project_script ~= nil and @project_script ~= "", "Invalid value for `project_script` => '#{@project_script}'"
 
         Validation\assert @script_location ~= nil and @script_location ~= "", "Invalid value for `fastbuild_script` => '#{@script_location}'"
         Validation\assert (os.isfile @script_location), "Non existing file set in `fastbuild_script` => '#{@script_location}'"
         Validation\assert @profile_list\has_profiles!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
 
-        application = @['application_class'] @project_settings
+        application = @['application_class'] @raw_settings
         selected_profiles = @profile_list\prepare_profiles @output_directory
 
         @build_system = FastBuildBuildSystem {
@@ -103,7 +135,7 @@ class Project
             -- Files
             files: {
                 ibt:@project_script
-                solution_name:@solution_name
+                solution_name:Setting\get 'project.fbuild.vstudio_solution_file'
                 fbuild_workspace_file:@script_location
             }
         }
@@ -117,6 +149,7 @@ class Project
             source_dir: @source_directory
             output_dir: @output_directory
             fastbuild_solution_name: @solution_name
+            settings_file:@project_settings_file
             action: {
                 install_conan_dependencies: -> install_conan_dependencies selected_profiles, true
                 generate_build_system_files: -> @build_system\generate force:true
