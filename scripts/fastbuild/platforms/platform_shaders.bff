@@ -1,0 +1,84 @@
+
+.PlatformRule_Vulkan_10 =
+[
+    .Name = 'Vulkan-1.0-Environment'
+    .Requires = { 'Vulkan1.0', 'Step-Build' }
+    .BuildOptions = { '--target-env=vulkan1.0' }
+]
+.PlatformRule_Vulkan_11 =
+[
+    .Name = 'Vulkan-1.1-Environment'
+    .Requires = { 'Vulkan1.1', 'Step-Build' }
+    .BuildOptions = { '--target-env=vulkan1.1' }
+]
+.PlatformRule_Vulkan_12 =
+[
+    .Name = 'Vulkan-1.2-Environment'
+    .Requires = { 'Vulkan1.2', 'Step-Build' }
+    .BuildOptions = { '--target-env=vulkan1.2' }
+]
+.PlatformRule_Vulkan_13 =
+[
+    .Name = 'Vulkan-1.3-Environment'
+    .Requires = { 'Vulkan1.3', 'Step-Build' }
+    .BuildOptions = { '--target-env=vulkan1.3' }
+]
+.PlatformRule_OpenGL_45 =
+[
+    .Name = 'OpenGL-4.5-Environment'
+    .Requires = { 'OpenGL4.5', 'Step-Build' }
+    .BuildOptions = { '--target-env=opengl4.5' }
+]
+
+.Platform_GFX_Vulkan =
+[
+    .PlatformSystem = 'Vulkan'
+    .PlatformSupportedArchitectures = { 'Vulkan1.0', 'Vulkan1.1', 'Vulkan1.2', 'Vulkan1.3' }
+    .PlatformSupportedToolchainFamilies = { 'vk-glslc' }
+
+    .PlatformRequiredSDKs = {
+        'GFX-Vulkan'
+    }
+
+    .PlatformRules = {
+        .PlatformRule_Vulkan_10
+        .PlatformRule_Vulkan_11
+        .PlatformRule_Vulkan_12
+        .PlatformRule_Vulkan_13
+    }
+
+    .PlatformExtensions =
+    [
+        .OutputExtension_StaticLib = ''
+        .OutputExtension_SharedLib = ''
+        .OutputExtension_ConsoleApp = ''
+        .OutputExtension_WindowedApp = ''
+        .OutputExtension_HeaderOnly = ''
+        .OutputExtension_ObjectList = '.spv'
+    ]
+]
+
+.Platform_GFX_OpenGL =
+[
+    .PlatformSystem = 'OpenGL'
+    .PlatformSupportedArchitectures = { 'OpenGL4.5' }
+    .PlatformSupportedToolchainFamilies = { 'vk-glslc' }
+
+    .PlatformRequiredSDKs = {
+        'GFX-Vulkan'
+    }
+
+    .PlatformRules = {
+        .PlatformRule_OpenGL_45
+    }
+
+    .PlatformExtensions =
+    [
+        .OutputExtension_StaticLib = ''
+        .OutputExtension_SharedLib = ''
+        .OutputExtension_ConsoleApp = ''
+        .OutputExtension_WindowedApp = ''
+        .OutputExtension_HeaderOnly = ''
+        .OutputExtension_ObjectList = '.spv'
+    ]
+]

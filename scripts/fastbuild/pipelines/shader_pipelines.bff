@@ -1,0 +1,78 @@
+
+.Task_BuildGlsl_VertexShaderSources =
+[
+    .Step = 'Build'
+    .Type = 'Compile'
+
+    .AllowUnityBuilds = true
+
+    .TaskInputPattern = { '*-vert.glsl', '*-vtx.glsl' }
+    .TaskCustomOptions = ' -fshader-stage=vert "%1"'
+
+    .CompilerOutputExtension = '.spv'
+]
+
+.Task_BuildGlsl_PixelShaderSources =
+[
+    Using( .Task_BuildGlsl_VertexShaderSources )
+
+    .TaskInputPattern = { '*-frag.glsl', '*-pix.glsl' }
+    .TaskCustomOptions = ' -fshader-stage=frag "%1"'
+]
+
+.ShaderConfig_Unoptimized =
+[
+    .ConfigurationName = 'Unoptimized'
+]
+.ShaderConfig_Speed =
+[
+    .ConfigurationName = 'Speed'
+]
+.ShaderConfig_Size =
+[
+    .ConfigurationName = 'Size'
+]
+
+.Pipeline_VulkanShaders_13 =
+[
+    .PipelineName = 'vk-glsl'
+    .PipelinePlatform = 'GFX-Vulkan'
+    .PipelineArchitecture = 'Vulkan1.3'
+
+    .PipelineAllowUnityBuilds = false
+    .PipelineRequirements = {
+        'GFX-Vulkan'
+    }
+    .PipelineProjectRequirements = {
+        'ShaderPipeline'
+    }
+
+    .PipelineSteps = {
+        'Build'
+    }
+
+    .PipelineTasks = {
+        .Task_BuildGlsl_VertexShaderSources
+        .Task_BuildGlsl_PixelShaderSources
+    }
+
+    ; Will override the default configurations assigned to Vulkan Shaders
+    .ConfigurationList = {
+        .ShaderConfig_Unoptimized
+        .ShaderConfig_Speed
+        .ShaderConfig_Size
+    }
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = false
+    ]
+]
+
+.Pipeline_OpenGLShaders_45 =
+[
+    Using( .Pipeline_VulkanShaders_13 )
+
+    .PipelineName = 'opengl-glsl'
+    .PipelineArchitecture = 'OpenGL4.5'
+]

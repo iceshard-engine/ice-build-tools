@@ -150,108 +150,112 @@
 
                 Using( .Pipeline )
                 Using( .PipelineVSInfo )
-                Using( .PipelinePlatformInfo )
-                Using( .PipelineOutputExtensions )
 
-                // Check if we the project has all requirements covered
-                .ProjectRequirementsSatisfied = true
+                If( .VSEnabled )
                 {
-                    .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
-                    .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
+                    Using( .PipelinePlatformInfo )
+                    Using( .PipelineOutputExtensions )
 
-                    Using( .PipelineAvailableProjects )
-
-                    .AvailableTags = .SDKNames
-                        + .PipelineTags
-                        + .'PipelineAvailableProjects_$PipelineIdentifier$'
-
-                    ForEach( .Requirement in .ProjectRequires )
-                    {
-                        If ( .Requirement not in .AvailableTags )
-                        {
-                            ^ProjectRequirementsSatisfied = false
-                        }
-                    }
-                }
-
-                .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
-
-                .OutDirName = .'KindOutDir_$ProjectKind$'
-                .TargetExtension = .'OutputExtension_$ProjectKind$'
-
-                .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                .TargetOutputName = "$ProjectName$$TargetExtension$"
-                .TargetList = { }
-
-                .ProjectConfig =
-                [
-                    .Config = '$PipelineConfig$$VSSuffix$'
-                    .Platform = .PlatformVSName
-                ]
-
-                If ( .ProjectRequirementsSatisfied )
-                {
+                    // Check if we the project has all requirements covered
+                    .ProjectRequirementsSatisfied = true
                     {
                         .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
-                        .PipelineAvailableProjects_Extension =
-                        [
-                            .'PipelineAvailableProjects_$PipelineIdentifier$' = { .ProjectName }
-                        ]
-                        ^PipelineAvailableProjects + .PipelineAvailableProjects_Extension
+                        .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
+
+                        Using( .PipelineAvailableProjects )
+
+                        .AvailableTags = .SDKNames
+                            + .PipelineTags
+                            + .'PipelineAvailableProjects_$PipelineIdentifier$'
+
+                        ForEach( .Requirement in .ProjectRequires )
+                        {
+                            If ( .Requirement not in .AvailableTags )
+                            {
+                                ^ProjectRequirementsSatisfied = false
+                            }
+                        }
                     }
 
-                    If ( .ProjectKind != .Kind_HeaderOnly )
-                    {
-                        .ProjectConfig_Extension =
-                        [
-                            .Target = .'CompileTarget_$ProjectTarget$'
+                    .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
 
-                            .Output = .TargetOutputName
-                            .OutputDirectory = .TargetOutputDirectory
-                            .IntermediateDirectory = .TargetIntermediateDirectory
-                            .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
+                    .OutDirName = .'KindOutDir_$ProjectKind$'
+                    .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-                            .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
-                            .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
+                    .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    .TargetOutputName = "$ProjectName$$TargetExtension$"
+                    .TargetList = { }
 
-                            .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
-                            .LocalDebuggerWorkingDirectory = .ProjectDebugDir
-                        ]
-                        ^ProjectConfig + .ProjectConfig_Extension
-                    }
-                }
-
-                If ( .ProjectKind == .Kind_HeaderOnly )
-                {
-                    Using( .Projects_SolutionInfo )
-                    Using( .'SolutionInfo_$ProjectTarget$' )
-                    Using( .Intellisense )
-
-                    .ProjectConfig_Intellisense =
+                    .ProjectConfig =
                     [
-                        .PreprocessorDefinitions = ''
-                        .IncludeSearchPath = ''
-                        .AdditionalOptions = ''
-
-                        ForEach( .Value in .Defines )
-                        {
-                            ^PreprocessorDefinitions + '$Value$;'
-                        }
-                        ForEach( .Value in .IncludeDirs )
-                        {
-                            ^IncludeSearchPath + '$Value$;'
-                        }
-                        ForEach( .Value in .BuildOptions )
-                        {
-                            ^AdditionalOptions + '$Value$ '
-                        }
+                        .Config = '$PipelineConfig$$VSSuffix$'
+                        .Platform = .PlatformVSName
                     ]
 
-                    ^ProjectConfig + .ProjectConfig_Intellisense
-                }
+                    If ( .ProjectRequirementsSatisfied )
+                    {
+                        {
+                            .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                            .PipelineAvailableProjects_Extension =
+                            [
+                                .'PipelineAvailableProjects_$PipelineIdentifier$' = { .ProjectName }
+                            ]
+                            ^PipelineAvailableProjects + .PipelineAvailableProjects_Extension
+                        }
 
-                ^ProjectConfigs + .ProjectConfig
+                        If ( .ProjectKind != .Kind_HeaderOnly )
+                        {
+                            .ProjectConfig_Extension =
+                            [
+                                .Target = .'CompileTarget_$ProjectTarget$'
+
+                                .Output = .TargetOutputName
+                                .OutputDirectory = .TargetOutputDirectory
+                                .IntermediateDirectory = .TargetIntermediateDirectory
+                                .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
+
+                                .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
+                                .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
+
+                                .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
+                                .LocalDebuggerWorkingDirectory = .ProjectDebugDir
+                            ]
+                            ^ProjectConfig + .ProjectConfig_Extension
+                        }
+                    }
+
+                    If ( .ProjectKind == .Kind_HeaderOnly )
+                    {
+                        Using( .Projects_SolutionInfo )
+                        Using( .'SolutionInfo_$ProjectTarget$' )
+                        Using( .Intellisense )
+
+                        .ProjectConfig_Intellisense =
+                        [
+                            .PreprocessorDefinitions = ''
+                            .IncludeSearchPath = ''
+                            .AdditionalOptions = ''
+
+                            ForEach( .Value in .Defines )
+                            {
+                                ^PreprocessorDefinitions + '$Value$;'
+                            }
+                            ForEach( .Value in .IncludeDirs )
+                            {
+                                ^IncludeSearchPath + '$Value$;'
+                            }
+                            ForEach( .Value in .BuildOptions )
+                            {
+                                ^AdditionalOptions + '$Value$ '
+                            }
+                        ]
+
+                        ^ProjectConfig + .ProjectConfig_Intellisense
+                    }
+
+                    ^ProjectConfigs + .ProjectConfig
+                }
             }
 
             VCXProject( '$ProjectName$-vcxproj' )               // (optional) Alias

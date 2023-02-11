@@ -108,7 +108,6 @@ ForEach( .PlatformName in .AvailablePlatformsNames, .Platform in .AvailablePlatf
     }
 }
 
-
 //
 // Once we have available platforms (and toolchains from the generation step)
 //  we can start to check if we have pipelines defined for any platform + tolchain pairs
@@ -163,7 +162,7 @@ ForEach( .Pipeline in .BuildPipelines )
 
         ForEach( .Configuration in .ConfigurationList )
         {
-            // Print( "Target $PipelineName$-$TargetSystem$-$TargetArchitecture$-$TargetToolchain$" )
+            .ConanConfiguration = 'UNUSED'
 
             Using( .Configuration )
 
@@ -245,6 +244,13 @@ ForEach( .Pipeline in .BuildPipelines )
 
                 .PipelineProperties_SDKs = [ .Defines = { } ]
                 ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
+                {
+                    If ( .SDKName in .PlatformRequiredSDKs )
+                    {
+                        ^PipelineProperties_SDKs + .SDK
+                    }
+                }
+                ForEach( .SDKName in .PlatformSDKNames, .SDK in .PlatformSDKList )
                 {
                     If ( .SDKName in .PlatformRequiredSDKs )
                     {

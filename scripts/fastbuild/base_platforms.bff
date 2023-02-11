@@ -1,15 +1,22 @@
 #include "platforms/platform_windows_x64.bff"
 #include "platforms/platform_windows_x64_uwp.bff"
 #include "platforms/platform_linux_x64.bff"
+#include "platforms/platform_shaders.bff"
 
 .PlatformList = {
     .Platform_Windows_x64
     .Platform_Windows_x64_UWP
     .Platform_Linux_x64
+
+    // "Graphics API" Platforms
+    .Platform_GFX_Vulkan
+    .Platform_GFX_OpenGL
 }
 
 .PlatformNames = {
     'Windows'
     'UWP'
     'Linux'
+    'GFX-Vulkan'
+    'GFX-OpenGL'
 }

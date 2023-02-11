@@ -72,7 +72,7 @@ class BuildSystem
 class FastBuildBuildSystem extends BuildSystem
     new: (info) =>
         super info
-        @script_files = info.fbuild_script_files or { }
+        @user_includes = info.user_includes or { }
 
     generate: (args = { }) =>
         toolchains_file = Path\join @output_dir, 'fbuild_toolchains.bff'
@@ -212,6 +212,8 @@ class FastBuildBuildSystem extends BuildSystem
             gen\line "'#{profile.id}'" for profile in *@profiles
         gen\line '}'
 
+        gen\line!
+        gen\line ".ConanModules_UNUSED = [ ]"
         for profile in *@profiles
             gen\line!
             gen\line ".ConanModules_#{profile.id} = [ ]"
@@ -227,13 +229,8 @@ class FastBuildBuildSystem extends BuildSystem
         gen\include Path.Unix\join @workspace_dir, generated.sdks
 
         gen\line!
-        gen\line '.SDKList + .PlatformSDKList'
-        gen\line '.SDKNames + .PlatformSDKNames'
-
-        gen\line!
         gen\line ".UserSolutionName = '#{@files.solution_name}'" if @files.solution_name
         gen\line ".UserScriptFile = '#{@files.ibt}'"
-
 
         fbscripts = IBT.fbuild_scripts
 
@@ -243,6 +240,10 @@ class FastBuildBuildSystem extends BuildSystem
         gen\include Path.Unix\join fbscripts, "base_platforms.bff"
         gen\include Path.Unix\join fbscripts, "base_configurations.bff"
         gen\include Path.Unix\join fbscripts, "base_pipelines.bff"
+
+        gen\line!
+        gen\line "// Project specific include files"
+        gen\include Path.Unix\join @workspace_dir, include_path for include_path in *@user_includes
 
         -- if os.isfile "#{@workspace_dir}/#{project.hooks_script_location}"
         --     gen\line!

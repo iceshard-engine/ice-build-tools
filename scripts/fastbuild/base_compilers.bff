@@ -1,4 +1,8 @@
+// Supported C++ compilers
 #include "compilers/msvc.bff"
 #include "compilers/winrc.bff"
 #include "compilers/clang.bff"
 #include "compilers/gcc.bff"
+
+// Supported shader compilers
+#include "compilers/vkglslc.bff"

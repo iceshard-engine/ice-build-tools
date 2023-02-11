@@ -76,6 +76,8 @@ Print( '[IBT] Creating build targets...' )
 //
 ForEach( .Pipeline in .AvailablePipelines )
 {
+    .PipelineProjectRequirements = { }
+
     Using( .Pipeline )
 
     .PipelineTargets = { }
@@ -100,8 +102,20 @@ ForEach( .Pipeline in .AvailablePipelines )
             {
                 If ( .Requirement not in .AvailableTags )
                 {
-                    Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
+                    // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
                     ^ProjectRequirementsSatisfied = false
+                }
+            }
+
+            If ( .ProjectRequirementsSatisfied )
+            {
+                ForEach ( .Requirement in .PipelineProjectRequirements )
+                {
+                    If ( .Requirement not in .ProjectTags )
+                    {
+                        // Print( "INFO: $ProjectName$ is not enabled for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$) missing `$Requirement$`" )
+                        ^ProjectRequirementsSatisfied = false
+                    }
                 }
             }
         }
@@ -514,6 +528,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                 //--------------------------------------------------------------------------
                 .ProcessedConanModules = { }
 
+                If ( .PipelineConfigConan != 'UNUSED' )
                 {
                     Using( .FinalProperties )
                     Using( .'ConanModules_$PipelineConfigConan$' )
@@ -613,7 +628,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     // .TaskExecutable = ''
                     // .TaskRunAlways = false
                     // .TaskPreBuildDirectory = false
-                    // .TaskUsePreviousTargets = false
+                    .TaskConsumesPreviousOutputs = false
                     // .TaskOutputFolder = ''
 
                     Using( .Task )
@@ -697,6 +712,16 @@ ForEach( .Pipeline in .AvailablePipelines )
                             .CompilerInputPattern = .TaskInputPattern
                             .CompilerInputAllowNoFiles = .TaskInputAllowNoFiles
                             .CompilerOptions + .TaskCustomOptions
+                            .CompilerInputObjectLists = { }
+
+                            If ( .TaskConsumesPreviousOutputs )
+                            {
+                                ^PreBuildDependencies + .PreviousTargets
+                                ^CompilerInputPath = .TargetIntermediateDirectory
+
+                                // ^CompilerInputFilesRoot + .TargetIntermediateDirectory
+                                // ^CompilerInputObjectLists + .PreviousTargets // Requires a different option probably
+                            }
 
                             // Unity files
                             //--------------------------------------------------------------------------

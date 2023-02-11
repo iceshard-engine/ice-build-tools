@@ -1,0 +1,51 @@
+
+.CompilerFrontend_VKGLSLC =
+[
+    .FrontendFlag_Defines =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '-D'
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_IncludeDirs =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '-I '
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_IncludeResDirs =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_BuildOptions =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_Libs =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LibDirs =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LinkOptions =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+
+    .FrontendProperties =
+    [
+        .CompilerOptions + ' -o "%2"'
+    ]
+]

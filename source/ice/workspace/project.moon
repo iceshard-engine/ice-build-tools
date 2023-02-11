@@ -30,6 +30,10 @@ project_settings = {
     Setting 'project.output_dir', required:true, default:'build', predicate:Dir\create
     Setting 'project.conan.profiles_file', required:true, default:'source/conan_profiles.json', predicate:File\exists
     Setting 'project.fbuild.config_file', required:true, default:'source/fbuild.bff', predicate:File\exists
+    Setting 'project.fbuild.user_includes', default:{ }, predicate:(list) ->
+        for file in *(list or { })
+            return false unless File\exists file
+        return true
     Setting 'project.fbuild.vstudio_solution_file', predicate:(v) -> (type v) == 'string'
 }
 
@@ -132,6 +136,7 @@ class Project
             workspace_dir:@workspace_root
             output_dir:@output_directory
             source_dir:@source_directory
+            user_includes:Setting\get 'project.fbuild.user_includes'
             -- Files
             files: {
                 ibt:@project_script
