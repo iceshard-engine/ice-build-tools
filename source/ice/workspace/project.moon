@@ -10,7 +10,7 @@ import SDK_Cpp_WinRT from require "ice.sdks.winrt_cpp"
 import Conan from require "ice.tools.conan"
 import FastBuildBuildSystem from require "ice.workspace.buildsystem"
 
-import ProfileList, Profile from require "ice.workspace.profile"
+import ProfileList from require "ice.workspace.profile"
 import ProjectApplication from require "ice.workspace.application"
 
 import Setting, Settings from require "ice.settings"
@@ -19,10 +19,7 @@ import Json from require "ice.util.json"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 
--- import install_conan_tools, install_conan_source_dependencies from require "ice.workspace.util.conan_install_helpers"
 install_conan_dependencies = ->
-generate_fastbuild_variables_script = ->
-generate_fastbuild_workspace_script = ->
 
 project_settings = {
     Setting 'project.script_file', required:true, predicate:File\exists
@@ -42,11 +39,8 @@ class Project
         ProjectApplication.name = @name
 
         @workspace_root = os.cwd!\gsub '\\', '/'
-
         @application_class = ProjectApplication
-        @profile_list = ProfileList!
 
-        @solution_name = "#{@name}.sln"
         @locators =
             [Locator.Type.Toolchain]: { }
             [Locator.Type.PlatformSDK]: { }
