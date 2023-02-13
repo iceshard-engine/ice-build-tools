@@ -76,8 +76,11 @@ class LicenseCommand extends Command
         newline = "\n"
         line_count = 0
 
+        file = Path\normalize file
         contents = File\load file, limit: 500, mode:'rb'
-        @log\warning "Failed to read file: '#{file}'" if not contents or contents == ""
+        if not contents or contents == ""
+            @log\info "Skipping empty file #{file}" if args.verbose == 2
+            return
 
         results = { }
         header_size = 0
@@ -155,7 +158,8 @@ class LicenseCommand extends Command
             final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
 
             @log\info "Generating copyright and SPDX header in file: #{file}"
-            contents = File\load file, mode:'rb' unless contents
+            contents = File\load file, mode:'rb'
+            contents = contents\sub header_size + 1
             contents = final_header .. contents
 
             if f = File\open file, mode:"wb"
