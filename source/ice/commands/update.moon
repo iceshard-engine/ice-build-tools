@@ -8,7 +8,7 @@ class UpdateCommand extends Command
     @arguments {
         option "upgrade_ibt",
             name: '--upgrade-ibt'
-            description: 'Upgrade the IBT package to the latest version/'
+            description: 'Upgrade the IBT package to the latest version.'
             default: 'latest'
             defmode: 'arg'
     }
@@ -36,7 +36,8 @@ class UpdateCommand extends Command
 
                 conanfile_update_success = false
                 if contents = File\load 'tools/conanfile.txt', mode:'r+'
-                    conanfile_update_success = File\save 'tools/conanfile.txt', contents\gsub (current_package\gsub '([%-%.])', (v) -> '%'..v), newest_package
+                    updated_conanfile = contents\gsub (current_package\gsub '([%-%.])', (v) -> '%'..v), newest_package
+                    conanfile_update_success = File\save 'tools/conanfile.txt', updated_conanfile
 
                 if conanfile_update_success
                     conan\install conanfile:'tools/conanfile.txt', install_folder:'build/tools', build_policy:'missing'
