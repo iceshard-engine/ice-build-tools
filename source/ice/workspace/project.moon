@@ -71,7 +71,7 @@ class Project
                     target_tab[key] = src_tab[key]
 
         -- Override settings with their os overrides
-        override_values @raw_settings[os.osname], @raw_settings
+        override_values @raw_settings[os.osname] or { }, @raw_settings
 
         @settings = { }
         for setting in *project_settings

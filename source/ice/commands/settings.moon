@@ -36,8 +36,30 @@ The operation to be peformed.
             success = Settings\set args.setting, args.new_value
             if success
                 @log\info "#{args.setting} = #{Settings\get args.setting}"
-                serialized_settings = Settings\serialize!
-                File\save project.settings_file, (Json\encode serialized_settings), mode:'w+'
+
+                -- Load the old settings file and override only the keys that got serialized.
+                -- This way we don't remove custom keys or deprecated keys that the user might want to keep
+                current_settings = File\load project.settings_file, mode:'r', parser:Json\decode
+                for key, value in pairs Settings\serialize!
+                    current_settings[key] = value
+
+                -- Builds the final Json structure with a pre-defined order of keys (special) + (... alphabetic order)
+                selector = (t) ->
+                    special = { 'windows', 'linux', 'macos', 'project' }
+                    special_map = { key, true for key in *special }
+
+                    keys = [k for k in pairs t when not special_map[k]]
+                    table.sort keys, (a, b) -> a < b
+
+                    final_keys = [key for key in *special when t[key]]
+                    table.insert final_keys, key for key in *keys
+
+                    i = 0
+                    (...) ->
+                        i = i + 1
+                        final_keys[i], t[final_keys[i]] if t[final_keys[i]]
+
+                File\save project.settings_file, (Json\encode current_settings, selector), mode:'w+'
 
         elseif args.action == 'list'
             @log\info "Settings list:"

@@ -170,6 +170,7 @@ class IceBuildToolsConan(ConanFile):
     def package(self):
         self.copy("LICENSE", src=".", dst=".", keep_path=False)
         self.copy("*.lua", src="build/", dst="scripts/lua/", keep_path=True)
+        self.copy("*.lua", src="source/", dst="scripts/lua/", keep_path=True)
         self.copy("*.*", src="scripts/", dst="scripts/", keep_path=True)
         self.copy("*.*", src="bootstrap/", dst="bootstrap/", keep_path=True)
         self.copy("*.bff", src="scripts/fastbuild/", dst="scripts/fastbuild/", keep_path=True)
