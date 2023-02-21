@@ -125,9 +125,36 @@ ForEach( .Pipeline in .AvailablePipelines )
         {
             ^PipelineEnabledProjects + .ProjectName
 
-            .AvailableTags
-                + .ProjectTags
-                + .ProjectKind
+            .AvailableTags + .ProjectTags
+
+            // First iteration to search for rules changing the project kind
+            // We check with limited tags
+            ForEach( .ProjectRule in .ProjectRules )
+            {
+                .RuleKind = .Kind_None
+                Using( .ProjectRule )
+
+                .RuleRequirementsSatisfied = true
+                ForEach( .Requirement in .RuleRequires )
+                {
+                    If ( .Requirement not in .AvailableTags )
+                    {
+                        ^RuleRequirementsSatisfied = false
+                    }
+                }
+
+                If ( .RuleRequirementsSatisfied )
+                {
+                    // Update project kind if needed
+                    If ( .RuleKind != .Kind_None )
+                    {
+                         Print( "$ProjectName$ ($PipelineConfig$)" )
+                        ^ProjectKind = .RuleKind
+                    }
+                }
+            }
+
+            .AvailableTags + .ProjectKind
 
             // Final list of rules for the current step
             .StepRules = { }
@@ -218,11 +245,11 @@ ForEach( .Pipeline in .AvailablePipelines )
                         }
                     }
 
-                    // Print( "$ProjectName$ $Step$ ($Name$) == $RuleRequirementsSatisfied$" )
+                    // Print( "$ProjectName$ ($PipelineConfig$ $Step$ ($Name$) == $RuleRequirementsSatisfied$" )
+                    // Print( "$ProjectKind$" )
 
                     If ( .RuleRequirementsSatisfied )
                     {
-                        .RuleKind = .Kind_None
                         .RuleDeploy =
                         [
                             .Executable = .EmptyString
@@ -231,12 +258,6 @@ ForEach( .Pipeline in .AvailablePipelines )
                         [
                             .Enabled = false
                         ]
-
-                        // Update project kind if needed
-                        If ( .RuleKind != .Kind_None )
-                        {
-                            ^ProjectKind = .RuleKind
-                        }
 
                         // Gether dependency properties
                         .GatheredDependencies = { }
