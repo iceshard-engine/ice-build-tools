@@ -6,6 +6,11 @@ class SDK_Win32 extends Locator
     locate: =>
         if os.iswindows
             if win_sdk = Windows\detect_win10_sdk!
+                makepri_tool = {
+                    name: 'WinSDK_MakePri'
+                    path: "#{win_sdk.directory}bin\\#{win_sdk.version}.0\\x64\\makepri.exe"
+                }
+
                 resource_compiler = {
                     name: 'win10-resource-compiler'
                     executable: "#{win_sdk.directory}bin\\#{win_sdk.version}.0\\x64\\rc.exe"
@@ -29,6 +34,10 @@ class SDK_Win32 extends Locator
 
                     compilers: {
                         resource_compiler
+                    }
+
+                    tools: {
+                        makepri_tool
                     }
                 }
 

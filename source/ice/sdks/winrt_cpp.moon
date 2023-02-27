@@ -9,11 +9,6 @@ class SDK_Cpp_WinRT extends Locator
             win_sdk_winrt = os.isdir "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\cppwinrt" if win_sdk ~= nil
 
             if win_sdk and win_sdk_winrt
-                makepri_tool = {
-                    name: 'WinSDK_MakePri'
-                    path: "#{win_sdk.directory}bin\\#{win_sdk.version}.0\\x64\\makepri.exe"
-                }
-
                 @\add_result {
                     tags: { 'Windows', 'Windows-10', 'WinRT', 'StoreApp' }
                     name: 'SDK-Windows-10-CXX-WinRT'
@@ -26,10 +21,6 @@ class SDK_Cpp_WinRT extends Locator
                     libs: {
                         "RuntimeObject"
                         "WindowsApp"
-                    }
-
-                    tools: {
-                        makepri_tool
                     }
                 }
 

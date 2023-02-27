@@ -201,11 +201,111 @@ ForEach( .Pipeline in .AvailablePipelines )
             .Step_TargetsContainer =
             [
                 .Step_Targets_INIT = {}
+                .Step_Outputs_INIT = {}
             ]
 
             // Some helper variables so we dont duplicate target creation
             .Step_CopyDirsTargets = { }
 
+
+            // Go through each project task and generate final tasks if applicable
+            {
+                .TaskToolOperationsNames = { }
+
+                Using( .PipelinePlatformInfo )
+                Using( .PipelineProperties_SDKs )
+
+                .NewPipelineStepTasks =
+                [
+                    Using( .PipelineStepTasks )
+
+                    ForEach( .ProjectTask in .ProjectTasks )
+                    {
+                        .TaskStep = 'PostBuild'
+
+                        Using( .ProjectTask )
+
+                        If ( .TaskStep in .PipelineSteps )
+                        {
+                            If ( .TaskOperation in .TaskToolOperationsNames )
+                            {
+                                .ExecArguments = ''
+                                .ExecInputPattern = '*.*'
+
+                                .TaskConsumesPreviousOutputs = false
+                                Using( .'Operation_$TaskOperation$' )
+
+                                .FinalTask =
+                                [
+                                    .Step = .TaskStep
+                                    .Type = .TaskType_Exec
+
+                                    .TaskID = '$ProjectName$-$TaskOperation$'
+                                    .TaskConsumesPreviousOutputs = .TaskConsumesPreviousOutputs
+
+                                    .ExecExecutable = .'$ExecName$'
+                                    .ExecInput = { }
+                                    .ExecInputPath = { }
+                                    .ExecArguments = .ExecArguments
+                                    .ExecInputPattern = .ExecInputPattern
+                                ]
+
+                                ForEach( .Option in .OperationOptions )
+                                {
+                                    .OptionPrefix = ''
+                                    .OptionSuffix = ''
+                                    .IsInputDependency = false
+                                    Using( .Option )
+
+                                    If ( .IsInputDependency )
+                                    {
+                                        .TaskExtension =
+                                        [
+                                            .ExecInput = '$SourceVar$'
+                                        ]
+                                        ^FinalTask + .TaskExtension
+                                    }
+
+                                    If ( .TargetType == 'String' )
+                                    {
+                                        .TaskExtension =
+                                        [
+                                            .'$TargetVar$' = ''
+
+                                            If ( .SourceType == 'List' )
+                                            {
+                                                ForEach( .Value in .'$SourceVar$' )
+                                                {
+                                                    ^'$TargetVar$' + '$OptionPrefix$$Value$$OptionSuffix$'
+                                                }
+                                            }
+
+                                            If ( .SourceType == 'String' )
+                                            {
+                                                .Value = .'$SourceVar$'
+                                                ^'$TargetVar$' + '$OptionPrefix$$Value$$OptionSuffix$'
+                                            }
+                                        ]
+                                        ^FinalTask + .TaskExtension
+                                    }
+
+                                    If ( .TargetType == 'List' )
+                                    {
+                                        .TaskExtension =
+                                        [
+                                            .'$TargetVar$' = .'$SourceVar$'
+                                        ]
+                                        ^FinalTask + .TaskExtension
+                                    }
+                                }
+
+                                ^'$TaskStep$_Tasks' + .FinalTask
+                            }
+                        }
+                    }
+                ]
+                ^PipelineStepTasks = .NewPipelineStepTasks
+            }
 
             // Go through each step
             ForEach( .Step in .PipelineSteps )
@@ -624,9 +724,11 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 .PreBuildDependencies = .StepDependencies
                 .PreviousTargets = .'Step_Targets_$Step_Previous$'
+                .PreviousOutputs = .'Step_Outputs_$Step_Previous$'
 
                 .CurrentTargets = { }
                 .CurrentTargets_Unused = { }
+                .CurrentOutputs = { }
 
                 .TaskIdx = 0
                 .TaskVSTargetSaved = false
@@ -646,11 +748,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     .TaskInputAllowNoFiles = false
                     .TaskInputPattern = { '.cpp', '.cxx' }
                     .TaskCustomOptions = ''
-                    // .TaskExecutable = ''
-                    // .TaskRunAlways = false
-                    // .TaskPreBuildDirectory = false
                     .TaskConsumesPreviousOutputs = false
-                    // .TaskOutputFolder = ''
 
                     Using( .Task )
 
@@ -927,109 +1025,61 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     If ( .Type == .TaskType_Exec )
                     {
-                        // .SDKToolNames = { }
-                        // Using( .PipelineProperties_SDKs )
+                        .PreBuildDependencies = .PreviousTargets + .CurrentTargets + .CurrentTargets_Unused
 
-                        // If ( .TaskExecutable not in .SDKToolNames )
-                        // {
-                        //     ^TaskExecutable = ''
-                        // }
+                        .ExecOutput = '$TargetTaskOutputDirectory$/$TaskID$/$TaskExecOutput$'
 
-                        // // Run the task executable
-                        // If ( .TaskExecutable != .EmptyString )
-                        // {
-                        //     .ExecExecutable = .'$TaskExecutable$'
-                        //     .ExecInputPath = .ProjectResourcePaths
-                        //     .ExecInputPattern = .TaskInputPattern
-                        //     .ExecArguments + .TaskCustomOptions
-                        //     .ExecAlways = .TaskRunAlways
-                        //     .ExecUseStdOutAsOutput = false
-                        //     .ExecOutput = ''
-
-                        //     .PreBuildDependencies = .PreviousTargets + .CurrentTargets + .CurrentTargets_Unused
-
-                        //     If ( .TaskOutputFolder != .EmptyString )
-                        //     {
-                        //         // TODO:
-                        //         ^ExecOutput = '$TargetTaskOutputDirectory$/$TaskID$/priconfig.xml'
-                        //     }
-
-                        //     If ( .ExecOutput == .EmptyString )
-                        //     {
-                        //         ^ExecAlways = true
-                        //         ^ExecUseStdOutAsOutput = true
-                        //         ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_$Step$_$TaskID$_log.txt'
-                        //         ^TaskPreBuildDirectory = false
-                        //     }
-
-                        //     If ( .TaskUsePreviousTargets )
-                        //     {
-                        //         .ExecInput = .PreviousTargets
-                        //     }
-
-                        //     If ( .TaskPreBuildDirectory )
-                        //     {
-                        //         TextFile( '$ProjectTarget$-$Step$-$TaskID$-prebuild-dir' )
-                        //         {
-                        //             .TextFileOutput = '$ExecOutput$.readme.txt'
-                        //             .TextFileInputStrings = { 'Directory creation for task: $ProjectTarget$-$Step$-$TaskID$' }
-                        //         }
-
-                        //         ^PreBuildDependencies = { '$ProjectTarget$-$Step$-$TaskID$-prebuild-dir' }
-                        //     }
-
-                        //     Exec( '$ProjectTarget$-$Step$-$TaskID$' )
-                        //     {
-                        //     }
-
-                        //     ^'$TargetsList$' = '$ProjectTarget$-$Step$-$TaskID$'
-
-                        //     // ForEach( .DeployEntry in .ProjectStepDeploys )
-                        //     // {
-                        //     //     Print( "WARNING: Deploy entries for project $ProjectName$ are not supported along with 'Execute' tasks" )
-                        //     //     Print( .DeployEntry )
-                        //     // }
-                        // }
-
-                        If ( .ProjectKind != .Kind_HeaderOnly )
+                        If ( .TaskConsumesPreviousOutputs )
                         {
-
-                            // If ( .TaskExecutable == .EmptyString ) // The whole ForEach
-
-                            // TODO: Make this more generic, as this is explicitly a 'Deploy' step but should be just used for executing various tools
-                            ForEach( .DeployEntry in .ProjectStepDeploys )
-                            {
-                                .Arguments = ''
-                                .Inputs = { }
-                                .Output = ''
-
-                                Using( .DeployEntry )
-
-                                If ( .Executable != .EmptyString )
-                                {
-                                    .PreBuildDependencies = .CurrentTargets + .CurrentTargets_Unused
-
-                                    Exec( '$ProjectTarget$-$Step$-deploy-$DeployName$' )
-                                    {
-                                        .ExecExecutable = .Executable
-                                        .ExecInput = .Inputs
-                                        .ExecArguments = .Arguments
-                                        .ExecOutput = .Output
-                                        .ExecUseStdOutAsOutput = false
-                                        .ExecAlwaysShowOutput = true
-                                        .ExecAlways = true
-
-                                        If ( .ExecOutput == .EmptyString )
-                                        {
-                                            ^ExecUseStdOutAsOutput = true
-                                            ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_deploy_$Step$_$DeployName$_log.txt'
-                                        }
-                                    }
-
-                                    ^'$TargetsList$' = '$ProjectTarget$-$Step$-deploy-$DeployName$'
-                                }
-                            }
+                            ^ExecInput = .PreviousOutputs
                         }
+
+                        Exec( '$ProjectTarget$-$Step$-$TaskID$' )
+                        {
+                        }
+
+                        ^CurrentOutputs + .ExecOutput
+                        ^CurrentTargets_Unused = '$ProjectTarget$-$Step$-$TaskID$'
+
+                        // If ( .ProjectKind != .Kind_HeaderOnly )
+                        // {
+
+                        //     // If ( .TaskExecutable == .EmptyString ) // The whole ForEach
+
+                        //     // TODO: Make this more generic, as this is explicitly a 'Deploy' step but should be just used for executing various tools
+                        //     ForEach( .DeployEntry in .ProjectStepDeploys )
+                        //     {
+                        //         .Arguments = ''
+                        //         .Inputs = { }
+                        //         .Output = ''
+
+                        //         Using( .DeployEntry )
+
+                        //         If ( .Executable != .EmptyString )
+                        //         {
+                        //             .PreBuildDependencies = .CurrentTargets + .CurrentTargets_Unused
+
+                        //             Exec( '$ProjectTarget$-$Step$-deploy-$DeployName$' )
+                        //             {
+                        //                 .ExecExecutable = .Executable
+                        //                 .ExecInput = .Inputs
+                        //                 .ExecArguments = .Arguments
+                        //                 .ExecOutput = .Output
+                        //                 .ExecUseStdOutAsOutput = false
+                        //                 .ExecAlwaysShowOutput = true
+                        //                 .ExecAlways = true
+
+                        //                 If ( .ExecOutput == .EmptyString )
+                        //                 {
+                        //                     ^ExecUseStdOutAsOutput = true
+                        //                     ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_deploy_$Step$_$DeployName$_log.txt'
+                        //                 }
+                        //             }
+
+                        //             ^'$TargetsList$' = '$ProjectTarget$-$Step$-deploy-$DeployName$'
+                        //         }
+                        //     }
+                        // }
                     }
 
                     ^TaskIdx + 1
@@ -1078,6 +1128,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .Step_TargetsContainer_Extension =
                 [
                     .'Step_Targets_$Step$' = .CurrentTargets
+                    .'Step_Outputs_$Step$' = .CurrentOutputs
                 ]
                 ^Step_TargetsContainer + .Step_TargetsContainer_Extension
                 ^Step_Previous = .Step
