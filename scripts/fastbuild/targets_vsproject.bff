@@ -22,11 +22,11 @@
 
     ForEach( .Pipeline in .AvailablePipelines )
     {
+        .PipelineVSInfo = []
+        Using( .Pipeline )
+
         .VSSuffix = ''
         .VSEnabled = false
-        .PipelineVSInfo = []
-
-        Using( .Pipeline )
         Using( .PipelineVSInfo )
 
         If ( .VSEnabled )
@@ -39,7 +39,7 @@
             {
                 .SolutionConfig =
                 [
-                    .Config = '$PipelineConfig$$VSSuffix$'
+                    .Config = '$PipelineConfig$-$PipelineName$$VSSuffix$'
                     .Platform = .PlatformVSName
 
                     .SolutionConfig = '$PipelineConfig$'
@@ -145,10 +145,11 @@
 
             ForEach( .Pipeline in .AvailablePipelines )
             {
+                .PipelineVSInfo = []
+                Using( .Pipeline )
+
                 .VSSuffix = ''
                 .VSEnabled = false
-
-                Using( .Pipeline )
                 Using( .PipelineVSInfo )
 
                 If( .VSEnabled )
@@ -189,7 +190,7 @@
 
                     .ProjectConfig =
                     [
-                        .Config = '$PipelineConfig$$VSSuffix$'
+                        .Config = '$PipelineConfig$-$PipelineName$$VSSuffix$'
                         .Platform = .PlatformVSName
                     ]
 
