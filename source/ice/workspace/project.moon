@@ -139,6 +139,23 @@ class Project
             }
         }
 
+        -- TODO: Find a better solution to work with conan v2, as with this version we cannot call the same environment file twice
+        -- This directly makes problems when using IBT as a 'compiler' in some fastbuild scripts.
+        -- For now we generate a conanrunenv version that does not create the deactivate version on call
+        -- GitHub: https://github.com/iceshard-engine/ice-build-tools/issues/7
+        unless File\exists "build/tools/conanrunenv_mini.bat"
+            for file in *Dir\find_files "build/tools", filter: (v) -> v\match "^conanrunenv"
+                mini_env = { "@echo off" }
+
+                -- Only keep the lines with the 'set' commands
+                with File\open (Path\join "build/tools", file), mode:"rb+"
+                    for line in \lines!
+                        table.insert mini_env, line if line\match "^set \""
+                    \close!
+
+                    -- Save the new file, also required local modification of the .bat file
+                    File\save (Path\join "build/tools", "conanrunenv_mini.bat"), (table.concat mini_env, "\n") .. "\n", mode:"wb"
+
         install_conan_dependencies selected_profiles, false
         @build_system\generate!
 
@@ -163,7 +180,7 @@ install_conan_dependencies = (profiles, force_update) ->
     for profile in *profiles
         profile_location = profile\get_location!
         profile_file = profile\get_file!
-        info_file = Path\join profile_location, "conaninfo.txt"
+        info_file = Path\join profile_location, "conanrun.bat"
 
         -- Generate the profile file
         profile\generate!

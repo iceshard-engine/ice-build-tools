@@ -1,15 +1,20 @@
-from conans import ConanFile, MSBuild, tools
-from conans.errors import ConanException
+from conan import ConanFile
+from conan.errors import ConanException
 from shutil import copyfile, copytree
 from conan.tools.scm import Git
 from conan.tools.files import rmdir, copy, rename, replace_in_file
+from conan.tools.env import VirtualBuildEnv, VirtualRunEnv
+from os.path import join
 
 import os
 import json
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "1.2.4"
+    version = "1.2.5"
+    user = "iceshard"
+    channel = "stable"
+
     license = "MIT"
     description = "IceShard - build tools base"
     url = "https://github.com/iceshard-engine/ice-build-tools"
@@ -128,6 +133,9 @@ class IceBuildToolsConan(ConanFile):
         if self.options.project_name != "None":
             replace_in_file(self, 'workspace.moon', 'NewProject', str(self.options.project_name))
 
+    def generate(self):
+        pass
+
     def build(self):
         # Generate IBT moonscript file with IBT metadata
         os.mkdir("source/ibt")
@@ -143,13 +151,19 @@ class IceBuildToolsConan(ConanFile):
             f.write("{ :IBT }\n")
             f.close()
 
-        # Build all moonscript files
-        if self.settings.os == "Windows":
-            self.run("%MOONC_SCRIPT% source/ice -t build")
-            self.run("%MOONC_SCRIPT% source/ibt -t build")
-        if self.settings.os == "Linux":
-            self.run("lua $MOONC_SCRIPT source/ice -t build")
-            self.run("lua $MOONC_SCRIPT source/ibt -t build")
+        renv = VirtualRunEnv(self)
+        benv = VirtualBuildEnv(self)
+        env = benv.environment()
+        env.compose_env(renv.environment())
+
+        with env.vars(self).apply():
+            # Build all moonscript files
+            if self.settings.os == "Windows":
+                self.run("%MOONC_SCRIPT% source/ice -t build")
+                self.run("%MOONC_SCRIPT% source/ibt -t build")
+            if self.settings.os == "Linux":
+                self.run("lua $MOONC_SCRIPT source/ice -t build")
+                self.run("lua $MOONC_SCRIPT source/ibt -t build")
 
         # Prepare the directory for tools bootstrap file.
         tools_path = "bootstrap/tools"
@@ -168,19 +182,19 @@ class IceBuildToolsConan(ConanFile):
             f.close()
 
     def package(self):
-        self.copy("LICENSE", src=".", dst=".", keep_path=False)
-        self.copy("*.lua", src="build/", dst="scripts/lua/", keep_path=True)
-        self.copy("*.*", src="scripts/", dst="scripts/", keep_path=True)
-        self.copy("*.*", src="bootstrap/", dst="bootstrap/", keep_path=True)
-        self.copy("*.bff", src="scripts/fastbuild/", dst="scripts/fastbuild/", keep_path=True)
+        copy(self, "LICENSE", src=self.source_folder, dst=self.package_folder, keep_path=False)
+        copy(self, "*.lua", src=join(self.build_folder, "build/"), dst=join(self.package_folder, "scripts/lua/"), keep_path=True)
+        copy(self, "*.*", src=join(self.build_folder, "scripts/"), dst=join(self.package_folder, "scripts/"), keep_path=True)
+        copy(self, "*.*", src=join(self.build_folder, "bootstrap/"), dst=join(self.package_folder, "bootstrap/"), keep_path=True)
+        # copy(self, "*.bff", src="scripts/fastbuild/", dst="scripts/fastbuild/", keep_path=True)
 
     def package_info(self):
-        self.env_info.LUA_PATH.append(os.path.join(self.package_folder, "scripts/lua/?.lua"))
-        self.env_info.LUA_PATH.append(os.path.join(self.package_folder, "scripts/lua/?/init.lua"))
+        self.runenv_info.append_path("LUA_PATH", os.path.join(self.package_folder, "scripts/lua/?.lua"))
+        self.runenv_info.append_path("LUA_PATH", os.path.join(self.package_folder, "scripts/lua/?/init.lua"))
 
-        self.env_info.ICE_BUILT_TOOLS_VER = self.version
-        self.env_info.ICE_FBUILD_SCRIPTS = os.path.join(self.package_folder, "scripts/fastbuild")
+        self.runenv_info.define("ICE_BUILT_TOOLS_VER", self.version)
+        self.runenv_info.define("ICE_FBUILD_SCRIPTS", os.path.join(self.package_folder, "scripts/fastbuild"))
         if self.settings.os == "Windows":
-            self.env_info.ICE_SCRIPT = os.path.join(self.package_folder, "scripts/shell/build_win.bat")
+            self.runenv_info.define("ICE_SCRIPT", os.path.join(self.package_folder, "scripts/shell/build_win.bat"))
         if self.settings.os == "Linux":
-            self.env_info.ICE_SCRIPT = os.path.join(self.package_folder, "scripts/shell/build_linux.sh")
+            self.runenv_info.define("ICE_SCRIPT", os.path.join(self.package_folder, "scripts/shell/build_linux.sh"))

@@ -219,7 +219,7 @@ class FastBuildBuildSystem extends BuildSystem
             gen\line ".ConanModules_#{profile.id} = [ ]"
             gen\line '{'
             gen\indented (gen) ->
-                gen\include Path.Unix\join @workspace_dir, "#{profile\get_location!}/conan.bff"
+                gen\include Path.Unix\join @workspace_dir, "#{profile\get_location!}/conandeps.bff"
                 gen\line "^ConanModules_#{profile.id} = .ConanModules"
             gen\line '}'
         gen\line!

@@ -33,19 +33,25 @@ class ConanProfileGenerator
             line = (value) ->
                 @file\write "#{value or ''}\n"
 
+            -- Conan decided to use even a weirder msvc versioning number....
+            conan_msvc_versions = {
+                'msvc17': 193
+                'msvc16': 192
+                'msvc14': 191
+            }
+
             line!
             line "[settings]"
             line "os=#{@settings.os}"
             line "arch=#{@settings.arch}"
-            line "os_build=#{@settings.os}"
-            line "arch_build=#{@settings.arch}"
             line "compiler=#{@settings.compiler.name}"
-            line "compiler.version=#{@settings.compiler.version}"
+            line "compiler.version=#{conan_msvc_versions[@settings.compiler.name..@settings.compiler.version] or @settings.compiler.version}"
             line "compiler.libcxx=#{@settings.compiler.libcxx}" if @settings.compiler.libcxx
+            line "compiler.runtime=dynamic"
             line "build_type=#{@settings.build_type}"
             line "[options]"
             line "#{name}=#{value}" for { :name, :value } in *sorted_options or { }
-            line "[env]"
+            line "[buildenv]"
             line "#{name}=#{value}" for { :name, :value } in *sorted_envs or { }
             line!
 

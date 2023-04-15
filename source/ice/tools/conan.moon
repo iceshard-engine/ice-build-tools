@@ -31,7 +31,7 @@ class Conan extends Exec
         return unless Validation\ensure args.install_folder, "Missing 'install_folder' param!"
 
         cmd ..= " #{args.conanfile or args.reference}"
-        cmd ..= " --install-folder #{args.install_folder}"
+        cmd ..= " --output-folder #{args.install_folder}"
         cmd ..= " --build #{args.build_policy}" if args.build_policy
         cmd ..= " --profile #{args.profile}" if args.profile
         cmd ..= " --update" if args.update

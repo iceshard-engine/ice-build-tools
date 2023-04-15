@@ -8,8 +8,21 @@ At the core it uses 'Conan' for managing packages, including this tool itself. T
 
 ### Dependencies
 - Conan Package Manager
+- _Iceshard Conan Config_
+    - _Because of changes in Conan v2 a hook is required to properly generate the custom FastBuildDeps generator_
+    - _See below for details_
 
 ## Installation
+
+### Conan v2 custom generator workaround
+
+Ensure you have installed the required Conan v2 hook to handle custom generators. It can be found in this [iceshard-engine/conan-config](https://github.com/iceshard-engine/conan-config.git)
+
+The hook can also be installed using the `conan config install` command pointing to the https://github.com/iceshard-engine/conan-config.git repo.
+> Please note that this will replace also your remotes file, so please make sure your config is backed-up or just copy the necessary files manually.
+
+### Project setup
+
 To install this utility for your project just follow the instructions on the wiki [page](/iceshard-engine/ice-build-tools/wiki/Project-Setup).
 
 > It's recommended to always install the latest stable version of this tool, since it's still undergoing lots of development and features are added frequently.
