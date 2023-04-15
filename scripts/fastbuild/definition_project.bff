@@ -35,6 +35,7 @@ ForEach( .Project in .Projects )
     .DebugDir = '$WorkspaceBuildDir$'
 
     .Rules = { }
+    .Tasks = { }
 
     .UnitTests =
     [
@@ -81,6 +82,10 @@ ForEach( .Project in .Projects )
         {
             ^ProjectVStudioInputPaths + "$ProjectBaseDir$/$Path$"
         }
+
+        // Special tasks set-up for the project.
+        // See documentation of particular platforms to set these up.
+        .ProjectTasks = .Tasks
 
         .Rule_DefaultInternal =
         [

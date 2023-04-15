@@ -216,7 +216,9 @@ ForEach( .Pipeline in .BuildPipelines )
 
             .AvailablePipelineConfig =
             [
+                .PipelineTags = { }
                 Using( .Pipeline )
+                .CustomPipelineTags = .PipelineTags
 
                 .PipelineStepTasks = .PipelineStepTasks
                 .PipelinePlatformInfo =
@@ -240,7 +242,7 @@ ForEach( .Pipeline in .BuildPipelines )
                     "$ToolchainFrontend$-Frontend"
                     "$ToolchainCompilerFamily$-$ToolchainToolset$"
                     .ConfigurationName
-                } + .PlatformTags + .PlatformRequiredSDKs
+                } + .PlatformTags + .PlatformRequiredSDKs + .CustomPipelineTags
 
                 .PipelineProperties_SDKs = [ .Defines = { } ]
                 ForEach( .SDKName in .SDKNames, .SDK in .SDKList )

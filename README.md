@@ -47,3 +47,10 @@ Currently you can define your own application, commands, settings, locators and 
 In addition you can change the layout, conan profiles, configurations, platform, pipelines for your C++ setup.
 
 > TODO: Currently there is lots of work put into the wiki pages, which should address each specific feature by itself, but for now questions are apprciated.
+
+
+## Licenses
+
+This tool uses a slightly modified version of [rix/json.lua](https://github.com/rxi/json.lua/) for json encoding and decoding.
+License file: `LICENSES/RXI_JSON_LUA_LICENSE`
+Source code: `source/rxi/json.lua`

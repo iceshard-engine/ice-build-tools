@@ -11,7 +11,7 @@ import json
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "1.2.5"
+    version = "1.4.0"
     user = "iceshard"
     channel = "stable"
 
@@ -184,9 +184,9 @@ class IceBuildToolsConan(ConanFile):
     def package(self):
         copy(self, "LICENSE", src=self.source_folder, dst=self.package_folder, keep_path=False)
         copy(self, "*.lua", src=join(self.build_folder, "build/"), dst=join(self.package_folder, "scripts/lua/"), keep_path=True)
+        copy(self, "*.lua", src=join(self.build_folder, "source/"), dst=join(self.package_folder, "scripts/lua/"), keep_path=True)
         copy(self, "*.*", src=join(self.build_folder, "scripts/"), dst=join(self.package_folder, "scripts/"), keep_path=True)
         copy(self, "*.*", src=join(self.build_folder, "bootstrap/"), dst=join(self.package_folder, "bootstrap/"), keep_path=True)
-        # copy(self, "*.bff", src="scripts/fastbuild/", dst="scripts/fastbuild/", keep_path=True)
 
     def package_info(self):
         self.runenv_info.append_path("LUA_PATH", os.path.join(self.package_folder, "scripts/lua/?.lua"))

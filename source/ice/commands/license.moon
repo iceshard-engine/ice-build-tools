@@ -1,6 +1,7 @@
-import Command, argument, option, flag from require "ice.command"
+import Command, group, argument, option, flag from require "ice.command"
 import Setting from require "ice.settings"
 import Json from require "ice.util.json"
+import Git from require "ice.tools.git"
 
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
@@ -36,14 +37,28 @@ class LicenseCommand extends Command
     }
 
     @arguments {
+        group 'general', description:'General licensing options'
         argument 'mode',
+            group: 'general'
             description: 'Selects the process that this command should run.\n- \'sources\' checks for SPDX headers.\n- \'3rdparty\' searches dependencies for license information.\n'
             name: 'mode'
             choices: { 'sources', '3rdparty' }
             default: 'sources'
         flag 'generate',
+            group: 'general'
             description: 'Runs generation step for the selected mode.\n- \'sources\' generates SPDX file headers.\n- \'3rdparty\' generates readme and license files.'
             name: '-g --generate'
+
+        group 'sources', description:'Source licensing options'
+        flag 'all_files',
+            group: 'sources'
+            name: '-a --all-files'
+            description: 'Instead of just checking current diff files, checks all files under the source directory.'
+        -- option 'diff_base'
+        --     group: 'sources'
+        --     name: '--diff-base'
+        --     count: '?'
+
         flag 'verbose',
             description: 'Increases verbosity of the output. Can be used up to two times.'
             name: '-v --verbose'
@@ -171,12 +186,17 @@ class LicenseCommand extends Command
             @log\verbose "No updated required for file #{file}"
 
 
-    search_dir: (dir, args) =>
+    search_dir: (args, project) =>
         sdpx_extensions = @settings.license.mode_sources.file_extensions
+        -- source_path = Path\join project.workspace_dir, project.source_dir
 
         -- Find matching files
-        files = Dir\find_files dir, recursive:true, filter: (filename) ->
-            sdpx_extensions[Path\extension filename]
+        files = { }
+        if args.all_files
+            files = Dir\find_files project.source_dir, recursive:true, filter: (filename) ->
+                sdpx_extensions[Path\extension filename]
+        else
+            files = [change.filename for change in *(Git!\status path:project.source_dir) when sdpx_extensions[Path\extension change.filename]]
 
         for file in *files
             @check_license_header file, args
@@ -186,7 +206,7 @@ class LicenseCommand extends Command
         @log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
         @log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
 
-        @search_dir "#{os.cwd!}/#{project.source_dir}", args
+        @search_dir args, project
         @log\info "Checks finished." if args.check
         return true
 

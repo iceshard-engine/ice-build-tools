@@ -85,40 +85,108 @@
     ]
 ]
 
-// Platform specific pipeline tasks
+.PlatformOperations_UWP =
+[
+    .Operation_MakePri_CreateConfig =
+    [
+        .Option_PriConfigFile =
+        [
+            .TargetVar = 'TaskExecOutput'
+            .TargetType = 'String'
+            .SourceVar = 'PriConfigFile'
+            .SourceType = 'String'
+        ]
+        .Option_Locale =
+        [
+            .SourceVar = 'Locale'
+            .SourceType = 'List'
+            .TargetVar = 'ExecArguments'
+            .TargetType = 'String'
+            .OptionPrefix = ' /Default '
+            .OptionSuffix = ''
+        ]
 
-// .Task_UWP_CreatePriConfig =
-// [
-//     .Step = 'Package-Prepare'
-//     .Type = 'Exec'
+        .OperationOptions = {
+            .Option_PriConfigFile
+            .Option_Locale
+        }
 
-//     .TaskID = 'CreatePriConfig'
-//     .TaskRequires = { 'SDK-Windows-10-CXX-WinRT' }
+        .ExecName = 'WinSDK_MakePri'
+        .ExecArguments = ' createconfig /Overwrite /ConfigXml %2'
+    ]
 
-//     .TaskExecutable = 'WinSDK_MakePri'
-//     // .TaskInputPattern = { 'appxmanifest.xml' }
-//     .TaskInputAllowNoFiles = true
-//     .TaskPreBuildDirectory = true
+    .Operation_MakePri_New =
+    [
+        .Option_PriFile =
+        [
+            .SourceVar = 'PriFile'
+            .SourceType = 'String'
+            .TargetVar = 'TaskExecOutput'
+            .TargetType = 'String'
+        ]
+        .Option_PriConfigFile =
+        [
+            .IsInputDependency = true
+            .SourceVar = 'PriConfigFile'
+            .SourceType = 'String'
+            .TargetVar = 'ExecArguments'
+            .TargetType = 'String'
+            .OptionPrefix = ' /cf '
+            .OptionSuffix = ''
+        ]
+        .Option_AppXManifest =
+        [
+            .IsInputDependency = true
+            .SourceVar = 'AppXManifest'
+            .SourceType = 'String'
+            .TargetVar = 'ExecArguments'
+            .TargetType = 'String'
+            .OptionPrefix = ' /mn '
+            .OptionSuffix = ''
+        ]
+        .Option_FilesDir =
+        [
+            .Type = 'String'
+            .SourceVar = 'FilesDir'
+            .SourceType = 'String'
+            .TargetVar = 'ExecArguments'
+            .TargetType = 'String'
+            .OptionPrefix = ' /pr '
+            .OptionSuffix = ''
+        ]
+        .Option_FilesDir_Inputs =
+        [
+            .Type = 'String'
+            .SourceVar = 'FilesDir'
+            .SourceType = 'String'
+            .TargetVar = 'ExecInputPath'
+            .TargetType = 'List'
+        ]
 
-//     .ExecArguments = ' createconfig /cf %2 /dq en-US'
-//     .ExecUseStdOutAsOutput = false
-//     .ExecInputPathRecurse = false
-// ]
+        .OperationOptions = {
+            .Option_PriFile
+            // .Option_PriConfigFile
+            .Option_AppXManifest
+            .Option_FilesDir
+            // .Option_FilesDir_Inputs
+        }
 
-// .Task_UWP_MakePri =
-// [
-//     .Step = 'Package-Prepare'
-//     .Type = 'Exec'
+        .ExecName = 'WinSDK_MakePri'
+        .ExecArguments = ' new /o /of %2 /cf %1'
+        .ExecInputPattern = '*.*'
 
-//     .TaskID = 'MakePri'
-//     .TaskRequires = { 'SDK-Windows-10-CXX-WinRT' }
+        .TaskConsumesPreviousOutputs = true
+    ]
 
-//     .TaskExecutable = 'WinSDK_MakePri'
-//     // .TaskInputPattern = { 'appxmanifest.xml' }
-//     .TaskInputAllowNoFiles = false
-//     .TaskPreviousTaskInputs = true
+    .TaskToolOperations = {
+        .Operation_MakePri_CreateConfig
+        .Operation_MakePri_New
+    }
+    .TaskToolOperationsNames = {
+        'MakePri_CreateConfig'
+        'MakePri_New'
+    }
+]
 
-//     .ExecArguments = ' new /pr %2 /cf %1'
-//     .ExecUseStdOutAsOutput = false
-//     .ExecInputPathRecurse = false
-// ]
+.Platform_Windows_x64_UWP + .PlatformOperations_UWP
+.Platform_Windows_x64 + .PlatformOperations_UWP

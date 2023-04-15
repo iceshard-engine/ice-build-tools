@@ -1,4 +1,4 @@
-import encode, decode from require "json"
+import encode, decode from require "rxi.json"
 
 class Json
     @encode = (...) => encode ...
