@@ -6,6 +6,11 @@ At the core it uses 'Conan' for managing packages, including this tool itself. T
 
 > There are so many great tools, and yet instead of sticking them together we create new ones.
 
+## Conan v2 Warning
+
+Due to huge changes with Conan v2 IBT might not fully work untill all broken cases have been found and fixed!
+
+
 ### Dependencies
 - Conan Package Manager
 - _Iceshard Conan Config_
@@ -23,7 +28,7 @@ The hook can also be installed using the `conan config install` command pointing
 
 ### Project setup
 
-To install this utility for your project just follow the instructions on the wiki [page](/iceshard-engine/ice-build-tools/wiki/Project-Setup).
+To install this utility for your project just follow the instructions on the [wiki page](https://github.com/iceshard-engine/ice-build-tools/wiki/Project-Setup).
 
 > It's recommended to always install the latest stable version of this tool, since it's still undergoing lots of development and features are added frequently.
 
