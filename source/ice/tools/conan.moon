@@ -24,6 +24,15 @@ class Conan extends Exec
                 table.insert result, { :name, :version, :user, :channel, full:line }
         result
 
+    graph_info: (args) =>
+        return unless Validation\ensure args.conanfile, "Missing 'conanfile.txt' location!"
+        return unless Validation\ensure (args.format == 'json' or args.format == 'html' or args.format == 'dot'), "Invalid format value provided! Allowed values are: 'json', 'html', 'dot'"
+
+        cmd = "graph info #{args.conanfile}"
+        cmd ..= " --format #{args.format}" if args.format
+        cmd ..= " --package-filter #{args.package}" if args.package
+        @\capture cmd
+
     install: (args) =>
         cmd = "install"
 

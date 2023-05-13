@@ -2,6 +2,7 @@ import Command, group, argument, option, flag from require "ice.command"
 import Setting from require "ice.settings"
 import Json from require "ice.util.json"
 import Git from require "ice.tools.git"
+import Conan from require "ice.tools.conan"
 
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
@@ -252,41 +253,50 @@ class LicenseCommand extends Command
         result
 
     execute_mode_3rdparty: (args, project) =>
+        return unless Validation\ensure (File\exists 'build/conan_Debug/conandeps.bff'), "Missing file 'conandeps.bff' to gather dependency information!"
+
+        dependencies = { }
+        for line in File\lines 'build/conan_Debug/conandeps.bff'
+            if line\match '// "name":'
+                line = line\sub 4
+                line = line\gsub '\\', '/'
+                table.insert dependencies, Json\decode "{#{line}}"
+        @log\warning "No dependencies found!" if #dependencies == 0
+
+        -- Check all dependencies for license files
         license_files = {}
+        for dependency in *dependencies
+            found_license_files = { }
+            for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
+                if not @search_for_license_files found_license_files, dependency.package_folder, subdir
+                    @search_for_license_files found_license_files, dependency.package_folder, subdir\lower!
 
-        if buildinfo = File\load 'build/conan_debug/conanbuildinfo.json', parser:Json\decode
-            for dependency in *buildinfo.dependencies
-                found_license_files = { }
-                for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
-                    if not @search_for_license_files found_license_files, dependency.rootpath, subdir
-                        @search_for_license_files found_license_files, dependency.rootpath, subdir\lower!
+            -- Gather license files
+            if #found_license_files > 0
+                selected_license = nil
 
-                -- Gather license files
-                if #found_license_files > 0
-                    selected_license = nil
+                if #found_license_files > 1
 
-                    if #found_license_files > 1
+                    if @details[dependency.name] and @details[dependency.name].license_file
+                        for license_file in *found_license_files
+                            if license_file\lower!\match @details[dependency.name].license_file\lower!
+                                selected_license = license_file
 
-                        if @details[dependency.name] and @details[dependency.name].license_file
-                            for license_file in *found_license_files
-                                if license_file\lower!\match @details[dependency.name].license_file\lower!
-                                    selected_license = license_file
+                    if selected_license == nil
+                        @log\warning "Packge '#{dependency.name}' contains more than one license file."
+                        @log\warning "> Please select the desired license file in 'thirdparty/details.json'."
+                        for license_file in *found_license_files
+                            @log\warning "- #{license_file}"
+                        continue
 
-                        if selected_license == nil
-                            @log\warning "Packge '#{dependency.name}' contains more than one license file."
-                            @log\warning "> Please select the desired license file in 'thirdparty/details.json'."
-                            for license_file in *found_license_files
-                                @log\warning "- #{license_file}"
-                            continue
+                table.insert license_files, {
+                    dependency,
+                    "#{dependency.package_folder}/../../export/conanfile.py",
+                    selected_license or found_license_files[1]
+                }
 
-                    table.insert license_files, {
-                        dependency,
-                        "#{dependency.rootpath}/../../export/conanfile.py",
-                        selected_license or found_license_files[1]
-                    }
-
-                else
-                    @log\warning "Packge '#{dependency.name}' is missing license file..."
+            else
+                @log\warning "Packge '#{dependency.name}' is missing license file..."
 
         if license_files and #license_files > 0
 
@@ -312,9 +322,12 @@ class LicenseCommand extends Command
                     readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
 
                     for { dep, conanfile, license_file } in *license_files
-                        conaninfo = @extract_recipe_info conanfile
-                        readme\write "\n## #{dep.name}\n"
+                        -- Parse graph info and get the first entry
+                        conaninfo = Json\decode Conan!\graph_info package:"#{dep.name}/*", format:'json', conanfile:'source/conanfile.txt'
+                        conaninfo = Validation\ensure conaninfo.nodes[1], "Package '#{dep.name}' info  not found!"
+                        conaninfo.version = conaninfo.label\match "[^/]+/([^@]+)"
 
+                        readme\write "\n## #{dep.name}\n"
                         license_info = conaninfo.license or 'not found'
                         upsteam_info = conaninfo.url or conaninfo.homepage
                         description_info = conaninfo.description or dep.description
