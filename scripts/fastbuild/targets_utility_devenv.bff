@@ -38,6 +38,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
     {
         .SolutionHasAppProjects = false
         .PipelineAvailableProjects = [ ]
+        .PipelineVSInfo = [ ]
 
         ForEach( .Project in .ProjectsResolved )
         {
@@ -78,28 +79,32 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                         }
                     }
 
-                    .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                    If ( .ProjectRequirementsSatisfied )
+                    {
+                        .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
 
-                    .OutDirName = .'KindOutDir_$ProjectKind$'
-                    .TargetExtension = .'OutputExtension_$ProjectKind$'
+                        .OutDirName = .'KindOutDir_$ProjectKind$'
+                        .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-                    .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                    .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                    .TargetOutputName = "$ProjectName$$TargetExtension$"
+                        .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetOutputName = "$ProjectName$$TargetExtension$"
 
-                    .ProjectConfig =
-                    [
-                        .Name = .ProjectName
-                        .Config = .PipelineConfig
-                        .Platform = .PipelinePlatform
-                        .PipelineName = .PipelineName
-                        .Target = .ProjectTarget
+                        .ProjectConfig =
+                        [
+                            .Name = .ProjectName
+                            .Config = .PipelineConfig
+                            .Platform = .PipelinePlatform
+                            .PipelineName = .PipelineName
+                            .Target = .ProjectTarget
+                            .ConanProfile = .PipelineConanProfile
 
-                        .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
-                        .DebugWorkingDir = .ProjectDebugDir
-                    ]
+                            .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
+                            .DebugWorkingDir = .ProjectDebugDir
+                        ]
 
-                    ^ProjectConfigs + .ProjectConfig
+                        ^ProjectConfigs + .ProjectConfig
+                    }
                 }
             }
         }
@@ -131,6 +136,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                 + 'config=$Config$'
                 + 'pipeline=$PipelineName$'
                 + 'name=$Name$'
+                + 'conan_profile=$ConanProfile$'
         }
 
         TextFile( 'devenv-targets' )

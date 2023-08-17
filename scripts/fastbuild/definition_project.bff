@@ -43,6 +43,8 @@ ForEach( .Project in .Projects )
         .Arguments = ''
     ]
 
+    .Android = [ ]
+
     Using( .Project )
 
     .Deploy =
@@ -82,6 +84,9 @@ ForEach( .Project in .Projects )
         {
             ^ProjectVStudioInputPaths + "$ProjectBaseDir$/$Path$"
         }
+
+        // Additional platform specific information
+        .ProjectAndroid = .Android
 
         // Special tasks set-up for the project.
         // See documentation of particular platforms to set these up.

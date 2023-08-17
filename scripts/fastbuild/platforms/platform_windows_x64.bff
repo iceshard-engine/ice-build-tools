@@ -51,6 +51,7 @@
 .Platform_Windows_x64 =
 [
     .PlatformSystem = 'Windows'
+    .PlatformSupportedFlavours = { }
     .PlatformSupportedArchitectures = { 'x64' } // x86, arm64
     .PlatformSupportedToolchainFamilies = { 'msvc', 'clang' }
 
@@ -68,6 +69,9 @@
 
     .PlatformExtensions =
     [
+        .OutputPrefix_SharedLib = ''
+        .OutputPrefix_StaticLib = ''
+
         .OutputExtension_StaticLib = '.lib'
         .OutputExtension_SharedLib = '.dll'
         .OutputExtension_ConsoleApp = '.exe'

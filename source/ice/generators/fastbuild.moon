@@ -1,8 +1,13 @@
 
 serialize_value = (value) ->
     value_type = type value
-    return "#{value}" if value_type == "boolean" or value_type == "number"
-    return "'#{value}'" if value_type == "string"
+    if value_type == "boolean" or value_type == "number"
+        return "#{value}"
+    if value_type == "string"
+        if (value\sub 1, 1) ~= '.'
+            return "'#{value}'"
+        else
+            return "#{value}"
     error "ERROR: Value of type #{value_type} is not supported!"
 
 class FastBuildGenerator

@@ -137,14 +137,37 @@
     }
 ]
 
+.Pipeline_Android_armv8_clang =
+[
+    .PipelineName = 'Android-arm64'
+
+    .PipelinePlatform = 'Android'
+    .PipelineToolchain = 'ndk25-clang-14.0.0'
+    .PipelineArchitecture = 'arm64'
+
+    .PipelineAllowUnityBuilds = false
+
+    .PipelineSteps = {
+        'Build'
+        'Link'
+    }
+
+    .PipelineTasks = {
+        .Task_BuildSources
+        .Task_LinkExecutable
+    }
+]
+
 // Default pipelines
 .Pipeline_Windows_x64 = .Pipeline_Windows_x64_v143
 .Pipeline_Windows_UWP = .Pipeline_Windows_UWP_v143
 .Pipeline_Linux_x64 = .Pipeline_Linux_x64_gcc12
+.Piepline_Android_ARM64 = .Pipeline_Android_armv8_clang
 
 // Default pipeline list
 .BuildPipelines = {
     .Pipeline_Windows_x64
     // .Pipeline_Windows_UWP
     .Pipeline_Linux_x64
+    .Piepline_Android_ARM64
 }

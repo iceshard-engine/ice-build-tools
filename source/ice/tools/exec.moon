@@ -66,7 +66,9 @@ class Where extends Exec
         args ..= " 2>>#{err_log}" if err_log
 
         if os.iswindows
-            ((PowerShell "Get-Command")\lines name, "Path")[1]
+            line = ((PowerShell "Get-Command")\lines name, "Path")[1]
+            line = nil if line\match "is not recognized"
+            return line
         else
             (Where!\lines args)[1]
 

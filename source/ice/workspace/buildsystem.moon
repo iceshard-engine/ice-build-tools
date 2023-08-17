@@ -6,7 +6,6 @@ import Validation from require "ice.core.validation"
 import FastBuildGenerator from require "ice.generators.fastbuild"
 
 import Locator from require "ice.locator"
-import VsMSVC from require "ice.toolchain.vs_msvc"
 import VsClang from require "ice.toolchain.vs_clang"
 import Clang from require "ice.toolchain.clang"
 import Gcc from require "ice.toolchain.gcc"
@@ -14,7 +13,7 @@ import Gcc from require "ice.toolchain.gcc"
 class BuildSystem
     new: (info) =>
         Validation\assert info.locators, "BuildSystem requires a list of locators to properly generate necessary files"
-        Validation\assert info.profiles and #info.profiles > 0, "BuildSystem requires a list of profiles to properly generate necessary files"
+        -- Validation\assert info.profiles and #info.profiles > 0, "BuildSystem requires a list of profiles to properly generate necessary files"
         Validation\assert (Dir\exists info.workspace_dir), "BuildSystem requires a valid workspace directory. '#{info.workspace_dir}' does not exist"
         Validation\assert (Dir\exists info.output_dir), "BuildSystem requires a valid output directory. '#{info.output_dir}' does not exist"
         Validation\assert (Dir\exists info.source_dir), "BuildSystem requires a valid source directoru. '#{info.source_dir}' does not exist"
@@ -39,26 +38,7 @@ class BuildSystem
             additional_sdks: { }
         }
 
-        -- Go over all profiles we have defined and look for their toolchains
-        for profile in *@profiles
-            if os.iswindows
-                compiler_version = tonumber profile.compiler.version
-                toolchain_version = "[#{compiler_version}.0,#{compiler_version+1}.0)"
-
-                msvc_toolchains = VsMSVC\detect toolchain_version
-                clang_toolchains = VsClang\detect toolchain_version
-
-                table.insert detected_info.toolchains, toolchain for toolchain in *msvc_toolchains or { }
-                table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
-
-            if os.isunix
-                clang_toolchains = Clang\detect profile, log_file
-                gcc_toolchains = Gcc\detect profile, log_file
-
-                table.insert detected_info.toolchains, toolchain for toolchain in *clang_toolchains or { }
-                table.insert detected_info.toolchains, toolchain for toolchain in *gcc_toolchains or { }
-
-        -- execute_locators Locator.Type.Toolchain, toolchains -- Currently unused
+        execute_locators Locator.Type.Toolchain, detected_info
         execute_locators Locator.Type.PlatformSDK, detected_info
         execute_locators Locator.Type.CommonSDK, detected_info
 
@@ -139,6 +119,24 @@ class FastBuildBuildSystem extends BuildSystem
             for compiler in *(sdk.compilers or { })
                 gen\compiler compiler
 
+        if sdk.flavours and #sdk.flavours > 0
+            sdk_flavours = { }
+
+            for rule in *sdk.flavours
+                continue unless rule.variables
+                table.insert sdk_flavours, ".#{rule.struct_name}"
+
+                gen\line!
+                gen\structure rule.struct_name, (gen) ->
+                    gen\variables {
+                        { 'Name', rule.name }
+                        { 'Requires', rule.requires or {} }
+                    }
+                    gen\variables rule.variables
+
+            gen\line!
+            gen\variables { { 'Flavours', sdk_flavours } }
+
         tool_names = { }
         unless not sdk.tools
             gen\line!
@@ -213,15 +211,12 @@ class FastBuildBuildSystem extends BuildSystem
         gen\line '}'
 
         gen\line!
-        gen\line ".ConanModules_UNUSED = [ ]"
-        for profile in *@profiles
-            gen\line!
-            gen\line ".ConanModules_#{profile.id} = [ ]"
-            gen\line '{'
-            gen\indented (gen) ->
-                gen\include Path.Unix\join @workspace_dir, "#{profile\get_location!}/conandeps.bff"
-                gen\line "^ConanModules_#{profile.id} = .ConanModules"
-            gen\line '}'
+        gen\line ".ConanProfiles = { }"
+        gen\line ".ConanProfilesModules = { }"
+        conanmodules_file = Path.Unix\join @workspace_dir, @output_dir, "conanmodules.bff"
+        gen\line "#if file_exists(\"#{conanmodules_file}\")"
+        gen\include conanmodules_file
+        gen\line "#endif"
         gen\line!
 
         gen\include Path.Unix\join @workspace_dir, generated.toolchains
@@ -269,8 +264,21 @@ class FastBuildBuildSystem extends BuildSystem
 
         gen\line!
         gen\include Path.Unix\join fbscripts, "targets_build.bff"
-        gen\include Path.Unix\join fbscripts, "targets_devenv.bff"
-        gen\include Path.Unix\join fbscripts, "targets_vsproject.bff" if os.iswindows and @files.solution_name
+        gen\include Path.Unix\join fbscripts, "targets_utility_conan.bff"
+        gen\include Path.Unix\join fbscripts, "targets_utility_android.bff"
+        gen\include Path.Unix\join fbscripts, "targets_utility_devenv.bff"
+        gen\include Path.Unix\join fbscripts, "targets_utility_vsproject.bff" if os.iswindows and @files.solution_name
         gen\close!
+
+    generate_conaninfo: (profiles) =>
+        for profile in *profiles
+            gen\line!
+            gen\line ".ConanModules_#{profile.id} = [ ]"
+            gen\line '{'
+            gen\indented (gen) ->
+                gen\include Path.Unix\join @workspace_dir, "#{profile\get_location!}/conandeps.bff"
+                gen\line "^ConanModules_#{profile.id} = .ConanModules"
+            gen\line '}'
+
 
 { :FastBuildBuildSystem }

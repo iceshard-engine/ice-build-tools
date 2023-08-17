@@ -1,0 +1,42 @@
+
+{
+    .ProfilesLines = { }
+    .ProfilesVariableLines = { }
+    .PlatformConanProfileVariables = { }
+
+    ForEach( .Pipeline in .AvailablePipelines )
+    {
+        Using( .Pipeline )
+        Using( .PipelinePlatformInfo )
+        Using( .PipelineToolchainInfo )
+
+        .FinalConanProfileVariables = .ConanProfileVariables + .PlatformConanProfileVariables
+
+        If ( .PipelineConfigConanProfile not in .ProfilesLines )
+        {
+            ^ProfilesLines + .PipelineConfigConanProfile
+
+            ^ProfilesVariableLines + '[$PipelineConfigConanProfile$]'
+            ForEach( .Var in .FinalConanProfileVariables )
+            {
+                .VarValue = .'$Var$'
+                ^ProfilesVariableLines + '$Var$=$VarValue$'
+            }
+            ^ProfilesVariableLines + ' '
+        }
+    }
+
+    TextFile( 'conan-profiles' )
+    {
+        .TextFileOutput = '$WorkspaceBuildDir$/conan_profiles.txt'
+        .TextFileAlways = false
+
+        .TextFileInputStrings = { ':: IBT Generated File ::' }
+            + ' '
+            + '[conan-profiles]'
+            + .ProfilesLines
+            + ' '
+            + .ProfilesVariableLines
+            + ' '
+    }
+}

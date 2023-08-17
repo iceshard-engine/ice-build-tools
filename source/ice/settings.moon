@@ -27,6 +27,7 @@ class Setting
         Validation\assert global_settings_table[@key] == nil, "A setting with key '#{@key}' was already defined!"
         global_settings_table[@key] = @
 
+        @isdefault = 'Default value'
         @properties = { }
         known_properties = {
             'required':true
@@ -46,7 +47,11 @@ class Setting
             if args.predicate
                 Validation\assert (type args.predicate) == 'function', "The 'predicate' property is not a valid function object in setting '#{key}'"
                 success, errmsg = args.predicate args.default
-                Validation\assert success, errmsg or "Default value '#{value}' failed predicate for setting '#{@key}'"
+                unless success
+                    errmsg = errmsg or "Default value '#{args.default}' failed predicate for setting '#{@key}'"
+                    Validation\assert success, errmsg if @properties.required
+                    -- Log\warning errmsg if not @properties.required
+
         elseif args.type_hint == nil
             @properties.type_hint = 'ANY'
 
@@ -66,7 +71,12 @@ class Setting
             return false, "Missing value for required setting '#{@key}'"
         if @properties.predicate
             success, errmsg = @properties.predicate value
-            return false, errmsg or "Value '#{value}' failed predicate for setting '#{@key}'" unless success
+            unless success
+                errmsg = errmsg or "#{@isdefault} '#{value}' failed predicate for setting '#{@key}'"
+                return false, errmsg if @properties.required
+                Log\warning errmsg if not @properties.required
+                return true, errmsg
+
         if @properties.type_hint ~= "ANY" and (type value) ~= @properties.type_hint
             return false, errmsg or "Value '#{value}' does not match the expected type '#{type value}' != '#{@properties.type_hint}'" unless success
 
@@ -75,6 +85,7 @@ class Setting
 
     set: (value) =>
         @validated = false
+        @isdefault = 'Value' if value
         @value = value or @properties.default
         @value
 
@@ -131,7 +142,8 @@ class Settings
 
         success, errmsg = global_settings_table[key]\validate value, true
         if success
-            global_settings_table[key]\set value
+            -- Skip setting the value if a error message was still included (this means the settings failed validation but was not required)
+            global_settings_table[key]\set value unless errmsg
             return true
         else
             Log\error "New value '#{value}' for setting '#{key}' failed validation with error:"

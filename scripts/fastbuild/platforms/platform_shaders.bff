@@ -33,6 +33,7 @@
 .Platform_GFX_Vulkan =
 [
     .PlatformSystem = 'Vulkan'
+    .PlatformSupportedFlavours = { }
     .PlatformSupportedArchitectures = { 'Vulkan1.0', 'Vulkan1.1', 'Vulkan1.2', 'Vulkan1.3' }
     .PlatformSupportedToolchainFamilies = { 'vk-glslc' }
 
@@ -49,6 +50,9 @@
 
     .PlatformExtensions =
     [
+        .OutputPrefix_SharedLib = ''
+        .OutputPrefix_StaticLib = ''
+
         .OutputExtension_StaticLib = ''
         .OutputExtension_SharedLib = ''
         .OutputExtension_ConsoleApp = ''

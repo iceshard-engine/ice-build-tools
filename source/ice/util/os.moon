@@ -29,6 +29,11 @@ os.osselect = (osmap) ->
 
 os.osname = os.osselect win:'windows', macos:'macos', linux:'linux'
 
+os.env = setmetatable {}, {
+    __index: (self, val) -> os.getenv val
+    __newindex: -> assert false, "Cannot set values in 'os.env' variable!"
+}
+
 -- Returns true if the path is a directory
 os.isfile = (path) -> (lfs.attributes path, 'mode') == 'file'
 

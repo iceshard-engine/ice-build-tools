@@ -2,6 +2,7 @@ require "ice.util.os"
 lfs = require "lfs"
 
 import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
 
 select = (v, true_val, false_val) -> v and true_val or false_val
 allowed_separators = os.osselect win:"\\/", unix:"/"

@@ -1,0 +1,67 @@
+
+
+.PlatformRule_Android_PIC =
+[
+    .Name = 'Android-StaticLib-LinkOptions'
+    .Requires = { 'Android', 'Step-Build' }
+    .BuildOptions = {
+        '-fPIC'
+    }
+]
+
+.PlatformRule_Android_SharedLib =
+[
+    .Name = 'Android-SharedLib-LinkOptions'
+    .Requires = { 'Android', 'Step-Link', 'SharedLib' }
+    .LinkOptions = {
+        '-shared'
+    }
+]
+
+.PlatformRule_Android_App =
+[
+    .Name = 'Android-App-LinkOptions'
+    .Requires = { 'Android', 'Step-Link', 'App' }
+    .LinkOptions = {
+        '-pie'
+    }
+]
+
+.PlatformFlavour_AndroidAPILevel =
+[
+    .Prefix = 'Android'
+    .Suffix = '-API'
+]
+
+.Platform_Android =
+[
+    .PlatformSystem = 'Android'
+    .PlatformFlavours = { 'AndroidAPILevel' }
+    .PlatformSupportedArchitectures = { 'arm64', 'arm', 'x86_64', 'x86' }
+    .PlatformSupportedToolchainFamilies = { 'ndk-clang' }
+
+    .PlatformConanProfileVariables = { 'AndroidAPILevel', 'NDKPath' }
+
+    .PlatformRequiredSDKs = {
+        'SDK-Android'
+    }
+
+    .PlatformRules = {
+        .PlatformRule_Android_PIC
+        .PlatformRule_Android_SharedLib
+        .PlatformRule_Android_App
+    }
+
+    .PlatformExtensions =
+    [
+        .OutputPrefix_SharedLib = 'lib'
+        .OutputPrefix_StaticLib = 'lib'
+
+        .OutputExtension_StaticLib = '.a'
+        .OutputExtension_SharedLib = '.so'
+        .OutputExtension_ConsoleApp = ''
+        .OutputExtension_WindowedApp = ''
+        .OutputExtension_HeaderOnly = ''
+        .OutputExtension_ObjectList = ''
+    ]
+]

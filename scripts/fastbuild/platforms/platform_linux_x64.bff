@@ -30,6 +30,7 @@
 .Platform_Linux_x64 =
 [
     .PlatformSystem = 'Linux'
+    .PlatformSupportedFlavours = { }
     .PlatformSupportedArchitectures = { 'x64' }
     .PlatformSupportedToolchainFamilies = { 'clang', 'gcc' }
 
@@ -45,6 +46,9 @@
 
     .PlatformExtensions =
     [
+        .OutputPrefix_SharedLib = 'lib'
+        .OutputPrefix_StaticLib = 'lib'
+
         .OutputExtension_StaticLib = '.a'
         .OutputExtension_SharedLib = '.so'
         .OutputExtension_ConsoleApp = ''

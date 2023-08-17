@@ -75,13 +75,15 @@ ForEach( .PlatformName in .AvailablePlatformsNames, .Platform in .AvailablePlatf
                     .TargetToolchain = .ToolchainName
                     .TargetCompatibility = {
                         .PlatformName
-                        .ToolchainCompilerFamily
+                        // .ToolchainCompilerFamily
                         .ToolchainName
                         .TargetArchitecture
                     }
 
                     .TargetPlatformInfo = .Platform
                     .TargetToolchainInfo = .Toolchain
+                    .TargetRules = { }
+                    .TargetTags = { }
 
                     // Extensions
                     .TargetVSArchitecture = ''
@@ -131,18 +133,99 @@ ForEach( .Pipeline in .BuildPipelines )
     .PipelineTargets = { }
     {
         // Create a requirements list
+        .PipelineFlavours = { }
         .PipelineRequirements = { .PipelinePlatform, .PipelineToolchain, .PipelineArchitecture }
 
         ForEach ( .Target in .AvailableTargets )
         {
             Using( .Target )
 
-            .TargetCompatible = true
-            ForEach ( .Requirement in .PipelineRequirements )
+            .FlavoursUsed = false
+            .FlavourTags = { }
+            .FlavourFound = false
+            .FlavourRules = { }
             {
-                If ( .Requirement not in .TargetCompatibility )
+                .PlatformFlavours = { }
+                Using( .TargetPlatformInfo )
                 {
-                    ^TargetCompatible = false
+                    ForEach( .Flavour in .PlatformFlavours )
+                    {
+                        ^FlavoursUsed = true
+                        Using( .'PlatformFlavour_$Flavour$' )
+
+                        .Value = ''
+                        .'$Flavour$' = ''
+                        {
+                            Using( .Pipeline )
+                            .FlavourVar = ^Flavour
+                            ^Value = .'$FlavourVar$'
+                        }
+
+                        ^FlavourTags + '$Prefix$$Value$$Suffix$'
+                    }
+
+                    .FlavourCompatibility = { .PipelineToolchain, .PipelineArchitecture } + .FlavourTags
+
+                    ForEach( .PlatformSDKName in .PlatformSDKNames, .PlatformSDK in .PlatformSDKList )
+                    {
+                        If ( .PlatformSDKName in .PlatformRequiredSDKs )
+                        {
+                            .Flavours = { }
+                            Using( .PlatformSDK )
+
+                            ForEach( .SDKFlavour in .Flavours )
+                            {
+                                Using( .SDKFlavour )
+
+                                .FlavourSelected = true
+                                ForEach( .FlavourRequirement in .Requires )
+                                {
+                                    If ( .FlavourRequirement not in .FlavourCompatibility )
+                                    {
+                                        ^FlavourSelected = false
+                                    }
+                                }
+
+                                If( .FlavourSelected )
+                                {
+                                    ^FlavourFound = true
+
+                                    .FlavourRule =
+                                    [
+                                        Using( .SDKFlavour )
+                                        .Name = 'Rule_$Name$'
+                                        .Requires = { }
+                                    ]
+                                    ^FlavourRules + .FlavourRule
+                                }
+                            }
+                        }
+                    }
+                }
+
+            } // .FlavoursUsed
+
+            .TargetCompatible = true
+            If ( .FlavoursUsed )
+            {
+                ^TargetCompatible = .FlavourFound
+
+                .TargetExtension =
+                [
+                    .TargetTags = .FlavourTags
+                    .TargetRules = .FlavourRules
+                ]
+                ^Target + .TargetExtension
+            }
+
+            If ( .TargetCompatible )
+            {
+                ForEach ( .Requirement in .PipelineRequirements )
+                {
+                    If ( .Requirement not in .TargetCompatibility )
+                    {
+                        ^TargetCompatible = false
+                    }
                 }
             }
 
@@ -217,8 +300,12 @@ ForEach( .Pipeline in .BuildPipelines )
             .AvailablePipelineConfig =
             [
                 .PipelineTags = { }
+                .PipelineConanProfile = ''
                 Using( .Pipeline )
-                .CustomPipelineTags = .PipelineTags
+
+                // Temporaries
+                .TempCustomPipelineTags = .PipelineTags
+                .TempConanProfile = .PipelineConanProfile
 
                 .PipelineStepTasks = .PipelineStepTasks
                 .PipelinePlatformInfo =
@@ -226,23 +313,25 @@ ForEach( .Pipeline in .BuildPipelines )
                     Using( .TargetPlatformInfo )
                     .PlatformVSName = .TargetVSArchitecture
                 ]
-                .PipelineRules = .PlatformRules
+                .PipelineRules = .PlatformRules + .TargetRules
                 .PipelineToolchainInfo = .TargetToolchainInfo
                 .PipelineToolchainStruct = "$ToolchainCompilerFamily$_$ToolchainToolset$"
                 .PipelineConfig = .ConfigurationName
                 .PipelineConfigConan = .ConanConfiguration
+                .PipelineConfigConanProfile = '$PipelineConanProfile$-$ConanConfiguration$'
                 .PipelineOutputExtensions = .PlatformExtensions
 
                 .PipelineTags = {
                     .TargetSystem
                     .TargetArchitecture
                     .TargetToolchain
+                    .TargetTags
                     .ToolchainToolset
                     .ToolchainCompilerFamily
                     "$ToolchainFrontend$-Frontend"
                     "$ToolchainCompilerFamily$-$ToolchainToolset$"
                     .ConfigurationName
-                } + .PlatformTags + .PlatformRequiredSDKs + .CustomPipelineTags
+                } + .PlatformTags + .PlatformRequiredSDKs + .TempCustomPipelineTags
 
                 .PipelineProperties_SDKs = [ .Defines = { } ]
                 ForEach( .SDKName in .SDKNames, .SDK in .SDKList )

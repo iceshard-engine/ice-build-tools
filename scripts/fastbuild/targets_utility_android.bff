@@ -1,0 +1,195 @@
+
+// Minium required version
+.BFFVersion_TextFile = 100
+
+If ( ._FASTBUILD_VERSION_ < .BFFVersion_TextFile )
+{
+    Print( "[IBT] DevEnv targets are not available. Missing 'TextFile' function introduced in version: $BFFVersion_TextFile$." )
+}
+
+If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
+{
+    .SolutionConfigs = { }
+
+    .ProjectConfigs = { }
+    .AllProjectConfigs = { }
+    .HasAnyConfig = false
+
+    Print( '[IBT] Creating android targets...' )
+
+    ForEach( .Pipeline in .AvailablePipelines )
+    {
+        Using( .Pipeline )
+        Using( .PipelinePlatformInfo )
+
+        .AllProjectConfig =
+        [
+            .Config = .PipelineConfig
+            .Platform = .PipelinePlatform
+            .PipelineName = .PipelineName
+            .Target = 'all-$PipelineName$-$PipelineConfig$'
+        ]
+        ^AllProjectConfigs + .AllProjectConfig
+
+        ^HasAnyConfig = true
+    }
+
+    If ( .HasAnyConfig )
+    {
+        .SolutionHasAppProjects = false
+        .PipelineEnabledProjects = { }
+        .PipelineAvailableProjects = [ ]
+        .PipelineVSInfo = [ ]
+
+        ForEach( .Project in .ProjectsResolved )
+        {
+            Using( .Project )
+
+            // On Android the native part of an app is always a shared library
+            If ( .ProjectKind == .Kind_SharedLib )
+            {
+                .ProjectBasePath = .ProjectBaseDir
+
+                ForEach( .Pipeline in .AvailablePipelines )
+                {
+                    .VSSuffix = ''
+                    .VSEnabled = false
+
+                    Using( .Pipeline )
+                    Using( .PipelineVSInfo )
+                    Using( .PipelinePlatformInfo )
+                    Using( .PipelineOutputExtensions )
+
+                    // Check if we the project has all requirements covered
+                    .ProjectRequirementsSatisfied = true
+                    {
+                        .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                        .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
+
+                        Using( .PipelineAvailableProjects )
+
+                        .AvailableTags = .PipelineEnabledProjects
+                            + .SDKNames
+                            + .PipelineTags
+                            + .'PipelineAvailableProjects_$PipelineIdentifier$'
+
+                        .ProjectAndroidRequires = .ProjectRequires
+                            + 'SDK-Android'
+
+                        ForEach( .Requirement in .ProjectAndroidRequires )
+                        {
+                            If ( .Requirement not in .AvailableTags )
+                            {
+                                ^ProjectRequirementsSatisfied = false
+                            }
+                        }
+                    }
+
+                    If ( .ProjectRequirementsSatisfied )
+                    {
+                        .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+
+                        .OutDirName = .'KindOutDir_$ProjectKind$'
+                        .TargetExtension = .'OutputExtension_$ProjectKind$'
+
+                        .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetOutputName = "$ProjectName$$TargetExtension$"
+
+                        .ProjectConfig =
+                        [
+                            .Name = .ProjectName
+                            .BasePath = .ProjectBasePath
+                            .Config = .PipelineConfig
+                            .Platform = .PipelinePlatform
+                            .PipelineName = .PipelineName
+                            .Target = .ProjectTarget
+
+                            .Android =
+                            [
+                                Using( .ProjectAndroid )
+                                .AndroidAPILevel = ^AndroidAPILevel
+                            ]
+
+                            .OutputDir = .TargetOutputDirectory
+                            .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
+                            .DebugWorkingDir = .ProjectDebugDir
+                        ]
+
+                        ^ProjectConfigs + .ProjectConfig
+                    }
+                }
+            }
+
+            ^PipelineEnabledProjects + .ProjectName
+        }
+
+        .TargetsLines = { }
+        .RunTargetsLines = { }
+        .DetailTargetLines = { }
+
+        // ForEach( .Config in .AllProjectConfigs )
+        // {
+        //     Using( .Config )
+        //     ^BuildTargetsLines
+        //         + .Target
+        // }
+
+        ForEach( .Config in .ProjectConfigs )
+        {
+            Using( .Config )
+
+            ^TargetsLines + .Target
+            ^DetailTargetLines
+                + ' '
+                + '[$Target$]'
+                + 'executable=$Executable$'
+                + 'output_dir=$OutputDir$'
+                + 'working_dir=$DebugWorkingDir$'
+                + 'source_dir=$BasePath$'
+                + 'platform=$Platform$'
+                + 'config=$Config$'
+                + 'pipeline=$PipelineName$'
+                + 'name=$Name$'
+
+            .Dependencies = { }
+            Using( .Android )
+            ^DetailTargetLines
+                + ' '
+                + 'android_module=$Name$'
+                + 'android_namespace=$Namespace$'
+                + 'android_androidapilevel=$AndroidAPILevel$'
+                + 'android_applicationid=$ApplicationID$'
+                + 'android_minsdk=$MinSDK$'
+                + 'android_targetsdk=$TargetSDK$'
+                + 'android_versioncode=$VersionCode$'
+                + 'android_versionname=$VersionName$'
+                + ' '
+
+            ^DetailTargetLines + '[$Target$-Android-Dependencies]'
+            ForEach( .Dependency in .Dependencies )
+            {
+                ^DetailTargetLines + .Plugin
+            }
+
+            ^DetailTargetLines + '[$Target$-Gradle-Plugins]'
+            ForEach( .Plugin in .GradlePlugins )
+            {
+                ^DetailTargetLines + .Plugin
+            }
+        }
+
+        TextFile( 'android-targets' )
+        {
+            .TextFileOutput = '$WorkspaceBuildDir$/android_targets.txt'
+            .TextFileAlways = false
+
+            .TextFileInputStrings = { ':: IBT Generated File ::' }
+                + ' '
+                + '[android_targets]'
+                + .TargetsLines
+                + ' '
+                + .DetailTargetLines
+        }
+    }
+}

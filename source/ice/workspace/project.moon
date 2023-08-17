@@ -6,16 +6,20 @@ import SDK_DX12 from require "ice.sdks.dx12"
 import SDK_Win32 from require "ice.sdks.win32"
 import SDK_Linux from require "ice.sdks.linux"
 import SDK_Cpp_WinRT from require "ice.sdks.winrt_cpp"
+import SDK_Android from require "ice.sdks.android"
+import TC_MSVC from require "ice.toolchain.vs_msvc"
 
 import Conan from require "ice.tools.conan"
+import FastBuild from require "ice.tools.fastbuild"
 import FastBuildBuildSystem from require "ice.workspace.buildsystem"
 
-import ProfileList from require "ice.workspace.profile"
+import ProfileList, ConanProfiles from require "ice.workspace.profile"
 import ProjectApplication from require "ice.workspace.application"
 
 import Setting, Settings from require "ice.settings"
 import Path, File, Dir from require "ice.core.fs"
 import Json from require "ice.util.json"
+import INIConfig from require "ice.util.iniconfig"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 
@@ -25,16 +29,30 @@ project_settings = {
     Setting 'project.script_file', required:true, predicate:File\exists
     Setting 'project.source_dir', required:true, default:'source/code', predicate:Dir\create
     Setting 'project.output_dir', required:true, default:'build', predicate:Dir\create
-    Setting 'project.conan.profiles_file', required:true, default:'source/conan_profiles.json', predicate:File\exists
     Setting 'project.fbuild.config_file', required:true, default:'source/fbuild.bff', predicate:File\exists
     Setting 'project.fbuild.user_includes', default:{ }, predicate:(list) ->
         for file in *(list or { })
             return false unless File\exists file
         return true
     Setting 'project.fbuild.vstudio_solution_file', predicate:(v) -> (type v) == 'string'
+
+    -- Conan related settings
+    Setting 'project.conan.profiles', required:false, default:'source/conanprofiles.txt', predicate:File\exists
+    Setting 'project.conan.dependencies', required:false, default:'source/conanfile.txt', predicate:File\exists
 }
 
 class Project
+    @locators: {
+        TC_MSVC
+        SDK_Win32
+        SDK_Linux
+        SDK_Cpp_WinRT
+        SDK_DX11
+        SDK_DX12
+        SDK_Vulkan
+        SDK_Android
+    }
+
     new: (@name) =>
         ProjectApplication.name = @name
 
@@ -47,13 +65,7 @@ class Project
             [Locator.Type.CommonSDK]: { }
 
         -- Initialize with default locators
-        @add_locator SDK_Win32!
-        @add_locator SDK_Linux!
-        @add_locator SDK_Cpp_WinRT!
-        @add_locator SDK_DX11!
-        @add_locator SDK_DX12!
-        @add_locator SDK_Vulkan!
-
+        @add_locator locator_type! for locator_type in *(@@locators or {})
         @_load_settings 'tools/settings.json'
 
     _load_settings: (@project_settings_file) =>
@@ -78,7 +90,10 @@ class Project
             setting\deserialize @raw_settings, @settings
 
     application: (@application_class) =>
-    add_locator: (locator) => table.insert @locators[locator.type], locator
+    add_locator: (locator) =>
+        table.insert @locators[locator.type], locator
+        for setting in *(locator.settings or {})
+            table.insert project_settings, setting
 
     set: (setting, value) => Settings\set setting, value
 
@@ -106,8 +121,6 @@ class Project
     working_dir: => Log\warning "The 'Project::working_dir' method is deprecated and can be safely removed."
 
     finish: (force_detect) =>
-        @profile_list = ProfileList\from_file @settings.project.conan.profiles_file
-
         @project_script = Setting\get 'project.script_file'
         @output_directory = Setting\get 'project.output_dir'
         @source_directory = Setting\get 'project.source_dir'
@@ -119,14 +132,12 @@ class Project
 
         Validation\assert @script_location ~= nil and @script_location ~= "", "Invalid value for `fastbuild_script` => '#{@script_location}'"
         Validation\assert (os.isfile @script_location), "Non existing file set in `fastbuild_script` => '#{@script_location}'"
-        Validation\assert @profile_list\has_profiles!, "The `profiles` file is not valid! No valid profile lists where loaded! => '#{@profile_list}'"
 
         application = @['application_class'] @raw_settings
-        selected_profiles = @profile_list\prepare_profiles @output_directory
 
         @build_system = FastBuildBuildSystem {
             locators:@locators
-            profiles:selected_profiles
+            profiles:{} -- selected_profiles
             workspace_dir:@workspace_root
             output_dir:@output_directory
             source_dir:@source_directory
@@ -156,8 +167,18 @@ class Project
                     -- Save the new file, also required local modification of the .bat file
                     File\save (Path\join "build/tools", "conanrunenv_mini.bat"), (table.concat mini_env, "\n") .. "\n", mode:"wb"
 
-        install_conan_dependencies selected_profiles, false
         @build_system\generate!
+
+        -- Execute FBuild to generate conan_profiles.txt
+        profiles_file = Path\join  @workspace_root, @output_directory, 'conan_profiles.txt'
+        unless (File\exists profiles_file)
+            FastBuild!\build
+                config: Path\join @workspace_root, @output_directory, 'fbuild.bff'
+                target:'conan-profiles'
+
+        Validation\assert (File\exists profiles_file), "The `profiles` file is not valid! No valid profile lists where loaded! => '#{profiles_file}'"
+        @profiles = ConanProfiles profiles_file, @output_directory
+        install_conan_dependencies @profiles.list, false
 
         command_result = application\run
             script: @project_script
@@ -167,36 +188,98 @@ class Project
             fastbuild_solution_name: @solution_name
             settings_file:@project_settings_file
             action: {
-                install_conan_dependencies: -> install_conan_dependencies selected_profiles, true
+                install_conan_dependencies: -> install_conan_dependencies @profiles, true
                 generate_build_system_files: -> @build_system\generate force:true
             }
 
 
 install_conan_dependencies = (profiles, force_update) ->
-    unless File\exists 'source/conanfile.txt'
+    file_conan_profiles = Setting\get 'project.conan.profiles'
+    file_conan_dependencies = Setting\get 'project.conan.dependencies'
+    unless (File\exists file_conan_profiles) and (File\exists file_conan_dependencies)
         Log\info "No description for source dependencies found, skipping..." if not same_version
         return
 
-    for profile in *profiles
-        profile_location = profile\get_location!
-        profile_file = profile\get_file!
-        info_file = Path\join profile_location, "conanrun.bat"
+    create_resolver = (base_sections) ->
+        (template, profile, config) ->
+            sections = { }
+            for section in *base_sections
+                table.insert sections, { base:section, template:section }
+                table.insert sections, { base:section, template:"#{section}-#{config}" }
+                table.insert sections, { base:section, template:"#{section}-#{profile}" }
+                table.insert sections, { base:section, template:"#{section}-#{profile}-#{config}" }
 
-        -- Generate the profile file
-        profile\generate!
+            result = { }
+            for section in *sections
+                values, meta = template\section section.template
+                if values and meta
+                    result[section.base] = { } unless result[section.base]
+
+                    if meta.type == 'array'
+                        table.insert result[section.base], val for val in *values
+                    if meta.type == 'map'
+                        result[section.base][key] = value for key, value in pairs values
+            result
+
+    conanfile_resolved = create_resolver {
+        'requires'
+        'tool_requires'
+        'options'
+        'tool_options'
+        'generators'
+        'conf'
+    }
+
+    conanprofile_resolved = create_resolver {
+        'settings'
+        'options'
+        'buildenv'
+        'conf'
+    }
+
+    for profile in *profiles
+        location = profile.location
+        Dir\create location
+
+        profile_file = Path\join location, 'build_profile.txt'
+        hostprofile_file = Path\join location, 'host_profile.txt'
+        conanfile_file = Path\join location, 'conanfile.txt'
+        conanrun_file = Path\join location, 'conanrun.bat'
 
         -- Execute conan for the generated profile
-        if force_update or not (os.isfile info_file)
+        if force_update or not ((File\exists profile_file) and (File\exists conanfile_file) and (File\exists hostprofile_file))
+            profiles_template = INIConfig\open file_conan_profiles
+            profile_info = conanprofile_resolved profiles_template, profile.profile, profile.config
+            Validation\check profile_info, "Missing profile definition for profile: #{profile.name} (#{profile.profile})"
+            profile_info.settings.build_type = profile.config
+
+            for section, values in pairs profile_info
+                updated_values = {}
+                for key, value in pairs values
+                    updated_values[key] = value\gsub '$%(([a-zA-Z0-9_]+)%)', (val) ->
+                        profile.variables[val] or ''
+                profile_info[section] = updated_values
+
+            conanfile_template = INIConfig\open file_conan_dependencies
+            conanfile_info = conanfile_resolved conanfile_template, profile.profile, profile.config
+
+            for section, values in pairs conanfile_info
+                updated_values = {}
+                for key, value in pairs values
+                    updated_values[key] = value\gsub '$%(([a-zA-Z0-9_]+)%)', (val) ->
+                        profile.variables[val] or ''
+                conanfile_info[section] = updated_values
+
+            INIConfig\save profile_file, profile_info or { }
+            INIConfig\save hostprofile_file, profile_info or { }
+            INIConfig\save conanfile_file, conanfile_info
+
             Conan!\install
-                conanfile:'source'
+                conanfile:location
                 update:false,
                 profile:profile_file,
-                install_folder:profile_location
+                install_folder:location
                 build_policy:'missing'
-
-        -- Check for the new generated file
-        unless os.isfile profile_file
-            error "Generated Conan profile file 'conan_profile.txt' was not found in path #{profile_location}"
 
 
 { :Project, :Locator }

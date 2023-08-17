@@ -3,9 +3,22 @@ import File from require "ice.core.fs"
 import Log from require "ice.core.logger"
 
 class INIConfig
-    @open = (path, args) =>
-        if file = File\open path, 'rb'
+    @open = (path, args = {}) =>
+        if file = File\open path, mode:'rb'
             return INIConfig file, args
+
+    @save = (path, sections) =>
+        if file = File\open path, mode:'wb+'
+            for section, values in pairs sections
+                file\write "\n[#{section}]\n"
+                if #values > 0
+                    file\write "#{value}\n" for value in *values
+                else
+                    sorted_values = [{:key, :value} for key, value in pairs values]
+                    table.sort sorted_values, (a, b) -> a.key < b.key
+
+                    file\write "#{key}=#{value}\n" for { :key, :value } in *sorted_values
+            file\close!
 
     new: (@file, args) =>
         @dbg_print = args.debug or false
@@ -18,9 +31,9 @@ class INIConfig
             line = line\gsub '[\n\r]', ''
             if (line\match "::") or (line\match "^[ \t]*$")
                 nil -- Comment or empty line
-            elseif section_name = line\match "%[([a-zA-Z0-9%-_]+)%]"
+            elseif section_name = line\match "%[([a-zA-Z0-9%-_%.:]+)%]"
                 @new_section section_name
-            elseif key = line\match "([a-zA-Z0-9%-_]+)="
+            elseif key = line\match "([a-zA-Z0-9%-_%.:]+)="
                 value = line\sub (#key + 2)
                 @new_entry key, value
             else

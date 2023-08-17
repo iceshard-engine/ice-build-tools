@@ -1,4 +1,5 @@
 import VSWhere from require "ice.tools.vswhere"
+import Locator from require "ice.locator"
 
 toolchain_definitions = {
     --[[ Toolchain: MSVC - v142 ]]
@@ -156,12 +157,17 @@ detect_compilers = (version, requirements) ->
     vswhere = VSWhere!
     vswhere\find products:'*', all:true, format:'json', version:version, requires:requirements
 
-class VsMSVC
+class Toolchain_MSVC extends Locator
+    new: => super Locator.Type.Toolchain, "MSVC Compiler Locator"
+
+    locate: =>
+        @\add_result toolchain for toolchain in *@@detect!
+
     @detect: (version, requirements) =>
         toolchain_list = { }
 
         -- Append all MSVC compilers
-        for compiler in *detect_compilers version, requires
+        for compiler in *detect_compilers version, requirements
             path = compiler.installationPath
 
             -- Try to enter this directory,
@@ -203,4 +209,4 @@ class VsMSVC
 
         toolchain_list
 
-{ :VsMSVC }
+{ TC_MSVC:Toolchain_MSVC, :Toolchain_MSVC }

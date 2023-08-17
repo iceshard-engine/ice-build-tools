@@ -3,6 +3,7 @@ import ConanProfileGenerator from require "ice.generators.conan_profile"
 
 import Path, File, Dir from require "ice.core.fs"
 import Validation from require "ice.core.validation"
+import INIConfig from require "ice.util.iniconfig"
 
 class Profile
     new: (@location, info) =>
@@ -69,4 +70,19 @@ class ProfileList
             table.insert profiles, Profile location, profile_info
         profiles
 
-{ :ProfileList, :Profile }
+class ConanProfiles
+    new: (@file, output_dir) =>
+        if @config = INIConfig\open @file
+            @rawlist = @config\section 'conan-profiles', 'list'
+            @list = { }
+            for name in *@rawlist
+                profile, config = name\match "([a-zA-Z0-9_%-]+)%-([a-zA-Z0-9_]+)$"
+                table.insert @list, {
+                    name:name
+                    location:Path\join output_dir, 'conan', (name\lower!\gsub '%-', '_')
+                    profile:profile,
+                    config:config
+                    variables:(@config\section name, 'map') or { }
+                }
+
+{ :ProfileList, :Profile, :ConanProfiles }

@@ -24,11 +24,13 @@
 .TaskType_Link = 'Link'
 .TaskType_Test = 'Test'
 .TaskType_Exec = 'Exec'
+.TaskType_Copy = 'Copy'
 .TaskType_ValidList = {
-    .TaskType_Compile,
+    .TaskType_Compile
     .TaskType_Link
     .TaskType_Test
     .TaskType_Exec
+    // .TaskType_Copy
 }
 
 .Piepline_CompileVSTargets =
@@ -64,6 +66,7 @@ ForEach( .GlobalRule in .GlobalRules )
             .Libs = ^Libs
             .LibDirs = ^LibDirs
             .LinkOptions = ^LinkOptions
+            .LinkLinkerOptions = ^LinkLinkerOptions
         ]
     ]
     ^Final_GlobalRules + .Final_GlobalRule
@@ -179,6 +182,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                         .Libs = ^Libs
                         .LibDirs = ^LibDirs
                         .LinkOptions = ^LinkOptions
+                        .LinkLinkerOptions = ^LinkLinkerOptions
                     ]
                 ]
                 ^StepRules + .Final_PipelineRule
@@ -369,6 +373,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             'Libs'
                             'LibDirs'
                             'LinkOptions'
+                            'LinkLinkerOptions'
                             'DependsOn'
                         }
 
@@ -602,6 +607,12 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .TargetOutputName = "$ProjectName$$TargetExtension$"
                 .TargetList = { }
 
+                If ( .ProjectKind in .Kind_Libraries )
+                {
+                    .Prefix = .'OutputPrefix_$ProjectKind$'
+                    ^TargetOutputName = '$Prefix$$TargetOutputName$'
+                }
+
                 // Print( "IntDir: $TargetIntermediateDirectory$" )
                 // Print( "LibDir: $TargetImpLibDirectory$" )
                 // Print( "Output: $TargetOutputDirectory$/$TargetOutputName$" )
@@ -647,53 +658,63 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 // Conan Modules
                 //--------------------------------------------------------------------------
-                .ProcessedConanModules = { }
+                .ConanModules = { }
+                .ConanModulesNames = { }
 
-                If ( .PipelineConfigConan != 'UNUSED' )
+                // If ( .PipelineConfigConan != 'UNUSED' )
+                ForEach( .ConanProfile in .ConanProfiles, .ConanProfileModules in .ConanProfilesModules )
                 {
-                    Using( .FinalProperties )
-                    Using( .'ConanModules_$PipelineConfigConan$' )
-
-                    ForEach( .ConanModule in .Modules )
+                    If ( .ConanProfile == .PipelineConfigConanProfile )
                     {
-                        If ( .ConanModule not in .ProcessedConanModules )
+                        Using( .FinalProperties )
+                        // Using( .'ConanModules_$PipelineConfigConan$' )
+                        Using( .ConanProfileModules )
+
+                        ForEach( .ConanModule in .Modules )
                         {
-                            ^ProcessedConanModules + .ConanModule
-
-                            Using( .'ConanModule_$ConanModule$' )
-                            If ( .CopyModules )
+                            If ( .ConanModule not in .ConanModulesNames )
                             {
-
-                                .CopyDirs = false
-                                .CopyDirsList = { }
-                                ForEach( .BinDir in .BinDirs )
-                                {
-                                    ^CopyDirs = true
-                                    ^CopyDirsList + "$BinDir$/"
-                                }
-
-                                If ( .CopyDirs )
-                                {
-                                    .CopyDirTargetName = '$ProjectTarget$-$ConanModule$-copydir'
-
-                                    If ( .CopyDirTargetName not in .Step_CopyDirsTargets )
-                                    {
-                                        // Only do this once
-                                        ^Step_CopyDirsTargets + .CopyDirTargetName
-
-                                        CopyDir( '$CopyDirTargetName$' )
-                                        {
-                                            .SourcePaths = .CopyDirsList
-                                            .SourcePathsPattern = '*.dll'
-                                            .Dest = .TargetOutputDirectory
-                                        }
-                                        ^StepDependencies + '$ProjectTarget$-$ConanModule$-copydir'
-                                    }
-                                }
+                                ^ConanModulesNames + .ConanModule
+                                ^ConanModules + .'ConanModule_$ConanModule$'
                             }
                         }
                     }
                 }
+
+                ForEach( .ConanModuleName in .ConanModulesNames, .ConanModule in .ConanModules )
+                {
+                    Using( .ConanModule )
+                    If ( .CopyModules )
+                    {
+                        .CopyDirs = false
+                        .CopyDirsList = { }
+                        ForEach( .BinDir in .BinDirs )
+                        {
+                            ^CopyDirs = true
+                            ^CopyDirsList + "$BinDir$/"
+                        }
+
+                        If ( .CopyDirs )
+                        {
+                            .CopyDirTargetName = '$ProjectTarget$-$ConanModuleName$-copydir'
+
+                            If ( .CopyDirTargetName not in .Step_CopyDirsTargets )
+                            {
+                                // Only do this once
+                                ^Step_CopyDirsTargets + .CopyDirTargetName
+
+                                CopyDir( '$CopyDirTargetName$' )
+                                {
+                                    .SourcePaths = .CopyDirsList
+                                    .SourcePathsPattern = '*.dll'
+                                    .Dest = .TargetOutputDirectory
+                                }
+                                ^StepDependencies + '$ProjectTarget$-$ConanModuleName$-copydir'
+                            }
+                        }
+                    } // If ( .CopyModules )
+
+                } // If ( .ConanModule not in .ConanModulesNames )
 
                 // Apply link step all flags
                 //--------------------------------------------------------------------------
@@ -796,10 +817,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 'BuildOptions'
                             }
 
-                            Using( .'ConanModules_$PipelineConfigConan$' )
-                            ForEach( .ConanModule in .ProcessedConanModules )
+                            ForEach( .ConanModule in .ConanModules )
                             {
-                                Using( .'ConanModule_$ConanModule$' )
+                                Using( .ConanModule )
 
                                 ForEach( .Var in .'ConanVariables_$ProjectKind$' )
                                 {
@@ -835,11 +855,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                             If ( .TaskConsumesPreviousOutputs )
                             {
-                                ^PreBuildDependencies + .PreviousTargets
-                                ^CompilerInputPath = .TargetIntermediateDirectory
-
-                                // ^CompilerInputFilesRoot + .TargetIntermediateDirectory
-                                // ^CompilerInputObjectLists + .PreviousTargets // Requires a different option probably
+                                ^CompilerInputObjectLists + .PreviousTargets // Requires a different option probably
                             }
 
                             // Unity files
@@ -893,10 +909,9 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 'LinkOptions'
                             }
 
-                            Using( .'ConanModules_$PipelineConfigConan$' )
-                            ForEach( .ConanModule in .ProcessedConanModules )
+                            ForEach( .ConanModule in .ConanModules )
                             {
-                                Using( .'ConanModule_$ConanModule$' )
+                                Using( .ConanModule )
 
                                 ForEach( .Var in .'ConanVariables_$ProjectKind$' )
                                 {
@@ -918,6 +933,18 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     If ( .Var == .Const_LinkOptions )
                                     {
                                         ^FlagVariable = 'LibrarianOptions'
+                                    }
+                                }
+
+                                If ( .ProjectKind != .Kind_StaticLib )
+                                {
+                                    .Const_LinkOptions = 'LinkOptions'
+                                    If ( .Var == .Const_LinkOptions )
+                                    {
+                                        ForEach( .Value in .LinkLinkerOptions )
+                                        {
+                                            ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                                        }
                                     }
                                 }
 
@@ -1022,6 +1049,14 @@ ForEach( .Pipeline in .AvailablePipelines )
                             }
                         }
                     }
+
+                    // If ( .Type == .TaskType_Copy )
+                    // {
+                    //     If ( .ProjectKind in .Kind_Executable )
+                    //     {
+                    //         Copy(  )
+                    //     }
+                    // }
 
                     If ( .Type == .TaskType_Exec )
                     {
