@@ -10,9 +10,19 @@ import Android from require "ice.platform.android"
 import INIConfig from require "ice.util.iniconfig"
 import Json from require "ice.util.json"
 
+loc_project_build_template = Path\join (os.getenv 'IBT_DATA'), 'project_build.gradle.template.kts'
+loc_project_settings_template = Path\join (os.getenv 'IBT_DATA'), 'project_settings.gradle.template.kts'
+loc_module_build_template = Path\join (os.getenv 'IBT_DATA'), 'module_build.gradle.template.kts'
+
 class AndroidCommand extends Command
     @settings {
         Setting 'android.projects', default:{}
+        Setting 'android.gradle.build_template',
+            default:loc_project_build_template
+            predicate:(v) -> v == nil or File\exists v
+        Setting 'android.gradle.settings_template',
+            default:loc_project_settings_template
+            predicate:(v) -> v == nil or File\exists v
         Setting 'android.gradle.wrapper', required:true, default:'build/android_gradle'
         Setting 'android.gradle.version', required:true, default:'8.1.1'
         Setting 'android.gradle.package_url', required:true, default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
@@ -25,6 +35,12 @@ class AndroidCommand extends Command
             name: 'mode'
             choices: { 'build', 'setup' }
             default: 'build'
+        group 'setup', description: "Setup options"
+        option 'copy_templates',
+            group: 'setup'
+            description: 'Copies the template files stored in the package to the provided location. Skips files that arleady exist.'
+            name: '--copy-templates'
+            argname:'<path>'
     }
 
     prepare: (args, project) =>
@@ -71,56 +87,59 @@ class AndroidCommand extends Command
             clean:true
 
         -- If we can open android_targets.txt we continue generation
-        android_modules = @_load_android_ini INIConfig\open "android_targets.txt", debug:false
+        android_project = @_load_android_ini INIConfig\open "android_targets.txt", debug:false
+        @fail "No Android projects found for setup!" unless android_project and Dir\exists android_project.location or ""
+
+        -- Setup the project files
+        wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
+        project_source_location = android_project.location
+        project_build_location = wrapper_location
+
+        target_settings_template = Path\join project_source_location, "settings.gradle.template.kts"
+        target_build_template = Path\join project_source_location, "build.gradle.template.kts"
+        if args.copy_templates
+            @fail "[--copy-templates] Target directory '#{args.copy_templates}' does not exist!" unless Dir\exists args.copy_templates
+            if File\copy loc_project_settings_template, target_settings_template
+                @log\info "Copied project settings template from '#{loc_project_settings_template}' to '#{target_settings_template}'"
+            if File\copy loc_project_build_template, target_build_template
+                @log\info "Copied project build template from '#{loc_project_build_template}' to '#{target_build_template}'"
+
+        -- Generate Gradle project directories
+        Dir\create project_build_location
+        Dir\enter project_build_location, ->
+            settings_path = Setting\get 'android.gradle.settings_template'
+            build_path = Setting\get 'android.gradle.build_template'
+
+            settings_path = target_settings_template if File\exists target_settings_template
+            build_path = target_build_template if File\exists target_build_template
+
+            -- Try load load from settings, if files are missing
+
+            @fail "File '#{settings_path}' does not exist." unless Path\exists settings_path
+            @fail "File '#{build_path}' does not exist." unless Path\exists build_path
+
+            @log\info "Selected project settings template from: #{settings_path}"
+            @log\info "Selected project build template from: #{build_path}"
+
+            @log\info "Writing settings file to: " .. (Path\join project_build_location, 'settings.gradle.kts')
+            @log\info "Writing build file to: " .. (Path\join project_build_location, 'build.gradle.kts')
+            File\save (Path\join project_build_location, 'settings.gradle.kts'), @_fill_template_file settings_path, android_project.context
+            File\save (Path\join project_build_location, 'build.gradle.kts'), @_fill_template_file build_path, android_project.context
+
+            sdk = Android\detect_android_sdk!
+            File\save (Path\join project_build_location, 'local.properties'), table.concat {
+                "sdk.dir=#{Path.Unix\normalize sdk.location}"
+            }, '\n'
+            File\save (Path\join project_build_location, 'gradle.properties'), table.concat {
+                "android.useAndroidX=true"
+            }, '\n'
 
         -- Go over the configuration file and find all android-gradle enabled projects
-        gradle_projects = { }
-        for module_name, module_info in pairs android_modules
-            wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
-            -- For Android a project is a Solution and the Module is the Project (in VS terms)
-            module_location = module_info.source_dir
-            project_location = Path\join module_info.source_dir, '..'
-            module_build_location = Path\join wrapper_location, module_name
-            project_build_location = Path\join module_build_location, '..'
-
-            -- Generate base gradle project directories
-            unless gradle_projects[project_build_location]
-                Dir\create project_build_location
-                Dir\enter project_build_location, ->
-                    settings_path = Path\join project_location, "settings.gradle.template.kts"
-                    build_path = Path\join project_location, "build.gradle.template.kts"
-                    @fail "File '#{settings_path}' does not exist." unless Path\exists settings_path
-                    @fail "File '#{settings_path}' does not exist." unless Path\exists build_path
-
-                    @log\info "Writing settings file to: " .. (Path\join project_build_location, 'settings.gradle.kts')
-                    @log\info "Writing build file to: " .. (Path\join project_build_location, 'build.gradle.kts')
-                    File\save (Path\join project_build_location, 'settings.gradle.kts'), (File\load settings_path)
-                    File\save (Path\join project_build_location, 'build.gradle.kts'), (File\load build_path)
-
-                    sdk = Android\detect_android_sdk!
-                    File\save (Path\join project_build_location, 'local.properties'), table.concat {
-                        "sdk.dir=#{Path.Unix\normalize sdk.location}"
-                    }, '\n'
-                    File\save (Path\join project_build_location, 'gradle.properties'), table.concat {
-                        "android.useAndroidX=true"
-                    }, '\n'
-
-                    -- Create the wrapper in the build location
-                    @gradle\run 'wrapper'
-
-                    gradle_projects[project_location] = {
-                        location:project_location
-                        build_location:project_build_location
-                        settings_template:settings_path
-                        build_template:build_path
-                        modules:{}
-                    }
-
-            -- Extend module information
+        processed_modules = { }
+        for module_name, module_info in pairs android_project.modules
             module_info.name = module_name
-            table.insert gradle_projects[project_location], {
-                module_info
-            }
+            module_source_location = module_info.source_dir
+            module_build_location = Path\join project_build_location, module_name
 
             -- Generate module gradle project files
             Dir\create module_build_location
@@ -128,50 +147,56 @@ class AndroidCommand extends Command
                 module_info.context.ScriptFile = project.script
                 module_info.context.WorkspaceDir = project.workspace_dir
                 module_info.context.BuildDir = project.output_dir
+                template_file = Path\join module_source_location, "build.gradle.template.kts"
 
-                build_template_file = Path\join module_location, "build.gradle.template.kts"
-                build_template = File\load build_template_file
-                build_template = build_template\gsub '([ \t]*)%$%(([a-zA-Z_%.]+)%)', (spaces, key) ->
-                    if value = module_info.context[key]
-                        if (type value) == 'table'
-                            return spaces .. (table.concat value, "\n#{spaces}")
-                        else
-                            return "#{spaces}#{value}"
-                    else
-                        return "#{spaces}<unknown-tag:#{key}>" unless value
+                if args.copy_templates and File\copy loc_module_build_template, template_file
+                    @log\info "Copied module build template from '#{loc_module_build_template}' to '#{template_file}'"
 
-                -- Save the build file
-                File\save 'build.gradle.kts', build_template
+                File\save 'build.gradle.kts', @_fill_template_file template_file, module_info.context
+
+        Dir\enter project_build_location, ->
+            -- Create a wrapper in the build location
+            @gradle\run 'wrapper'
 
     _load_android_ini: (ini) =>
         android_targets = ini\section 'android_targets', 'array'
 
-        modules = { }
+        module_names = { }
+        project = modules:{}, plugins:{}, context:{}
         for target in *android_targets
             target_info = ini\section target, 'map'
 
-            module_info = modules[target_info.android_module]
+            module_info = project.modules[target_info.android_module]
             unless module_info ~= nil
+                project.location = Path\join target_info.source_dir, '..' unless project.location
+
+                module_plugins = [{val\match '((id%(".+"%)) version ".+")'} for val in *(ini\section "#{target}-Gradle-Plugins", 'array') or { }]
+                project.plugins[val[1]] = true for val in *module_plugins
+
                 module_info = { targets:{ } }
                 module_info.source_dir = target_info.source_dir
                 module_info.context = {
                     ProjectDir: target_info.source_dir
                     ProjectOutputDir: target_info.output_dir
-                    ProjectPlugins: ini\section "#{target}-Gradle-Plugins", 'array'
-                    AndroidAPILevel: target_info.android_androidapilevel
-                    AndroidMinSDK: target_info.android_minsdk or target_info.android_androidapilevel
-                    AndroidTargetSDK: target_info.android_targetsdk or target_info.android_androidapilevel
-                    AndroidBuildToolsVersion: target_info.android_buildtoolsversion
+                    ProjectPlugins: [val[2] for val in *module_plugins]
+                    CompileSDK: target_info.android_compilesdk
+                    MinSDK: target_info.android_minsdk or target_info.android_compilesdk
+                    TargetSDK: target_info.android_targetsdk or target_info.android_compilesdk
+                    -- AndroidBuildToolsVersion: target_info.android_buildtoolsversion
                     ApplicationId: target_info.android_applicationid
                     Namespace: target_info.android_namespace
                     VersionCode: target_info.android_versioncode
                     VersionName: target_info.android_versionname
                     ProjectCustomConfigurationTypes: {}
                 }
+
+                table.sort module_info.context.ProjectPlugins, (l, r) -> l < r
+
                 -- module_info.flavourDimensions = { }
                 -- module_info.flavours = { }
                 -- module_info.dependencies = ini\section "#{target}-Android-Dependencies", 'array'
-                modules[target_info.android_module] = module_info
+                project.modules[target_info.android_module] = module_info
+                table.insert module_names, target_info.android_module
 
             -- Generating custom config requests
             custom_config = module_info.context.ProjectCustomConfigurationTypes
@@ -197,6 +222,28 @@ class AndroidCommand extends Command
                 name:target_info.name
             }
 
-        modules
+        -- Prepare a sorted array of plugins
+        project.context.Plugins = [plugin for plugin in pairs project.plugins]
+        table.sort project.context.Plugins, (l, r) -> l < r
+
+        -- Prepare a list of modules
+        project.context.ModuleIncludes = ["include(\":#{name}\")" for name in *module_names]
+        project
+
+    _fill_template_file: (template_file, context) =>
+        template = File\load template_file
+        template = template\gsub '([ \t]*)%$%(([a-zA-Z_%.]+)([a-zA-Z_%.\'%{%} ]*)%)', (spaces, key, format) ->
+            format = format\match "'([a-zA-Z_%.\'%{%} ]+)'"
+            format = format\gsub "%{%}", "%%s" if format
+            format = "%s" unless format
+
+            if value = context[key]
+                if (type value) == 'table'
+                    return spaces .. (table.concat [string.format format, val for val in *value], "\n#{spaces}")
+                else
+                    return "#{spaces}#{string.format format, value}"
+            else
+                return "#{spaces}<unknown-tag:#{key}>" unless value
+        template
 
 { :AndroidCommand }

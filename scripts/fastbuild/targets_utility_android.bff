@@ -107,8 +107,25 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
 
                             .Android =
                             [
+                                .MinDSK = .AndroidAPILevel
+                                .TargetSDK = .AndroidAPILevel
+
                                 Using( .ProjectAndroid )
-                                .AndroidAPILevel = ^AndroidAPILevel
+                                .CompileSDK = ^AndroidAPILevel
+
+                                If ( .AndroidAPILevel != ^AndroidAPILevel )
+                                {
+                                    Error( "'AndroidAPILevel' can only be set as a Pipeline property. Do NOT set this value in the project!" )
+                                }
+
+                                If ( .TargetSDK < .CompileSDK )
+                                {
+                                    Error( "'TargetSDK' ($TargetSDK$) cannot be below 'AndroidAPILevel' ($CompileSDK$)" )
+                                }
+                                If ( .MinSDK > .CompileSDK )
+                                {
+                                    Error( "'MinSDK' ($MinSDK$) cannot be higher than 'AndroidAPILevel' ($CompileSDK$)" )
+                                }
                             ]
 
                             .OutputDir = .TargetOutputDirectory
@@ -157,11 +174,11 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             ^DetailTargetLines
                 + ' '
                 + 'android_module=$Name$'
-                + 'android_namespace=$Namespace$'
-                + 'android_androidapilevel=$AndroidAPILevel$'
-                + 'android_applicationid=$ApplicationID$'
+                + 'android_compilesdk=$CompileSDK$'
                 + 'android_minsdk=$MinSDK$'
                 + 'android_targetsdk=$TargetSDK$'
+                + 'android_namespace=$Namespace$'
+                + 'android_applicationid=$ApplicationID$'
                 + 'android_versioncode=$VersionCode$'
                 + 'android_versionname=$VersionName$'
                 + ' '
