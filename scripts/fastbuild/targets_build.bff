@@ -683,7 +683,9 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 ForEach( .ConanModuleName in .ConanModulesNames, .ConanModule in .ConanModules )
                 {
+                    Using( .FinalProperties )
                     Using( .ConanModule )
+
                     If ( .CopyModules )
                     {
                         .CopyDirs = false
@@ -706,7 +708,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 CopyDir( '$CopyDirTargetName$' )
                                 {
                                     .SourcePaths = .CopyDirsList
-                                    .SourcePathsPattern = '*.dll'
+                                    .SourcePathsPattern = { '*.dll', '*.so' }
                                     .Dest = .TargetOutputDirectory
                                 }
                                 ^StepDependencies + '$ProjectTarget$-$ConanModuleName$-copydir'

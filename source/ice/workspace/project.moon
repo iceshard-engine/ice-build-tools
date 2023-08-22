@@ -180,6 +180,10 @@ class Project
         @profiles = ConanProfiles profiles_file, @output_directory
         install_conan_dependencies @profiles.list, false
 
+        -- Secondary call to generate 'fbuild_conanmodules.bff' file
+        -- We can do it in two stages, becase the first stage only checks for available pipelines, it does not require any compile data to be present yet
+        @build_system\generate_conanmodules @profiles.list
+
         command_result = application\run
             script: @project_script
             workspace_dir: @workspace_root

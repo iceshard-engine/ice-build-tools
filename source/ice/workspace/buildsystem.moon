@@ -196,6 +196,21 @@ class FastBuildBuildSystem extends BuildSystem
 
         gen\close!
 
+    generate_conanmodules: (profiles) =>
+        conanmodules_file = Path.Unix\join @workspace_dir, @output_dir, "fbuild_conanmodules.bff"
+        conanmodules_gen = FastBuildGenerator conanmodules_file
+        gen = conanmodules_gen
+
+        for profile in *(profiles or {})
+            gen\line ".ConanProfiles + '#{profile.name}'"
+            gen\line '{'
+            gen\indented (gen) ->
+                gen\include Path.Unix\join @workspace_dir, profile.location, 'conandeps.bff'
+                gen\line '^ConanProfilesModules + .ConanModules'
+            gen\line '}'
+
+        conanmodules_gen\close!
+
     generate_main: (generated, gen) =>
         gen\variables {
             { 'WorkspaceRoot', @workspace_dir }
@@ -213,7 +228,7 @@ class FastBuildBuildSystem extends BuildSystem
         gen\line!
         gen\line ".ConanProfiles = { }"
         gen\line ".ConanProfilesModules = { }"
-        conanmodules_file = Path.Unix\join @workspace_dir, @output_dir, "conanmodules.bff"
+        conanmodules_file = Path.Unix\join @workspace_dir, @output_dir, "fbuild_conanmodules.bff"
         gen\line "#if file_exists(\"#{conanmodules_file}\")"
         gen\include conanmodules_file
         gen\line "#endif"
