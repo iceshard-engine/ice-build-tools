@@ -187,6 +187,7 @@ class AndroidCommand extends Command
                     Namespace: target_info.android_namespace
                     VersionCode: target_info.android_versioncode
                     VersionName: target_info.android_versionname
+                    ProjectJNISources: {}
                     ProjectCustomConfigurationTypes: {}
                 }
 
@@ -198,31 +199,22 @@ class AndroidCommand extends Command
                 project.modules[target_info.android_module] = module_info
                 table.insert module_names, target_info.android_module
 
-            -- Generating custom config requests
-            fn_sourceset_add_jnidir = (custom_config) ->
-                table.insert custom_config, ""
-                table.insert custom_config, "    sourceSets {"
-                table.insert custom_config, "        getByName(\"main\") {"
-                table.insert custom_config, "            jniLibs.srcDir(\"#{target_info.output_dir}\")"
-                table.insert custom_config, "        }"
-                table.insert custom_config, "    }"
-
-            custom_config = module_info.context.ProjectCustomConfigurationTypes
             config_lower = target_info.config\lower!
-            is_debug = config_lower == 'debug'
-            is_release = config_lower == 'release'
-            if is_debug or is_release
-                table.insert custom_config, "getByName(\"#{config_lower}\") {"
-                fn_sourceset_add_jnidir custom_config
-                table.insert custom_config, "}"
-            else
-                table.insert custom_config, "create(\"#{config_lower}\") {"
+
+            -- Generating custom config requests
+            macro_lines = module_info.context.ProjectJNISources
+            table.insert macro_lines, "getByName(\"#{config_lower}\") {"
+            table.insert macro_lines, "    jniLibs.srcDir(\"#{target_info.output_dir}\")"
+            table.insert macro_lines, "}"
+
+            macro_lines = module_info.context.ProjectCustomConfigurationTypes
+            unless (config_lower == 'debug') or (config_lower == 'release')
+                table.insert macro_lines, "create(\"#{config_lower}\") {"
                 if config_lower\match 'debug'
-                    table.insert custom_config, "    initWith(getByName(\"debug\"))"
+                    table.insert macro_lines, "    initWith(getByName(\"debug\"))"
                 else
-                    table.insert custom_config, "    initWith(getByName(\"release\"))"
-                fn_sourceset_add_jnidir custom_config
-                table.insert custom_config, "}"
+                    table.insert macro_lines, "    initWith(getByName(\"release\"))"
+                table.insert macro_lines, "}"
 
             table.insert module_info.targets, {
                 target:target

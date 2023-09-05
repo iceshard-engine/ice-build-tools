@@ -7,14 +7,6 @@ android {
     compileSdk = $(TargetSDK)
     // buildToolsVersion = "$ (AndroidBuildToolsVersion)"
 
-    sourceSets {
-        getByName("main") {
-            res.setSrcDirs(listOf("$(ProjectDir)/src/main/res"))
-            java.setSrcDirs(listOf("$(ProjectDir)/src/main/java"))
-            manifest.srcFile("$(ProjectDir)/src/main/AndroidManifest.xml")
-        }
-    }
-
     namespace = "$(Namespace)"
 
     defaultConfig {
@@ -41,6 +33,16 @@ android {
          *   It's recommended to apply your own changes with additional 'getByName' clauses or replace this macro with the generated results.
          */
         $(ProjectCustomConfigurationTypes)
+    }
+
+    sourceSets {
+        getByName("main") {
+            res.setSrcDirs(listOf("$(ProjectDir)/src/main/res"))
+            java.setSrcDirs(listOf("$(ProjectDir)/src/main/java"))
+            manifest.srcFile("$(ProjectDir)/src/main/AndroidManifest.xml")
+        }
+
+        $(ProjectJNISources)
     }
 }
 
