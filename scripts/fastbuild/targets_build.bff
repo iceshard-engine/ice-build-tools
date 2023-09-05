@@ -33,11 +33,11 @@
     // .TaskType_Copy
 }
 
+.Step_Build = 'Build'
+
 .Piepline_CompileVSTargets =
 [
 ]
-
-.Projects_SolutionInfo = []
 
 //
 // Prepare global build rules
@@ -79,6 +79,7 @@ Print( '[IBT] Creating build targets...' )
 //
 ForEach( .Pipeline in .AvailablePipelines )
 {
+    .PipelineSolutionInfo = []
     .PipelineProjectRequirements = { }
 
     Using( .Pipeline )
@@ -607,6 +608,11 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .TargetOutputName = "$ProjectName$$TargetExtension$"
                 .TargetList = { }
 
+                If ( .PipelineOutputDirSuffix != .EmptyString )
+                {
+                    ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                }
+
                 If ( .ProjectKind in .Kind_Libraries )
                 {
                     .Prefix = .'OutputPrefix_$ProjectKind$'
@@ -720,6 +726,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 // Apply link step all flags
                 //--------------------------------------------------------------------------
+                If ( .Step == .Step_Build )
                 {
                     Using( .FinalProperties )
 
@@ -727,16 +734,18 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         .Piepline_CompileVSTargets_Extension =
                         [
-                            .'SolutionInfo_$ProjectTarget$' =
+                            .PipelineSolutionInfo =
                             [
-                                .Intellisense =
+                                .'SolutionInfo_$ProjectTarget$'  =
                                 [
-                                    .IncludeDirs = .IncludeDirs
-                                    .Defines = .Defines
-                                    .BuildOptions = .BuildOptions
+                                    .Intellisense =
+                                    [
+                                        .IncludeDirs = .IncludeDirs
+                                        .Defines = .Defines
+                                        .BuildOptions = .BuildOptions
+                                    ]
                                 ]
                             ]
-                            ^Projects_SolutionInfo + .'SolutionInfo_$ProjectTarget$'
                         ]
                         ^Piepline_CompileVSTargets + .Piepline_CompileVSTargets_Extension
                     }

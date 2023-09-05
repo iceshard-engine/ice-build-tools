@@ -71,10 +71,12 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                         .AvailableTags = .PipelineEnabledProjects
                             + .SDKNames
                             + .PipelineTags
+                            + .ProjectTags
                             + .'PipelineAvailableProjects_$PipelineIdentifier$'
 
                         .ProjectAndroidRequires = .ProjectRequires
                             + 'SDK-Android'
+                            + 'Android-Gradle'
 
                         ForEach( .Requirement in .ProjectAndroidRequires )
                         {
@@ -107,7 +109,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
 
                             .Android =
                             [
-                                .MinDSK = .AndroidAPILevel
+                                .MinSDK = .AndroidAPILevel
                                 .TargetSDK = .AndroidAPILevel
 
                                 Using( .ProjectAndroid )

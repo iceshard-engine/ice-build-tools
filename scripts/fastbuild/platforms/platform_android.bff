@@ -63,5 +63,14 @@
         .OutputExtension_WindowedApp = ''
         .OutputExtension_HeaderOnly = ''
         .OutputExtension_ObjectList = ''
+
+        // Needs to follow PlatformSupportedArchitectures
+        .OutputDirArchitectureSuffixes =
+        [
+            .OutputSuffix_arm64 = 'arm64-v8a'
+            .OutputSuffix_arm = 'armeabi-v7a'
+            .OutputSuffix_x86_64 = 'x86_64'
+            .OutputSuffix_x86 = 'x86'
+        ]
     ]
 ]

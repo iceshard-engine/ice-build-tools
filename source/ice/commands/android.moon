@@ -177,7 +177,7 @@ class AndroidCommand extends Command
                 module_info.source_dir = target_info.source_dir
                 module_info.context = {
                     ProjectDir: target_info.source_dir
-                    ProjectOutputDir: target_info.output_dir
+                    ProjectOutputDir: target_info.output_dir\gsub target_info.config, "${buildConfig}"
                     ProjectPlugins: [val[2] for val in *module_plugins]
                     CompileSDK: target_info.android_compilesdk
                     MinSDK: target_info.android_minsdk or target_info.android_compilesdk
@@ -199,16 +199,29 @@ class AndroidCommand extends Command
                 table.insert module_names, target_info.android_module
 
             -- Generating custom config requests
+            fn_sourceset_add_jnidir = (custom_config) ->
+                table.insert custom_config, ""
+                table.insert custom_config, "    sourceSets {"
+                table.insert custom_config, "        getByName(\"main\") {"
+                table.insert custom_config, "            jniLibs.srcDir(\"#{target_info.output_dir}\")"
+                table.insert custom_config, "        }"
+                table.insert custom_config, "    }"
+
             custom_config = module_info.context.ProjectCustomConfigurationTypes
             config_lower = target_info.config\lower!
             is_debug = config_lower == 'debug'
             is_release = config_lower == 'release'
-            unless is_debug or is_release
+            if is_debug or is_release
+                table.insert custom_config, "getByName(\"#{config_lower}\") {"
+                fn_sourceset_add_jnidir custom_config
+                table.insert custom_config, "}"
+            else
                 table.insert custom_config, "create(\"#{config_lower}\") {"
                 if config_lower\match 'debug'
                     table.insert custom_config, "    initWith(getByName(\"debug\"))"
                 else
                     table.insert custom_config, "    initWith(getByName(\"release\"))"
+                fn_sourceset_add_jnidir custom_config
                 table.insert custom_config, "}"
 
             table.insert module_info.targets, {

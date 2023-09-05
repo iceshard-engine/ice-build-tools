@@ -89,6 +89,20 @@ ForEach( .PlatformName in .AvailablePlatformsNames, .Platform in .AvailablePlatf
                     .TargetVSArchitecture = ''
                 ]
 
+                // Platform output dir suffix extensions
+                {
+                    .OutputDirArchitectureSuffixes = []
+                    .'OutputSuffix_$PlatformArchitecture$' = ''
+                    Using( .PlatformExtensions )
+                    Using( .OutputDirArchitectureSuffixes )
+
+                    .TargetExt =
+                    [
+                        .TargetOutputDirSuffix = .'OutputSuffix_$PlatformArchitecture$'
+                    ]
+                    ^Target + .TargetExt
+                }
+
                 // VStudio compat
                 {
                     .VSEnabled = false
@@ -320,6 +334,7 @@ ForEach( .Pipeline in .BuildPipelines )
                 .PipelineConfigConan = .ConanConfiguration
                 .PipelineConfigConanProfile = '$PipelineConanProfile$-$ConanConfiguration$'
                 .PipelineOutputExtensions = .PlatformExtensions
+                .PipelineOutputDirSuffix = .TargetOutputDirSuffix
 
                 .PipelineTags = {
                     .TargetSystem

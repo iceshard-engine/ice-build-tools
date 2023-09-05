@@ -31,9 +31,9 @@ class INIConfig
             line = line\gsub '[\n\r]', ''
             if (line\match "::") or (line\match "^[ \t]*$")
                 nil -- Comment or empty line
-            elseif section_name = line\match "%[([a-zA-Z0-9%-_%.:]+)%]"
+            elseif section_name = line\match "%[([a-zA-Z0-9%-_%.:/%*]+)%]"
                 @new_section section_name
-            elseif key = line\match "([a-zA-Z0-9%-_%.:]+)="
+            elseif key = line\match "([a-zA-Z0-9%-_%.:/%*]+)="
                 value = line\sub (#key + 2)
                 @new_entry key, value
             else

@@ -6,6 +6,35 @@ group = (name, tab) -> func:'group', name:name, opts:tab or { }
 import Validation from require "ice.core.validation"
 import Logger, Log from require "ice.core.logger"
 
+class CommandResult
+    @from_values: (command, result, message, value) =>
+        final_result = nil
+        if (type result) == "boolean"
+            final_result = return_code:(result and 0 or -1), :value
+        elseif (type result) == "number"
+            final_result = return_code:result, :message, :value
+        elseif (type result) == "table"
+            if result.return_code ~= nil
+                final_result = result
+            else
+                final_result = return_code:0, value:value or result, :message
+        elseif (type result) == "nil"
+            final_result = return_code:0, :message, value:true
+
+        CommandResult command, final_result
+
+    new: (command, params) =>
+        @return_code = params.return_code or 0
+        @message = params.message or "Failed command '#{command}' with return code '#{@return_code}'"
+        @result = params.value or true
+
+    success: => @return_code == 0
+
+    validate: =>
+        unless Validation\ensure @success!, @message
+            os.exit @return_code
+        @result
+
 class Command
     @settings = (defined_settings) =>
         @settings = { }
@@ -94,41 +123,55 @@ class Command
     run_prepare: (args, prj) =>
         coro = coroutine.create @\prepare
 
-        @.fail = (msg, error_code = -1) => coroutine.yield false, { success:false, :msg, :error_code }
-        @.success = (result) => coroutine.yield true, { success:true, :result }
-        fn = (...) -> coroutine.resume coro, ...
+        @.result = (code, message, value) =>
+            coroutine.yield CommandResult\from_values @name, code, message, value
+        @.fail = (message, error_code = -1) =>
+            Validation\assert error_code ~= 0, "A explicit fail cannot set the 'error_code' value to '0'"
+            @result error_code, message
+        @.success = (value) =>
+            @result 0, message, value
 
-        call_success, coro_success, cmd_success, cmd_result = pcall fn, args, prj
-        cmd_result = { success:false, msg:cmd_success } unless coro_success
+        fn = (...) ->
+            coro_success, result, message = coroutine.resume coro, ...
+            return false unless coro_success
+            return true, CommandResult\from_values @name, result, message
+
+        call_success, coro_success, cmd_result = pcall fn, args, prj
+        Validation\assert (call_success and coro_success), "Error while executing command '#{@name}'"
 
         @.fail = nil
+        @.result = nil
         @.success = nil
 
-        unless cmd_result == nil or cmd_result.success
-            @log\error cmd_result.msg
-            return false
-        true
+        cmd_result
 
     run_execute: (args, prj) =>
         coro = coroutine.create @\execute
 
-        @.fail = (msg, error_code = -1) => coroutine.yield false, { success:false, :msg, :error_code }
-        @.success = (result) => coroutine.yield true, { success:true, :result }
-        fn = (...) -> coroutine.resume coro, ...
+        @.result = (code, message, value) =>
+            coroutine.yield CommandResult\from_values @name, code, message, value
+        @.fail = (message, error_code = -1) =>
+            Validation\assert error_code ~= 0, "A explicit fail cannot set the 'error_code' value to '0'"
+            @result error_code, message
+        @.success = (value) =>
+            @result 0, message, value
 
-        call_success, coro_success, cmd_success, cmd_result = pcall fn, args, prj
-        cmd_result = { success:false, msg:cmd_success } unless coro_success
+        fn = (...) ->
+            coro_success, result, message = coroutine.resume coro, ...
+            return false unless coro_success
+            return true, CommandResult\from_values @name, result, message
+
+        call_success, coro_success, cmd_result = pcall fn, args, prj
+        Validation\assert (call_success and coro_success), "Error while executing command '#{@name}'"
 
         @.fail = nil
+        @.result = nil
         @.success = nil
 
-        unless cmd_result == nil or cmd_result.success
-            @log\error cmd_result.msg
-            return false
-        true
+        cmd_result
 
 
     prepare: => nil
     execute: => true
 
-{ :Command, :argument, :option, :flag, :group }
+{ :Command, :CommandResult, :argument, :option, :flag, :group }

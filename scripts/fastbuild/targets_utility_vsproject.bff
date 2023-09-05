@@ -228,7 +228,7 @@
 
                     If ( .ProjectKind == .Kind_HeaderOnly )
                     {
-                        Using( .Projects_SolutionInfo )
+                        Using( .PipelineSolutionInfo )
                         Using( .'SolutionInfo_$ProjectTarget$' )
                         Using( .Intellisense )
 
