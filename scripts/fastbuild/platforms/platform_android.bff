@@ -37,7 +37,7 @@
 [
     .PlatformSystem = 'Android'
     .PlatformFlavours = { 'AndroidAPILevel' }
-    .PlatformSupportedArchitectures = { 'arm64', 'arm', 'x86_64', 'x86' }
+    .PlatformSupportedArchitectures = { 'arm64', 'x86_64', 'x64' } //, 'arm', 'x86' }
     .PlatformSupportedToolchainFamilies = { 'ndk-clang' }
 
     .PlatformConanProfileVariables = { 'AndroidAPILevel', 'NDKPath' }
@@ -70,7 +70,17 @@
             .OutputSuffix_arm64 = 'arm64-v8a'
             .OutputSuffix_arm = 'armeabi-v7a'
             .OutputSuffix_x86_64 = 'x86_64'
+            .OutputSuffix_x64 = 'x86_64' // Alias
             .OutputSuffix_x86 = 'x86'
         ]
+    ]
+
+    .PlatformVSInfo =
+    [
+        .VSEnabled = true
+        // Set name for each arch defined. Is specific arch unsupported by VS set EmptyString
+        .VSArch_arm64 = 'ARM64'
+        .VSArch_x86_64 = 'x64'
+        .VSArch_x64 = 'x64' // Alias
     ]
 ]

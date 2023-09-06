@@ -1,5 +1,8 @@
 
 {
+    .VSFeature_Enabled = 'VSEnabled'
+    .VSFeature_AndroidProject = 'VSAndroidProject'
+
     .PlatformVSEnabled = false
 
     .SolutionProjects = { }
@@ -158,7 +161,7 @@
                     Using( .PipelineOutputExtensions )
 
                     // Check if we the project has all requirements covered
-                    .ProjectRequirementsSatisfied = true
+                    .ProjectEnabledFeatures = { }
                     {
                         .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                         .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
@@ -169,11 +172,37 @@
                             + .PipelineTags
                             + .'PipelineAvailableProjects_$PipelineIdentifier$'
 
-                        ForEach( .Requirement in .ProjectRequires )
                         {
-                            If ( .Requirement not in .AvailableTags )
+                            .ContainsAll = true
+                            ForEach( .Requirement in .ProjectRequires )
                             {
-                                ^ProjectRequirementsSatisfied = false
+                                If ( .Requirement not in .AvailableTags )
+                                {
+                                    // Print( "Requirement $Requirement$ not available for project $ProjectName$ in pipeline $PipelineIdentifier$" )
+                                    ^ContainsAll = false
+                                }
+                            }
+                            If ( .ContainsAll )
+                            {
+                                ^ProjectEnabledFeatures + .VSFeature_Enabled
+                            }
+                        }
+
+                        If ( .VSFeature_Enabled in .ProjectEnabledFeatures )
+                        {
+                            .ProjectAndroidRequires = { 'SDK-Android' }
+                            .ContainsAll = true
+                            ForEach( .Requirement in .ProjectAndroidRequires )
+                            {
+                                If ( .Requirement not in .AvailableTags )
+                                {
+                                    ^ContainsAll = false
+                                }
+                            }
+
+                            If ( .ContainsAll )
+                            {
+                                ^ProjectEnabledFeatures + .VSFeature_AndroidProject
                             }
                         }
                     }
@@ -194,7 +223,7 @@
                         .Platform = .PlatformVSName
                     ]
 
-                    If ( .ProjectRequirementsSatisfied )
+                    If ( .VSFeature_Enabled in .ProjectEnabledFeatures )
                     {
                         {
                             .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
@@ -205,25 +234,52 @@
                             ^PipelineAvailableProjects + .PipelineAvailableProjects_Extension
                         }
 
+                        .ProjectConfig_Extension =
+                        [
+                        ]
+
                         If ( .ProjectKind != .Kind_HeaderOnly )
                         {
-                            .ProjectConfig_Extension =
+                            ^ProjectConfig_Extension =
                             [
-                                .Target = .'CompileTarget_$ProjectTarget$'
-
                                 .Output = .TargetOutputName
                                 .OutputDirectory = .TargetOutputDirectory
                                 .IntermediateDirectory = .TargetIntermediateDirectory
                                 .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
-
-                                .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
-                                .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
-
-                                .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
-                                .LocalDebuggerWorkingDirectory = .ProjectDebugDir
                             ]
-                            ^ProjectConfig + .ProjectConfig_Extension
+
+                            If ( .ProjectTarget in .Piepline_CompileVSTargetsNames )
+                            {
+                                .ProjectConfig_BuildExtension =
+                                [
+                                    .Target = .'CompileTarget_$ProjectTarget$'
+
+                                    .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
+                                    .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
+
+                                    .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
+                                    .LocalDebuggerWorkingDirectory = .ProjectDebugDir
+                                ]
+                                ^ProjectConfig_Extension + .ProjectConfig_BuildExtension
+                            }
                         }
+
+                        ^ProjectConfig + .ProjectConfig_Extension
+                    }
+
+                    If ( .VSFeature_AndroidProject in .ProjectEnabledFeatures )
+                    {
+                        .ProjectConfig_Extension =
+                        [
+                            // .AndroidApkLocation =
+                            .Keyword = 'Android'
+                            .ApplicationType = 'Android'
+                            .ApplicationTypeRevision = '3.0'
+
+                            // .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ android build -t $ProjectTarget$'
+                            // .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ android build -t $ProjectTarget$ -c'
+                        ]
+                        ^ProjectConfig + .ProjectConfig_Extension
                     }
 
                     If ( .ProjectKind == .Kind_HeaderOnly )

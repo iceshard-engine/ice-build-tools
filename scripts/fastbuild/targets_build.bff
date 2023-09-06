@@ -35,9 +35,8 @@
 
 .Step_Build = 'Build'
 
-.Piepline_CompileVSTargets =
-[
-]
+.Piepline_CompileVSTargetsNames = { }
+.Piepline_CompileVSTargets = [ ]
 
 //
 // Prepare global build rules
@@ -748,6 +747,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             ]
                         ]
                         ^Piepline_CompileVSTargets + .Piepline_CompileVSTargets_Extension
+                        ^Piepline_CompileVSTargetsNames + .ProjectTarget
                     }
                 }
 
@@ -903,6 +903,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     .'CompileTarget_$ProjectTarget$' = '$ProjectTarget$-$TaskIdx$-$Step$'
                                 ]
                                 ^Piepline_CompileVSTargets + .Piepline_CompileVSTargets_Extension
+                                ^Piepline_CompileVSTargetsNames + .ProjectTarget
                             }
                         }
                     }

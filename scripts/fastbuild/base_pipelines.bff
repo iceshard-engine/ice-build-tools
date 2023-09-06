@@ -156,6 +156,13 @@
         .Task_BuildSources
         .Task_LinkExecutable
     }
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = true
+        .VSToolset = 'clang'
+        .VSSuffix = ''
+    ]
 ]
 
 // Default pipelines
