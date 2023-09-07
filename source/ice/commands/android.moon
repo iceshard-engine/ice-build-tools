@@ -35,6 +35,17 @@ class AndroidCommand extends Command
             name: 'mode'
             choices: { 'build', 'setup' }
             default: 'build'
+        group 'build', description: "Build options"
+        option 'target',
+            group: 'build'
+            description: 'The target task to be executed by the gradle wrapper.'
+            name: '-t --target'
+            default: 'assemble'
+            argname: '<gradle_task>'
+        flag 'rerunn_tasks',
+            group: 'build'
+            description: 'Re-runs all dependent tasks for the given target task.'
+            name: '--rerun-tasks'
         group 'setup', description: "Setup options"
         option 'copy_templates',
             group: 'setup'
@@ -44,11 +55,12 @@ class AndroidCommand extends Command
     }
 
     prepare: (args, project) =>
-        wrapper_script = Path\join (Setting\get 'android.gradle.wrapper'), (os.osselect win:'gradlew.bat', unix:'gradlew')
+        @_wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
+        @_wrapper_script = Path\join @_wrapper_location, (os.osselect win:'gradlew.bat', unix:'gradlew')
 
         -- Check we have access to gradlew or are in 'setup' mode
-        unless Path\exists wrapper_script
-            if args.mode == 'setup'
+        unless Path\exists @_wrapper_script
+            if args.mode == 'setup' or args.mode == 'build'
                 java = Where\path 'java'
                 @fail "Missing valid java installation. Make sure the 'java' command is visible!" unless java ~= nil
 
@@ -63,7 +75,7 @@ class AndroidCommand extends Command
                 @fail "Gradle wrapper not available, please run the '<ibt> android setup' command!"
 
         else
-            @gradle = Exec (Path\join Dir\current!, wrapper_script)
+            @gradle = Exec @_wrapper_script
 
         -- Enter the output directory
         Dir\enter project.output_dir
@@ -73,9 +85,15 @@ class AndroidCommand extends Command
         @execute_build args, project
 
     execute_build: (args, project) =>
-        wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
-        module_build_location = Path\join wrapper_location, 'build.gradle.kts'
-        @log\warning "Command not implemented, please open '#{module_build_location}' project file in Android Studio!"
+        @fail "Missing target to execute build!" unless args.target
+
+        -- Run setup before calling build if wrapper script is not available
+        unless File\exists @_wrapper_script
+            @execute_setup {}, project
+            @gradle = Exec @_wrapper_script
+
+        Dir\enter @_wrapper_location, ->
+            @gradle\run "#{args.target} #{args.rerun_tasks and '--rerun-tasks' or ''}"
 
     execute_setup: (args, project) =>
         @log\info "Setting up environment for Android development..."
@@ -91,9 +109,8 @@ class AndroidCommand extends Command
         @fail "No Android projects found for setup!" unless android_project and Dir\exists android_project.location or ""
 
         -- Setup the project files
-        wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
         project_source_location = android_project.location
-        project_build_location = wrapper_location
+        project_build_location = @_wrapper_location
 
         target_settings_template = Path\join project_source_location, "settings.gradle.template.kts"
         target_build_template = Path\join project_source_location, "build.gradle.template.kts"
@@ -204,7 +221,7 @@ class AndroidCommand extends Command
             -- Generating custom config requests
             macro_lines = module_info.context.ProjectJNISources
             table.insert macro_lines, "getByName(\"#{config_lower}\") {"
-            table.insert macro_lines, "    jniLibs.srcDir(\"#{target_info.output_dir}\")"
+            table.insert macro_lines, "    jniLibs.srcDir(\"#{target_info.android_output_dir}\")"
             table.insert macro_lines, "}"
 
             macro_lines = module_info.context.ProjectCustomConfigurationTypes

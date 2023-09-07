@@ -1,7 +1,11 @@
 
 {
+    // For now we don't enable VS Android Support
+    .VSAndroidEnabled = false
+
     .VSFeature_Enabled = 'VSEnabled'
-    .VSFeature_AndroidProject = 'VSAndroidProject'
+    .VSFeature_AndroidPlatform = 'VSAndroidPlatform'
+    .VSFeature_AndroidGradleProject = 'VSAndroidGradleProject'
 
     .PlatformVSEnabled = false
 
@@ -169,6 +173,7 @@
                         Using( .PipelineAvailableProjects )
 
                         .AvailableTags = .SDKNames
+                            + .ProjectTags
                             + .PipelineTags
                             + .'PipelineAvailableProjects_$PipelineIdentifier$'
 
@@ -190,19 +195,19 @@
 
                         If ( .VSFeature_Enabled in .ProjectEnabledFeatures )
                         {
-                            .ProjectAndroidRequires = { 'SDK-Android' }
-                            .ContainsAll = true
-                            ForEach( .Requirement in .ProjectAndroidRequires )
+                            If ( .VSAndroidEnabled )
                             {
-                                If ( .Requirement not in .AvailableTags )
-                                {
-                                    ^ContainsAll = false
-                                }
-                            }
+                                .AndroidTag_SDK = 'SDK-Android'
+                                .AndroidTag_GradleProject = 'Android-Gradle'
 
-                            If ( .ContainsAll )
-                            {
-                                ^ProjectEnabledFeatures + .VSFeature_AndroidProject
+                                If ( .AndroidTag_SDK in .AvailableTags )
+                                {
+                                    ^ProjectEnabledFeatures + .VSFeature_AndroidPlatform
+                                }
+                                If ( .AndroidTag_GradleProject in .AvailableTags )
+                                {
+                                    ^ProjectEnabledFeatures + .VSFeature_AndroidGradleProject
+                                }
                             }
                         }
                     }
@@ -215,7 +220,17 @@
                     .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                     .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                     .TargetOutputName = "$ProjectName$$TargetExtension$"
-                    .TargetList = { }
+
+                    If ( .PipelineOutputDirSuffix != .EmptyString )
+                    {
+                        ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                    }
+
+                    If ( .ProjectKind in .Kind_Libraries )
+                    {
+                        .Prefix = .'OutputPrefix_$ProjectKind$'
+                        ^TargetOutputName = '$Prefix$$TargetOutputName$'
+                    }
 
                     .ProjectConfig =
                     [
@@ -267,7 +282,7 @@
                         ^ProjectConfig + .ProjectConfig_Extension
                     }
 
-                    If ( .VSFeature_AndroidProject in .ProjectEnabledFeatures )
+                    If ( .VSFeature_AndroidPlatform in .ProjectEnabledFeatures )
                     {
                         .ProjectConfig_Extension =
                         [
@@ -275,10 +290,21 @@
                             .Keyword = 'Android'
                             .ApplicationType = 'Android'
                             .ApplicationTypeRevision = '3.0'
-
-                            // .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ android build -t $ProjectTarget$'
-                            // .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ android build -t $ProjectTarget$ -c'
                         ]
+
+                        If ( .VSFeature_AndroidGradleProject in .ProjectEnabledFeatures )
+                        {
+                            .ProjectConfig_Replacement =
+                            [
+                                Using( .ProjectConfig )
+
+                                .AdditionalSymbolSearchPaths = "$TargetOutputDirectory$"
+                                .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ android build -t :$ProjectName$:assemble$PipelineConfig$ --rerun-tasks'
+                                .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ android build -t :$ProjectName$:assemble$PipelineConfig$ --rerun-tasks'
+                            ]
+                            ^ProjectConfig = .ProjectConfig_Replacement
+                        }
+
                         ^ProjectConfig + .ProjectConfig_Extension
                     }
 

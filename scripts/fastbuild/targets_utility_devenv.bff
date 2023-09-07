@@ -90,6 +90,17 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                         .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                         .TargetOutputName = "$ProjectName$$TargetExtension$"
 
+                        If ( .PipelineOutputDirSuffix != .EmptyString )
+                        {
+                            ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                        }
+
+                        If ( .ProjectKind in .Kind_Libraries )
+                        {
+                            .Prefix = .'OutputPrefix_$ProjectKind$'
+                            ^TargetOutputName = '$Prefix$$TargetOutputName$'
+                        }
+
                         .ProjectConfig =
                         [
                             .Name = .ProjectName

@@ -96,7 +96,19 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
 
                         .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                         .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetAndroidOutputDirectory = .TargetOutputDirectory
                         .TargetOutputName = "$ProjectName$$TargetExtension$"
+
+                        If ( .PipelineOutputDirSuffix != .EmptyString )
+                        {
+                            ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                        }
+
+                        If ( .ProjectKind in .Kind_Libraries )
+                        {
+                            .Prefix = .'OutputPrefix_$ProjectKind$'
+                            ^TargetOutputName = '$Prefix$$TargetOutputName$'
+                        }
 
                         .ProjectConfig =
                         [
@@ -131,6 +143,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                             ]
 
                             .OutputDir = .TargetOutputDirectory
+                            .AndroidOutputDir = .TargetAndroidOutputDirectory
                             .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
                             .DebugWorkingDir = .ProjectDebugDir
                         ]
@@ -175,6 +188,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             Using( .Android )
             ^DetailTargetLines
                 + ' '
+                + 'android_output_dir=$AndroidOutputDir$'
                 + 'android_module=$Name$'
                 + 'android_compilesdk=$CompileSDK$'
                 + 'android_minsdk=$MinSDK$'
