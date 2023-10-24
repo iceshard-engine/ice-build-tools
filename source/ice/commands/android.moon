@@ -192,6 +192,7 @@ class AndroidCommand extends Command
 
                 module_info = { targets:{ } }
                 module_info.source_dir = target_info.source_dir
+                module_info.config_sources = { }
                 module_info.context = {
                     ProjectDir: target_info.source_dir
                     ProjectOutputDir: target_info.output_dir\gsub target_info.config, "${buildConfig}"
@@ -218,20 +219,19 @@ class AndroidCommand extends Command
 
             config_lower = target_info.config\lower!
 
-            -- Generating custom config requests
-            macro_lines = module_info.context.ProjectJNISources
-            table.insert macro_lines, "getByName(\"#{config_lower}\") {"
-            table.insert macro_lines, "    jniLibs.srcDir(\"#{target_info.android_output_dir}\")"
-            table.insert macro_lines, "}"
-
             macro_lines = module_info.context.ProjectCustomConfigurationTypes
-            unless (config_lower == 'debug') or (config_lower == 'release')
-                table.insert macro_lines, "create(\"#{config_lower}\") {"
-                if config_lower\match 'debug'
-                    table.insert macro_lines, "    initWith(getByName(\"debug\"))"
-                else
-                    table.insert macro_lines, "    initWith(getByName(\"release\"))"
-                table.insert macro_lines, "}"
+            unless module_info.config_sources[config_lower]
+                module_info.config_sources[config_lower] = { }
+                unless (config_lower == 'debug') or (config_lower == 'release')
+                    table.insert macro_lines, "create(\"#{config_lower}\") {"
+                    if config_lower\match 'debug'
+                        table.insert macro_lines, "    initWith(getByName(\"debug\"))"
+                    else
+                        table.insert macro_lines, "    initWith(getByName(\"release\"))"
+                    table.insert macro_lines, "}"
+
+            -- Store all ABI related JNI locations that will be later set
+            table.insert module_info.config_sources[config_lower], target_info.android_output_dir
 
             table.insert module_info.targets, {
                 target:target
@@ -243,6 +243,15 @@ class AndroidCommand extends Command
                 pipeline:target_info.pipeline
                 name:target_info.name
             }
+
+        -- Generate final macro lines for JNI sources
+        for _, module_info in pairs project.modules
+            macro_lines = module_info.context.ProjectJNISources
+            for config_lower, config_sources in pairs module_info.config_sources
+                table.insert macro_lines, "getByName(\"#{config_lower}\") {"
+                for config_src in *config_sources
+                    table.insert macro_lines, "    jniLibs.srcDir(\"#{config_src}\")"
+                table.insert macro_lines, "}"
 
         -- Prepare a sorted array of plugins
         project.context.Plugins = [plugin for plugin in pairs project.plugins]
