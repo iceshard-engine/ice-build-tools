@@ -58,6 +58,7 @@ Path.Unix = class extends Path
 Path.Windows = class extends Path
     @separator = '\\'
 
+class File
 class Dir
     @current = => lfs.currentdir!
     @exists = (path) => (Path\info path, 'mode') == 'directory'
@@ -82,8 +83,8 @@ class Dir
 
         result = true
         if args.with_files
-            for name, mode in Dir\list path
-                entry_path = "#{path}/#{name}"
+            for name, mode in Dir\list path, recursive:true
+                entry_path = "#{name}"
 
                 -- Delete file nodes
                 result and= File\delete entry_path if mode == 'file'

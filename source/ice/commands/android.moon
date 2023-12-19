@@ -33,7 +33,7 @@ class AndroidCommand extends Command
             group: 'general'
             description: 'Selects the mode in which the command operates.'
             name: 'mode'
-            choices: { 'build', 'setup' }
+            choices: { 'build', 'setup', 'sdk' }
             default: 'build'
         group 'build', description: "Build options"
         option 'target',
@@ -52,6 +52,19 @@ class AndroidCommand extends Command
             description: 'Copies the template files stored in the package to the provided location. Skips files that arleady exist.'
             name: '--copy-templates'
             argname:'<path>'
+        group 'sdk', description: "SDK management options"
+        option 'list_sdks',
+            group: 'sdk'
+            name: '-l --list'
+            description: 'Lists currently installed SDK packages.'
+            choices: { 'all', 'outdated' }
+            default: 'all'
+            defmode: 'arg'
+        option 'update_sdks',
+            group: 'sdk'
+            description: 'Updates the selected SDKs. Multiple entries can be provided. Use the SDK \'id\' for the value.'
+            name: '-u --update'
+            count: '*'
     }
 
     prepare: (args, project) =>
@@ -60,7 +73,7 @@ class AndroidCommand extends Command
 
         -- Check we have access to gradlew or are in 'setup' mode
         unless Path\exists @_wrapper_script
-            if args.mode == 'setup' or args.mode == 'build'
+            if args.mode == 'setup' or args.mode == 'build' or args.mode == 'sdk'
                 java = Where\path 'java'
                 @fail "Missing valid java installation. Make sure the 'java' command is visible!" unless java ~= nil
 
@@ -81,8 +94,75 @@ class AndroidCommand extends Command
         Dir\enter project.output_dir
 
     execute: (args, project) =>
+        return @execute_sdkman args, project if args.mode == "sdk"
         return @execute_setup args, project if args.mode == "setup"
         @execute_build args, project
+
+    execute_sdkman: (args, project) =>
+        sdk = Android\detect_android_sdk!
+        @fail "Missing Android SDK Manager installation!" unless sdk
+
+        package = sdk.manager\list installed:false
+
+        final_table = { }
+        final_ordered_table = { }
+        for e in *package.installed
+            id = e.path\match "([^;]+;?[^%.]*)"
+            if final_table[id] ~= nil
+                @log\warning "Multiple packages with the same major version found: #{final_table[id].path} != #{e.path}"
+
+            if not final_table[id]
+                final_table[id] = {
+                    id: id
+                    path: e.path
+                    name: e.description
+                    location: e.location
+                    version: { current:e.version }
+                }
+                table.insert final_ordered_table, final_table[id]
+
+            elseif final_table[id].version.current < e.version
+                final_table[id].version.current = e.version
+
+        for e in *package.available
+            id = e.path\match "([^;]+;?[^%.]*)"
+            if (id\match "ndk;") and final_table[id]
+                newest = final_table[id].version.newest or final_table[id].version.current
+                if newest < e.version
+                    final_table[id].version.newest = e.version
+
+        for e in *package.updates
+            id = e.id\match "([^;]+;?[^%.]*)"
+            if id and final_table[id]
+                newest = final_table[id].version.newest or final_table[id].version.current
+                if newest < e.available
+                    final_table[id].version.newest = e.available
+
+        -- Final output
+        @log\info "SDK location: #{sdk.location}"
+
+        if args.list
+            @log\info "Installed packages:"
+            for package in *final_ordered_table
+                if args.list == 'outdated' and package.version.newest
+                    @log\info "#{package.name}\n- id: #{package.id}\n- version: #{package.version.current}\n- available: #{package.version.newest}"
+                elseif args.list ~= 'outdated'
+                    if package.version.newest
+                        @log\info "#{package.name}\n- id: #{package.id}\n- version: #{package.version.current}\n- available: #{package.version.newest}"
+                    else
+                        @log\info "#{package.name}\n- id: #{package.id}\n- version: #{package.version.current}"
+
+        elseif args.update and #args.update > 0
+            for package in *args.update
+                info = final_table[package]
+                if info and info.version.newest
+                    if package\match "ndk;"
+                        sdk.manager\install package:"ndk;#{info.version.newest}"
+                        sdk.manager\uninstall package:info.path
+                    else
+                        sdk.manager\install package:info.path
+                else
+                    @fail "Package #{package} was not available for updating."
 
     execute_build: (args, project) =>
         @fail "Missing target to execute build!" unless args.target

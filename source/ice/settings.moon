@@ -1,6 +1,7 @@
 import Validation from require "ice.core.validation"
 import Logger, Log from require "ice.core.logger"
 
+global_warnings_table = { }
 global_settings_table = { }
 
 class Setting
@@ -74,7 +75,10 @@ class Setting
             unless success
                 errmsg = errmsg or "#{@isdefault} '#{value}' failed predicate for setting '#{@key}'"
                 return false, errmsg if @properties.required
-                Log\warning errmsg if not @properties.required
+                unless global_warnings_table[@] and not @properties.required
+                    global_warnings_table[@] = true
+                    Log\warning errmsg
+                @validated = false
                 return true, errmsg
 
         if @properties.type_hint ~= "ANY" and (type value) ~= @properties.type_hint

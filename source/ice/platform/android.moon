@@ -7,9 +7,20 @@ import Log from require "ice.core.logger"
 class SDKManager extends Exec
     new: (path, @deprecated) => super path
 
+    install: (opts = { }) =>
+        return false unless opts.package
+        args = "--install #{opts.package}"
+        @\run args
+
+    uninstall: (opts = { }) =>
+        return false unless opts.package
+        args = "--uninstall #{opts.package}"
+        @\run args
+
     list: (opts = { }) =>
         args = "--list"
         args = "--list_installed" if (not @deprecated and opts.installed)
+        args ..= "--channel=#{opts.channel}" if opts.channel
 
         stage_builder = (origin_header, origin_pattern) ->
             (it) ->

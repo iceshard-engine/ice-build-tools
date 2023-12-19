@@ -192,7 +192,7 @@ class Project
             fastbuild_solution_name: @solution_name
             settings_file:@project_settings_file
             action: {
-                install_conan_dependencies: -> install_conan_dependencies @profiles, true
+                install_conan_dependencies: -> install_conan_dependencies @profiles.list, true
                 generate_build_system_files: -> @build_system\generate force:true
             }
 
@@ -201,7 +201,7 @@ install_conan_dependencies = (profiles, force_update) ->
     file_conan_profiles = Setting\get 'project.conan.profiles'
     file_conan_dependencies = Setting\get 'project.conan.dependencies'
     unless (File\exists file_conan_profiles) and (File\exists file_conan_dependencies)
-        Log\info "No description for source dependencies found, skipping..." if not same_version
+        Log\info "No description for source dependencies found, skipping..."
         return
 
     create_resolver = (base_sections) ->
@@ -223,15 +223,15 @@ install_conan_dependencies = (profiles, force_update) ->
                         table.insert result[section.base], val for val in *values
                     if meta.type == 'map'
                         result[section.base][key] = value for key, value in pairs values
+                else
+                    result[section.base] = { }
             result
 
     conanfile_resolved = create_resolver {
         'requires'
         'tool_requires'
         'options'
-        'tool_options'
         'generators'
-        'conf'
     }
 
     conanprofile_resolved = create_resolver {

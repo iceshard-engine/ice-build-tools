@@ -61,8 +61,8 @@ class FastBuildBuildSystem extends BuildSystem
         main_file = Path\join @output_dir, 'fbuild.bff'
 
         is_dirty = do
-            res = true if args.force
             res = ((File\exists toolchains_file) and (File\exists platforms_file) and (File\exists sdks_file) and (File\exists main_file)) == false
+            res = true if args.force
             res
         return unless is_dirty
 
@@ -205,7 +205,11 @@ class FastBuildBuildSystem extends BuildSystem
             gen\line ".ConanProfiles + '#{profile.name}'"
             gen\line '{'
             gen\indented (gen) ->
-                gen\include Path.Unix\join @workspace_dir, profile.location, 'conandeps.bff'
+                gen\line ".ConanModules = [ ]"
+                conandeps_file = Path.Unix\join @workspace_dir, profile.location, 'conandeps.bff'
+                gen\line "#if file_exists(\"#{conandeps_file}\")"
+                gen\include conandeps_file
+                gen\line "#endif"
                 gen\line '^ConanProfilesModules + .ConanModules'
             gen\line '}'
 

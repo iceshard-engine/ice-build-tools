@@ -7,11 +7,13 @@ import DevenvCommand from require "ice.commands.devenv"
 import ExecCommand from require "ice.commands.exec"
 import ScriptCommand from require "ice.commands.script"
 import SettingsCommand from require "ice.commands.settings"
+import AndroidCommand from require "ice.commands.android"
 
 class ProjectApplication extends Application
     @name: 'NewProject'
     @description: 'Workspace CLI tool'
     @commands: {
+        'android': AndroidCommand
         'update': UpdateCommand
         'build': BuildCommand
         'license': LicenseCommand
