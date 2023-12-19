@@ -2,6 +2,7 @@
 #include "platforms/platform_windows_x64_uwp.bff"
 #include "platforms/platform_linux_x64.bff"
 #include "platforms/platform_android.bff"
+#include "platforms/platform_webasm.bff"
 #include "platforms/platform_shaders.bff"
 
 .PlatformList = {
@@ -9,6 +10,7 @@
     .Platform_Windows_x64_UWP
     .Platform_Linux_x64
     .Platform_Android
+    .Platform_WebAsm
 
     // "Graphics API" Platforms
     .Platform_GFX_Vulkan
@@ -20,6 +22,7 @@
     'UWP'
     'Linux'
     'Android'
+    'WebAsm'
     'GFX-Vulkan'
     'GFX-OpenGL'
 }

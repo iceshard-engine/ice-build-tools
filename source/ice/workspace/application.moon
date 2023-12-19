@@ -8,12 +8,12 @@ import ExecCommand from require "ice.commands.exec"
 import ScriptCommand from require "ice.commands.script"
 import SettingsCommand from require "ice.commands.settings"
 import AndroidCommand from require "ice.commands.android"
+import WebAsmCommand from require "ice.commands.webasm"
 
 class ProjectApplication extends Application
     @name: 'NewProject'
     @description: 'Workspace CLI tool'
     @commands: {
-        'android': AndroidCommand
         'update': UpdateCommand
         'build': BuildCommand
         'license': LicenseCommand
@@ -21,6 +21,8 @@ class ProjectApplication extends Application
         'exec': ExecCommand
         'script': ScriptCommand
         'settings': SettingsCommand
+        'android': AndroidCommand
+        'webasm': WebAsmCommand
     }
 
     -- Plain call to the application

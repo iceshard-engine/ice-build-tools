@@ -1,0 +1,56 @@
+
+
+.PlatformRule_Linux_PIC =
+[
+    .Name = 'Linux-StaticLib-LinkOptions'
+    .Requires = { 'WebAsm', 'Step-Build' }
+    .BuildOptions = {
+    }
+]
+
+.PlatformRule_Linux_SharedLib =
+[
+    .Name = 'Linux-SharedLib-LinkOptions'
+    .Requires = { 'WebAsm', 'Step-Link', 'SharedLib' }
+    .LinkOptions = {
+    }
+]
+
+.PlatformRule_Linux_App =
+[
+    .Name = 'Linux-App-LinkOptions'
+    .Requires = { 'WebAsm', 'Step-Link', 'App' }
+    .LinkOptions = {
+    }
+]
+
+.Platform_WebAsm =
+[
+    .PlatformSystem = 'WebAsm'
+    .PlatformSupportedFlavours = { }
+    .PlatformSupportedArchitectures = { 'webasm' }
+    .PlatformSupportedToolchainFamilies = { 'clang' }
+
+    .PlatformRequiredSDKs = {
+        'SDK-WebAsm'
+    }
+
+    .PlatformRules = {
+        .PlatformRule_Linux_PIC
+        .PlatformRule_Linux_SharedLib
+        .PlatformRule_Linux_App
+    }
+
+    .PlatformExtensions =
+    [
+        .OutputPrefix_SharedLib = ''
+        .OutputPrefix_StaticLib = ''
+
+        .OutputExtension_StaticLib = '.a'
+        .OutputExtension_SharedLib = '.so'
+        .OutputExtension_ConsoleApp = '.js'
+        .OutputExtension_WindowedApp = '.html'
+        .OutputExtension_HeaderOnly = ''
+        .OutputExtension_ObjectList = ''
+    ]
+]

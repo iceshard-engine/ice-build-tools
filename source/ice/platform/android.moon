@@ -121,7 +121,4 @@ class Android
             manager_is_deprecated:sdk_manager.deprecated
         }
 
-    @detect_android_ndk: =>
-        return {}
-
 { :Android }

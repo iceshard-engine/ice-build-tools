@@ -165,11 +165,40 @@
     ]
 ]
 
+.Piepline_WebAsm_clang =
+[
+    .PipelineName = 'WebAsm'
+
+    .PipelinePlatform = 'WebAsm'
+    .PipelineToolchain = 'em3-clang-18.0.0'
+    .PipelineArchitecture = 'webasm'
+
+    .PipelineAllowUnityBuilds = false
+
+    .PipelineSteps = {
+        'Build'
+        'Link'
+    }
+
+    .PipelineTasks = {
+        .Task_BuildSources
+        .Task_LinkExecutable
+    }
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = false
+        .VSToolset = 'clang'
+        .VSSuffix = ''
+    ]
+]
+
 // Default pipelines
 .Pipeline_Windows_x64 = .Pipeline_Windows_x64_v143
 .Pipeline_Windows_UWP = .Pipeline_Windows_UWP_v143
 .Pipeline_Linux_x64 = .Pipeline_Linux_x64_gcc12
 .Piepline_Android_ARM64 = .Pipeline_Android_armv8_clang
+.Piepline_WebAsm = .Piepline_WebAsm_clang
 
 // Default pipeline list
 .BuildPipelines = {
@@ -177,4 +206,5 @@
     // .Pipeline_Windows_UWP
     .Pipeline_Linux_x64
     .Piepline_Android_ARM64
+    .Piepline_WebAsm
 }

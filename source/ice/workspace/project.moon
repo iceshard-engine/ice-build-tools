@@ -7,6 +7,7 @@ import SDK_Win32 from require "ice.sdks.win32"
 import SDK_Linux from require "ice.sdks.linux"
 import SDK_Cpp_WinRT from require "ice.sdks.winrt_cpp"
 import SDK_Android from require "ice.sdks.android"
+import SDK_WebAsm from require "ice.sdks.webasm"
 import TC_MSVC from require "ice.toolchain.vs_msvc"
 
 import Conan from require "ice.tools.conan"
@@ -51,6 +52,7 @@ class Project
         SDK_DX12
         SDK_Vulkan
         SDK_Android
+        SDK_WebAsm
     }
 
     new: (@name) =>
