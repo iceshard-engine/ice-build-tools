@@ -4,13 +4,13 @@ import Path, Dir, File from require "ice.core.fs"
 import Json from require "ice.util.json"
 import Exec from require "ice.tools.exec"
 
-create_toolchain = (ver_major, emver, arch_list) ->
+create_toolchain = (ver_major, emver, emver_full, arch_list) ->
     return {
         name: "em#{emver}-clang-#{ver_major}.0.0"
         struct_name: "Toolchain_EM#{emver}_Clang_#{ver_major}00"
         compiler_name: "compiler-em#{emver}-clang-#{ver_major}00"
 
-        generate_structure: (gen, clang_path, ar_path, ndk_path) ->
+        generate_structure: (gen, clang_path, ar_path, em_path) ->
             struct_name = "Toolchain_EM#{emver}_Clang_#{ver_major}00"
             compiler_name = "compiler-em#{emver}-clang-#{ver_major}00"
 
@@ -24,7 +24,8 @@ create_toolchain = (ver_major, emver, arch_list) ->
 
                 gen\line!
                 gen\variables {
-                    { 'EMSDKPath', ndk_path }
+                    { 'EMSDKPath', em_path }
+                    { 'EMSDKVersion', emver_full }
                     { 'ToolchainCompilerFamily', 'em-clang' }
                     { 'ToolchainSupportedArchitectures', arch_list or { } }
                     { 'ToolchainToolset', "#{ver_major}00" }
@@ -44,7 +45,8 @@ class SDK_WebAsm extends Locator
         @settings = WebAsm.settings
 
     locate: =>
-        if sdk_path = WebAsm\detect_webasm_sdk!.location
+        if sdk_path = WebAsm\detect_webasm_sdk!
+            sdk_path = sdk_path.location
 
             llvm_path = Path\join sdk_path, "upstream/bin"
             em_path = Path\join sdk_path, "upstream/emscripten"
@@ -56,16 +58,17 @@ class SDK_WebAsm extends Locator
                 -- clangpp: Path\join llvm_path, os.osselect win:"clang++.exe", unix:"clang++",
             }
 
-            em_major = (((Exec em_tools.cc)\lines '--version')[1]\match "emcc[^%d]+(%d+)")
+            em_major, em_minor, em_patch = ((Exec em_tools.cc)\lines '--version')[1]\match "emcc[^%d]+(%d+).(%d+).(%d+)"
+            em_full = "#{em_major}.#{em_minor}.#{em_patch}"
 
             clang_major, clang_minor, clang_patch = (((Exec em_tools.clang)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
-            toolchain_definition = create_toolchain clang_major, em_major, { 'webasm' }
+            toolchain_definition = create_toolchain clang_major, em_major, em_full, { 'webasm' }
 
             @\add_result {
                 name: toolchain_definition.name
                 struct_name: toolchain_definition.struct_name
                 compiler_name: toolchain_definition.compiler_name
-                generate: (gen) -> toolchain_definition.generate_structure gen, em_tools.cxx, em_tools.ar, em_path
+                generate: (gen) -> toolchain_definition.generate_structure gen, em_tools.cxx, em_tools.ar, sdk_path
             }, Locator.Type.Toolchain
 
             @\add_result {

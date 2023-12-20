@@ -24,6 +24,7 @@ import INIConfig from require "ice.util.iniconfig"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 
+build_conan_profiles = ->
 install_conan_dependencies = ->
 
 project_settings = {
@@ -172,14 +173,7 @@ class Project
         @build_system\generate!
 
         -- Execute FBuild to generate conan_profiles.txt
-        profiles_file = Path\join  @workspace_root, @output_directory, 'conan_profiles.txt'
-        unless (File\exists profiles_file)
-            FastBuild!\build
-                config: Path\join @workspace_root, @output_directory, 'fbuild.bff'
-                target:'conan-profiles'
-
-        Validation\assert (File\exists profiles_file), "The `profiles` file is not valid! No valid profile lists where loaded! => '#{profiles_file}'"
-        @profiles = ConanProfiles profiles_file, @output_directory
+        build_conan_profiles @workspace_root, @output_directory, @
         install_conan_dependencies @profiles.list, false
 
         -- Secondary call to generate 'fbuild_conanmodules.bff' file
@@ -194,10 +188,21 @@ class Project
             fastbuild_solution_name: @solution_name
             settings_file:@project_settings_file
             action: {
+                build_conan_profiles: -> build_conan_profiles @workspace_root, @output_directory, @, force:true
                 install_conan_dependencies: -> install_conan_dependencies @profiles.list, true
                 generate_build_system_files: -> @build_system\generate force:true
             }
 
+build_conan_profiles = (workspace_root, output_directory, out_table, opts = { }) ->
+    -- Execute FBuild to generate conan_profiles.txt
+    profiles_file = Path\join  workspace_root, output_directory, 'conan_profiles.txt'
+    if (not File\exists profiles_file) or opts.force
+        FastBuild!\build
+            config: Path\join workspace_root, output_directory, 'fbuild.bff'
+            target:'conan-profiles'
+
+    Validation\assert (File\exists profiles_file), "The `profiles` file is not valid! No valid profile lists where loaded! => '#{profiles_file}'"
+    out_table.profiles = ConanProfiles profiles_file, output_directory
 
 install_conan_dependencies = (profiles, force_update) ->
     file_conan_profiles = Setting\get 'project.conan.profiles'
@@ -225,7 +230,7 @@ install_conan_dependencies = (profiles, force_update) ->
                         table.insert result[section.base], val for val in *values
                     if meta.type == 'map'
                         result[section.base][key] = value for key, value in pairs values
-                else
+                elseif not result[section.base]
                     result[section.base] = { }
             result
 
@@ -241,6 +246,8 @@ install_conan_dependencies = (profiles, force_update) ->
         'options'
         'buildenv'
         'conf'
+        'buildenv'
+        'runenv'
     }
 
     for profile in *profiles

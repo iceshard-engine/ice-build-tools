@@ -57,6 +57,7 @@ class UpdateCommand extends Command
                     @log\error "Failed to update IBT package ID in 'tools/conanfile.txt'"
 
         else
+            project.action.build_conan_profiles!
             project.action.install_conan_dependencies!
             project.action.generate_build_system_files!
 
