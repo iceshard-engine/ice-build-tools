@@ -81,6 +81,18 @@ class SDK_Android extends Locator
                 flavours:flavours
             }
 
+            @\add_result {
+                name: 'SDK-Vulkan'
+                struct_name: 'SDK_Android_Vulkan'
+                supported_platforms: { 'Android' }
+                includedirs: { }
+                libdirs: { }
+                defines: { 'VK_USE_PLATFORM_ANDROID_KHR' }
+                libs: { 'vulkan' }
+                compilers: { }
+                tools: { }
+            }, Locator.Type.CommonSDK
+
     _add_ndk: (sdk, pkg, allowed) =>
         ndk_path = Path\join sdk.location, pkg.location
         ndk_major = pkg.version\match '^(%d+)'

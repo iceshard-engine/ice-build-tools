@@ -652,7 +652,12 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         If ( .SDKName in .ProjectRequires )
                         {
-                            ^FinalProperties + .SDK
+                            .SDKSupportedPlatforms = { }
+                            Using( .SDK )
+                            If ( .PipelinePlatform in .SDKSupportedPlatforms )
+                            {
+                                ^FinalProperties + .SDK
+                            }
                         }
                     }
                 }
@@ -668,7 +673,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                 ForEach( .ConanProfile in .ConanProfiles, .ConanProfileModules in .ConanProfilesModules )
                 {
-                    If ( .PipelineConanProfile != 'UNUSED' )
+                    If ( .PipelineConanProfile != .EmptyString )
                     {
                         If ( .ConanProfile == .PipelineConfigConanProfile )
                         {

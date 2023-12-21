@@ -109,12 +109,17 @@ class FastBuildBuildSystem extends BuildSystem
     generate_sdk_entry = (sdk) -> (gen) ->
         gen\variables {
             { 'Tags', sdk.tags or { } }
+            { 'Defines', sdk.defines or { } }
             { 'IncludeDirs', sdk.includedirs }
             { 'LibDirs', sdk.libdirs }
             { 'Libs', sdk.libs }
         }
 
-        unless not sdk.compilers
+        if sdk.supported_platforms
+            gen\line!
+            gen\variables { { 'SDKSupportedPlatforms', sdk.supported_platforms } }
+
+        if sdk.compilers
             gen\line!
             for compiler in *(sdk.compilers or { })
                 gen\compiler compiler

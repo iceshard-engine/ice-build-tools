@@ -53,7 +53,9 @@ class SDK_Vulkan extends Locator
             @\add_result {
                 name: 'SDK-Vulkan'
                 struct_name: 'SDK_Vulkan'
+                supported_platforms: { 'Windows' }
                 location: vulkan_sdk
+                defines: { 'VK_USE_PLATFORM_WIN32_KHR' }
                 includedirs: {
                     Path\join vulkan_sdk, "Include"
                 }

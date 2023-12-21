@@ -353,7 +353,12 @@ ForEach( .Pipeline in .BuildPipelines )
                 {
                     If ( .SDKName in .PlatformRequiredSDKs )
                     {
-                        ^PipelineProperties_SDKs + .SDK
+                        .SDKSupportedPlatforms = { }
+                        Using( .SDK )
+                        If ( .PipelinePlatform in .SDKSupportedPlatforms )
+                        {
+                            ^PipelineProperties_SDKs + .SDK
+                        }
                     }
                 }
                 ForEach( .SDKName in .PlatformSDKNames, .SDK in .PlatformSDKList )

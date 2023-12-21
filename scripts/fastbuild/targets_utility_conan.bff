@@ -12,7 +12,7 @@
 
         .FinalConanProfileVariables = .ConanProfileVariables + .PlatformConanProfileVariables
 
-        If ( .PipelineConanProfile != 'UNUSED' )
+        If ( .PipelineConanProfile != .EmptyString )
         {
             If ( .PipelineConfigConanProfile not in .ProfilesLines )
             {
