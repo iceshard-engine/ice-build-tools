@@ -94,6 +94,12 @@ class Android
                 Log\verbose "Searching for Android SDK in #{entry.source} path #{entry.location}..."
                 Log\warning "Overriden Android SDK location from #{sdk_root} to #{entry.location}" if sdk_root and sdk_root != entry.location
                 sdk_root = entry.location
+
+        -- Early exit if no sdk was found
+        unless sdk_root
+            Log\verbose "No Android SDK could be found, skipping..."
+            return
+
         Log\verbose "Selected Android SDK at location #{sdk_root}"
 
         possible_paths = {

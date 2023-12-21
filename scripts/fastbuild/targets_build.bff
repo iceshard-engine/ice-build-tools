@@ -666,21 +666,23 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .ConanModules = { }
                 .ConanModulesNames = { }
 
-                // If ( .PipelineConfigConan != 'UNUSED' )
                 ForEach( .ConanProfile in .ConanProfiles, .ConanProfileModules in .ConanProfilesModules )
                 {
-                    If ( .ConanProfile == .PipelineConfigConanProfile )
+                    If ( .PipelineConanProfile != 'UNUSED' )
                     {
-                        Using( .FinalProperties )
-                        // Using( .'ConanModules_$PipelineConfigConan$' )
-                        Using( .ConanProfileModules )
-
-                        ForEach( .ConanModule in .Modules )
+                        If ( .ConanProfile == .PipelineConfigConanProfile )
                         {
-                            If ( .ConanModule not in .ConanModulesNames )
+                            Using( .FinalProperties )
+                            // Using( .'ConanModules_$PipelineConfigConan$' )
+                            Using( .ConanProfileModules )
+
+                            ForEach( .ConanModule in .Modules )
                             {
-                                ^ConanModulesNames + .ConanModule
-                                ^ConanModules + .'ConanModule_$ConanModule$'
+                                If ( .ConanModule not in .ConanModulesNames )
+                                {
+                                    ^ConanModulesNames + .ConanModule
+                                    ^ConanModules + .'ConanModule_$ConanModule$'
+                                }
                             }
                         }
                     }

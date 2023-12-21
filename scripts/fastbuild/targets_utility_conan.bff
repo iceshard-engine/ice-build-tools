@@ -12,17 +12,20 @@
 
         .FinalConanProfileVariables = .ConanProfileVariables + .PlatformConanProfileVariables
 
-        If ( .PipelineConfigConanProfile not in .ProfilesLines )
+        If ( .PipelineConanProfile != 'UNUSED' )
         {
-            ^ProfilesLines + .PipelineConfigConanProfile
-
-            ^ProfilesVariableLines + '[$PipelineConfigConanProfile$]'
-            ForEach( .Var in .FinalConanProfileVariables )
+            If ( .PipelineConfigConanProfile not in .ProfilesLines )
             {
-                .VarValue = .'$Var$'
-                ^ProfilesVariableLines + '$Var$=$VarValue$'
+                ^ProfilesLines + .PipelineConfigConanProfile
+
+                ^ProfilesVariableLines + '[$PipelineConfigConanProfile$]'
+                ForEach( .Var in .FinalConanProfileVariables )
+                {
+                    .VarValue = .'$Var$'
+                    ^ProfilesVariableLines + '$Var$=$VarValue$'
+                }
+                ^ProfilesVariableLines + ' '
             }
-            ^ProfilesVariableLines + ' '
         }
     }
 
