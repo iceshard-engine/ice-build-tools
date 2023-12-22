@@ -138,7 +138,10 @@ class IceBuildToolsConan(ConanFile):
 
     def build(self):
         # Generate IBT moonscript file with IBT metadata
-        os.mkdir("source/ibt")
+        ibt_path = "source/ibt"
+        if os.path.exists(ibt_path) == False:
+            os.mkdir(ibt_path)
+
         with open("source/ibt/ibt.moon", 'w') as f:
             f.write("IBT =\n")
             f.write("  version: '{}'\n".format(self.version))
@@ -151,19 +154,22 @@ class IceBuildToolsConan(ConanFile):
             f.write("{ :IBT }\n")
             f.close()
 
+        # Copy the rxi/json to the scripts folder
+        copy(self, "*.lua", src="source/rxi", dst="scripts/lua/rxi")
+
         renv = VirtualRunEnv(self)
         benv = VirtualBuildEnv(self)
         env = benv.environment()
         env.compose_env(renv.environment())
 
         with env.vars(self).apply():
-            # Build all moonscript files
+            # Build all moonscript files directly into scripts
             if self.settings.os == "Windows":
-                self.run("%MOONC_SCRIPT% source/ice -t build")
-                self.run("%MOONC_SCRIPT% source/ibt -t build")
+                self.run("%MOONC_SCRIPT% source/ice -t scripts/lua")
+                self.run("%MOONC_SCRIPT% source/ibt -t scripts/lua")
             if self.settings.os == "Linux":
-                self.run("lua $MOONC_SCRIPT source/ice -t build")
-                self.run("lua $MOONC_SCRIPT source/ibt -t build")
+                self.run("lua $MOONC_SCRIPT source/ice -t scripts/lua")
+                self.run("lua $MOONC_SCRIPT source/ibt -t scripts/lua")
 
         # Prepare the directory for tools bootstrap file.
         tools_path = "bootstrap/tools"
@@ -175,7 +181,7 @@ class IceBuildToolsConan(ConanFile):
             f.write("[requires]\n")
             f.write("{}/{}@{}/{}\n".format(self.name, self.version, self.user, self.channel))
             # Additional dependencies
-            f.write("fastbuild-installer/1.07@iceshard/stable\n")
+            f.write("fastbuild-installer/1.10@iceshard/stable\n")
 
             f.write("\n[generators]\n")
             f.write("virtualenv\n")
@@ -183,8 +189,6 @@ class IceBuildToolsConan(ConanFile):
 
     def package(self):
         copy(self, "LICENSE", src=self.source_folder, dst=self.package_folder, keep_path=False)
-        copy(self, "*.lua", src=join(self.build_folder, "build/"), dst=join(self.package_folder, "scripts/lua/"), keep_path=True)
-        copy(self, "*.lua", src=join(self.build_folder, "source/"), dst=join(self.package_folder, "scripts/lua/"), keep_path=True)
         copy(self, "*.*", src=join(self.build_folder, "scripts/"), dst=join(self.package_folder, "scripts/"), keep_path=True)
         copy(self, "*.*", src=join(self.build_folder, "bootstrap/"), dst=join(self.package_folder, "bootstrap/"), keep_path=True)
 

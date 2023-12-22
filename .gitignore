@@ -2,6 +2,7 @@
 test_package/build/*
 bootstrap/tools/*
 scripts/lua/*
+source/ibt/*
 build/*
 
 # Remove conan generated batch file
