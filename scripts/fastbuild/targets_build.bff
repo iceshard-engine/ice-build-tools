@@ -93,7 +93,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
         Using( .Project )
 
-        .AvailableTags = .SDKNames
+        .AvailableTags = .PipelineAvailableSDKs
             + .PipelineTags
 
         // Check if we the project has all requirements covered

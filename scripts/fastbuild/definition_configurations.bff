@@ -348,14 +348,16 @@ ForEach( .Pipeline in .BuildPipelines )
                     .ConfigurationName
                 } + .PlatformTags + .PlatformRequiredSDKs + .TempCustomPipelineTags
 
+                .PipelineAvailableSDKs = { }
                 .PipelineProperties_SDKs = [ .Defines = { } ]
                 ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
                 {
-                    If ( .SDKName in .PlatformRequiredSDKs )
+                    .SDKSupportedPlatforms = { }
+                    Using( .SDK )
+                    If ( .PipelinePlatform in .SDKSupportedPlatforms )
                     {
-                        .SDKSupportedPlatforms = { }
-                        Using( .SDK )
-                        If ( .PipelinePlatform in .SDKSupportedPlatforms )
+                        ^PipelineAvailableSDKs + .SDKName
+                        If ( .SDKName in .PlatformRequiredSDKs )
                         {
                             ^PipelineProperties_SDKs + .SDK
                         }
