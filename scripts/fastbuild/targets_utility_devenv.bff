@@ -44,20 +44,20 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
         {
             Using( .Project )
 
-            If ( .ProjectKind in .Kind_Applications )
+            .ProjectBasePath = .ProjectBaseDir
+
+            ForEach( .Pipeline in .AvailablePipelines )
             {
-                .ProjectBasePath = .ProjectBaseDir
+                .VSSuffix = ''
+                .VSEnabled = false
 
-                ForEach( .Pipeline in .AvailablePipelines )
+                Using( .Pipeline )
+                Using( .PipelineVSInfo )
+                Using( .PipelinePlatformInfo )
+                Using( .PipelineOutputExtensions )
+
+                If ( .ProjectKind in .Kind_Applications )
                 {
-                    .VSSuffix = ''
-                    .VSEnabled = false
-
-                    Using( .Pipeline )
-                    Using( .PipelineVSInfo )
-                    Using( .PipelinePlatformInfo )
-                    Using( .PipelineOutputExtensions )
-
                     // Check if we the project has all requirements covered
                     .ProjectRequirementsSatisfied = true
                     {
@@ -117,6 +117,13 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                         ^ProjectConfigs + .ProjectConfig
                     }
                 }
+
+                .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                .PipelineAvailableProjects_Extension =
+                [
+                    .'PipelineAvailableProjects_$PipelineIdentifier$' = { .ProjectName }
+                ]
+                ^PipelineAvailableProjects + .PipelineAvailableProjects_Extension
             }
         }
 
