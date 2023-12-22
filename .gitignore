@@ -1,1 +1,8 @@
+# Remove all the folders containing files generated during build
 test_package/build/*
+bootstrap/tools/*
+scripts/lua/*
+build/*
+
+# Remove conan generated batch file
+*.bat
