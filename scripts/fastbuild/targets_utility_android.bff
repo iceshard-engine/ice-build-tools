@@ -85,6 +85,11 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                                 ^ProjectRequirementsSatisfied = false
                             }
                         }
+
+                        If ( .ProjectDeploy == false )
+                        {
+                            ^ProjectRequirementsSatisfied = false
+                        }
                     }
 
                     If ( .ProjectRequirementsSatisfied )
@@ -96,12 +101,15 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
 
                         .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                         .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetDeployDirectory = '$WorkspaceBuildDir$/deploy/$ProjectName$/$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                         .TargetAndroidOutputDirectory = .TargetOutputDirectory
+                        .TargetAndroidDeployDirectory = .TargetDeployDirectory
                         .TargetOutputName = "$ProjectName$$TargetExtension$"
 
                         If ( .PipelineOutputDirSuffix != .EmptyString )
                         {
                             ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                            ^TargetDeployDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
                         }
 
                         If ( .ProjectKind in .Kind_Libraries )
@@ -143,7 +151,9 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                             ]
 
                             .OutputDir = .TargetOutputDirectory
+                            .DeployDir = .TargetDeployDirectory
                             .AndroidOutputDir = .TargetAndroidOutputDirectory
+                            .AndroidDeployDir = .TargetAndroidDeployDirectory
                             .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
                             .DebugWorkingDir = .ProjectDebugDir
                         ]
@@ -177,6 +187,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                 + '[$Target$]'
                 + 'executable=$Executable$'
                 + 'output_dir=$OutputDir$'
+                + 'deploy_dir=$DeployDir$'
                 + 'working_dir=$DebugWorkingDir$'
                 + 'source_dir=$BasePath$'
                 + 'platform=$Platform$'
@@ -189,6 +200,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             ^DetailTargetLines
                 + ' '
                 + 'android_output_dir=$AndroidOutputDir$'
+                + 'android_deploy_dir=$AndroidDeployDir$'
                 + 'android_module=$Name$'
                 + 'android_compilesdk=$CompileSDK$'
                 + 'android_minsdk=$MinSDK$'

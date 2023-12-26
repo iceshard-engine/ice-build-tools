@@ -43,6 +43,12 @@
     .TaskRequires = { 'Debug' }
 ]
 
+.Task_DeployBinaries =
+[
+    .Step = 'Deploy'
+    .Type = 'Deploy'
+]
+
 .Pipeline_Windows_x64_v142 =
 [
     .PipelineName = 'x64-v142'
@@ -150,11 +156,13 @@
     .PipelineSteps = {
         'Build'
         'Link'
+        'Deploy'
     }
 
     .PipelineTasks = {
         .Task_BuildSources
         .Task_LinkExecutable
+        .Task_DeployBinaries
     }
 
     .PipelineVSInfo =

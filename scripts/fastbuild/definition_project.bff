@@ -44,15 +44,9 @@ ForEach( .Project in .Projects )
     ]
 
     .Android = [ ]
+    .Deploy = false
 
     Using( .Project )
-
-    .Deploy =
-    [
-        .Executable = ''
-        .Arguments = ''
-        .Inputs = { }
-    ]
 
     .ResolvedProject =
     [
@@ -60,6 +54,7 @@ ForEach( .Project in .Projects )
         .ProjectKind = .Kind
         .ProjectTags = .Tags
         .ProjectBaseDir = .BaseDir
+        .ProjectDeploy = .Deploy
 
         // #TODO (#4): https://github.com/iceshard-engine/ice-build-tools/issues/4
         .ProjectRequires = .Requires
@@ -98,7 +93,6 @@ ForEach( .Project in .Projects )
             .RuleRequires = { }
             .RuleDependsOn = ^DependsOn
             .RuleUnitTests = .UnitTests
-            .RuleDeploy = .Deploy
 
             .RuleProperties_Public =
             [
@@ -145,7 +139,6 @@ ForEach( .Project in .Projects )
                 .RuleRequires = .Requires
                 .RuleDependsOn = .DependsOn
                 .RuleUnitTests = .UnitTests
-                .RuleDeploy = .Deploy
 
                 .RuleProperties_Public =
                 [

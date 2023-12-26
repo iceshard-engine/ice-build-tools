@@ -244,6 +244,7 @@ class AndroidCommand extends Command
                 module_info.context.ScriptFile = project.script
                 module_info.context.WorkspaceDir = project.workspace_dir
                 module_info.context.BuildDir = project.output_dir
+                module_info.context.DeployDir = project.deploy_dir
                 template_file = Path\join module_source_location, "build.gradle.template.kts"
 
                 if args.copy_templates and File\copy loc_module_build_template, template_file
@@ -276,6 +277,7 @@ class AndroidCommand extends Command
                 module_info.context = {
                     ProjectDir: target_info.source_dir
                     ProjectOutputDir: target_info.output_dir\gsub target_info.config, "${buildConfig}"
+                    ProjectDeployDir: target_info.deploy_dir\gsub target_info.config, "${buildConfig}"
                     ProjectPlugins: [val[2] for val in *module_plugins]
                     CompileSDK: target_info.android_compilesdk
                     MinSDK: target_info.android_minsdk or target_info.android_compilesdk
@@ -311,12 +313,13 @@ class AndroidCommand extends Command
                     table.insert macro_lines, "}"
 
             -- Store all ABI related JNI locations that will be later set
-            table.insert module_info.config_sources[config_lower], target_info.android_output_dir
+            table.insert module_info.config_sources[config_lower], target_info.android_deploy_dir
 
             table.insert module_info.targets, {
                 target:target
                 executable:target_info.executable
                 output_dir:target_info.output_dir
+                deploy_dir:target_info.deploy_dir
                 working_dir:target_info.working_dir
                 platform:target_info.platform
                 config:target_info.config

@@ -25,15 +25,18 @@
 .TaskType_Test = 'Test'
 .TaskType_Exec = 'Exec'
 .TaskType_Copy = 'Copy'
+.TaskType_Deploy = 'Deploy'
 .TaskType_ValidList = {
     .TaskType_Compile
     .TaskType_Link
     .TaskType_Test
     .TaskType_Exec
     // .TaskType_Copy
+    .TaskType_Deploy
 }
 
 .Step_Build = 'Build'
+.Step_Deploy = 'Deploy'
 
 .Piepline_CompileVSTargetsNames = { }
 .Piepline_CompileVSTargets = [ ]
@@ -320,7 +323,6 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .ProjectStepProperties_Public = []
                 .ProjectStepProperties_Combined = []
                 .ProjectStepDependencies = []
-                .ProjectStepDeploys = { }
                 .ProjectStepUnitTest = [ ]
 
                 ForEach( .Rule in .StepRules )
@@ -354,10 +356,6 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                     If ( .RuleRequirementsSatisfied )
                     {
-                        .RuleDeploy =
-                        [
-                            .Executable = .EmptyString
-                        ]
                         .RuleUnitTests =
                         [
                             .Enabled = false
@@ -549,20 +547,6 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                         {
                             Using( .Rule )
-                            Using( .RuleDeploy )
-                            If ( .Executable != .EmptyString )
-                            {
-                                .DeployEntry =
-                                [
-                                    .DeployName = .RuleName
-                                    Using( .RuleDeploy )
-                                ]
-                                ^ProjectStepDeploys + .DeployEntry
-                            }
-                        }
-
-                        {
-                            Using( .Rule )
                             Using( .RuleUnitTests )
                             If ( .Enabled )
                             {
@@ -602,6 +586,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                 .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                 .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                .TargetDeployDirectory = '$WorkspaceBuildDir$/deploy/$ProjectName$/$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                 .TargetTestOutputDirectory = '$WorkspaceBuildDir$/tests/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                 .TargetTaskOutputDirectory = '$WorkspaceBuildDir$/tasks/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                 .TargetOutputName = "$ProjectName$$TargetExtension$"
@@ -610,6 +595,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                 If ( .PipelineOutputDirSuffix != .EmptyString )
                 {
                     ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                    ^TargetDeployDirectory = '$TargetDeployDirectory$/$PipelineOutputDirSuffix$'
                 }
 
                 If ( .ProjectKind in .Kind_Libraries )
@@ -1020,6 +1006,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                             }
 
+                            ^CurrentOutputs + .LinkerOutput
                             ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
                         }
 
@@ -1040,6 +1027,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                             }
 
+                            ^CurrentOutputs + .LinkerOutput
                             ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
                         }
                     }
@@ -1069,13 +1057,40 @@ ForEach( .Pipeline in .AvailablePipelines )
                         }
                     }
 
-                    // If ( .Type == .TaskType_Copy )
-                    // {
-                    //     If ( .ProjectKind in .Kind_Executable )
-                    //     {
-                    //         Copy(  )
-                    //     }
-                    // }
+                    If ( .Step == .Step_Deploy )
+                    {
+                        If ( .ProjectDeploy )
+                        {
+                            If ( .Type == .TaskType_Deploy )
+                            {
+                                If ( .ProjectKind in .Kind_Executable )
+                                {
+                                    .PreBuildDependencies = .PreviousTargets + .CurrentTargets + .CurrentTargets_Unused
+
+                                    .BinaryFiles = .Step_Outputs_Link
+
+                                    // Deploy runtime dependencies
+                                    .Runtime = { }
+                                    Using( .ProjectStepDependencies )
+                                    ForEach( .Dependency in .Runtime )
+                                    {
+                                        If ( .Dependency in .PipelineEnabledProjects )
+                                        {
+                                            ^BinaryFiles + '$Dependency$-$TargetTriple$-$PipelineToolchain$-Link'
+                                        }
+                                    }
+
+                                    Copy( '$ProjectTarget$-$Step$-binary' )
+                                    {
+                                        .Source = .BinaryFiles
+                                        .Dest = "$TargetDeployDirectory$/"
+                                    }
+
+                                    ^CurrentTargets_Unused + '$ProjectTarget$-$Step$-binary'
+                                }
+                            }
+                        }
+                    }
 
                     If ( .Type == .TaskType_Exec )
                     {
@@ -1094,46 +1109,6 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                         ^CurrentOutputs + .ExecOutput
                         ^CurrentTargets_Unused = '$ProjectTarget$-$Step$-$TaskID$'
-
-                        // If ( .ProjectKind != .Kind_HeaderOnly )
-                        // {
-
-                        //     // If ( .TaskExecutable == .EmptyString ) // The whole ForEach
-
-                        //     // TODO: Make this more generic, as this is explicitly a 'Deploy' step but should be just used for executing various tools
-                        //     ForEach( .DeployEntry in .ProjectStepDeploys )
-                        //     {
-                        //         .Arguments = ''
-                        //         .Inputs = { }
-                        //         .Output = ''
-
-                        //         Using( .DeployEntry )
-
-                        //         If ( .Executable != .EmptyString )
-                        //         {
-                        //             .PreBuildDependencies = .CurrentTargets + .CurrentTargets_Unused
-
-                        //             Exec( '$ProjectTarget$-$Step$-deploy-$DeployName$' )
-                        //             {
-                        //                 .ExecExecutable = .Executable
-                        //                 .ExecInput = .Inputs
-                        //                 .ExecArguments = .Arguments
-                        //                 .ExecOutput = .Output
-                        //                 .ExecUseStdOutAsOutput = false
-                        //                 .ExecAlwaysShowOutput = true
-                        //                 .ExecAlways = true
-
-                        //                 If ( .ExecOutput == .EmptyString )
-                        //                 {
-                        //                     ^ExecUseStdOutAsOutput = true
-                        //                     ^ExecOutput = '$TargetOutputDirectory$/$ProjectName$_deploy_$Step$_$DeployName$_log.txt'
-                        //                 }
-                        //             }
-
-                        //             ^'$TargetsList$' = '$ProjectTarget$-$Step$-deploy-$DeployName$'
-                        //         }
-                        //     }
-                        // }
                     }
 
                     ^TaskIdx + 1

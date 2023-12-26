@@ -27,6 +27,9 @@ class UpdateCommand extends Command
             conan = Conan!
             conan\install conanfile:'tools/conanfile.txt', install_folder:'build/tools', build_policy:'missing'
 
+            -- And also regenerate project build-system scripts
+            project.action.generate_build_system_files!
+
         elseif args.upgrade_ibt
             current_package = "ice-build-tools/#{IBT.conan.version}@#{IBT.conan.user}/#{IBT.conan.channel}"
             current_version = IBT.conan.version
