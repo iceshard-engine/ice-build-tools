@@ -137,7 +137,12 @@ class FastBuildBuildSystem extends BuildSystem
                         { 'Name', rule.name }
                         { 'Requires', rule.requires or {} }
                     }
-                    gen\variables rule.variables
+                    gen\variables rule.variables or { }
+
+                    -- Used to deploy additional files for specific platform flavours
+                    if rule.runtime
+                        gen\structure "DependsOn", (gen) ->
+                            gen\variables { { 'RuntimeExternal', rule.runtime } }
 
             gen\line!
             gen\variables { { 'Flavours', sdk_flavours } }
@@ -226,6 +231,7 @@ class FastBuildBuildSystem extends BuildSystem
             { 'WorkspaceBuildDir', Path.Unix\join @workspace_dir, @output_dir }
             { 'WorkspaceSourceDir', Path.Unix\join @workspace_dir, @source_dir }
             { 'WorkspaceCodeDir', Path.Unix\join @workspace_dir, @source_dir }
+            { 'WorkspaceMainScript', Path.Unix\join @workspace_dir, @files.fbuild_workspace_file }
         }
         gen\line!
 

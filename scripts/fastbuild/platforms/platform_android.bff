@@ -33,10 +33,16 @@
     .Suffix = '-API'
 ]
 
+.PlatformFlavour_AndroidStdLib =
+[
+    .Prefix = 'Std'
+    .Suffix = 'Lib'
+]
+
 .Platform_Android =
 [
     .PlatformSystem = 'Android'
-    .PlatformFlavours = { 'AndroidAPILevel' }
+    .PlatformFlavours = { 'AndroidAPILevel', 'AndroidStdLib' }
     .PlatformSupportedArchitectures = { 'arm64', 'x86_64', 'x64' } //, 'arm', 'x86' }
     .PlatformSupportedToolchainFamilies = { 'ndk-clang' }
 

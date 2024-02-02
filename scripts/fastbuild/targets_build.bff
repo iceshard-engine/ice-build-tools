@@ -87,6 +87,7 @@ ForEach( .Pipeline in .AvailablePipelines )
     Using( .Pipeline )
 
     .PipelineTargets = { }
+    .PipelineCleanTargets = { }
     .PipelineEnabledProjects = { }
     .PipelineProperties_Public = []
 
@@ -186,6 +187,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                         .LibDirs = ^LibDirs
                         .LinkOptions = ^LinkOptions
                         .LinkLinkerOptions = ^LinkLinkerOptions
+                        .DependsOn = ^DependsOn
                     ]
                 ]
                 ^StepRules + .Final_PipelineRule
@@ -596,6 +598,18 @@ ForEach( .Pipeline in .AvailablePipelines )
                 {
                     ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
                     ^TargetDeployDirectory = '$TargetDeployDirectory$/$PipelineOutputDirSuffix$'
+                }
+
+                // Define a clean target
+                .ProjectCleanTarget = "$ProjectTarget$-clean"
+                If ( .ProjectCleanTarget not in .PipelineCleanTargets )
+                {
+                    RemoveDir( '$ProjectTarget$-clean' )
+                    {
+                        .RemovePaths = { .TargetOutputDirectory, .TargetDeployDirectory, .TargetImpLibDirectory }
+                        .RemovePathsRecurse = false
+                    }
+                    ^PipelineCleanTargets + '$ProjectTarget$-clean'
                 }
 
                 If ( .ProjectKind in .Kind_Libraries )
@@ -1066,12 +1080,13 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 If ( .ProjectKind in .Kind_Executable )
                                 {
                                     .PreBuildDependencies = .PreviousTargets + .CurrentTargets + .CurrentTargets_Unused
-
                                     .BinaryFiles = .Step_Outputs_Link
 
-                                    // Deploy runtime dependencies
                                     .Runtime = { }
+                                    .RuntimeExternal = { }
                                     Using( .ProjectStepDependencies )
+
+                                    // Prepare runtime dependencies to be deployed
                                     ForEach( .Dependency in .Runtime )
                                     {
                                         If ( .Dependency in .PipelineEnabledProjects )
@@ -1079,14 +1094,23 @@ ForEach( .Pipeline in .AvailablePipelines )
                                             ^BinaryFiles + '$Dependency$-$TargetTriple$-$PipelineToolchain$-Link'
                                         }
                                     }
+                                    // External runtime dependencies (shared objects required by platforms)
+                                    ForEach( .Dependency in .RuntimeExternal )
+                                    {
+                                        If ( .Dependency not in .BinaryFiles )
+                                        {
+                                            ^BinaryFiles + .Dependency
+                                        }
+                                    }
 
+                                    // Copy operation
                                     Copy( '$ProjectTarget$-$Step$-binary' )
                                     {
                                         .Source = .BinaryFiles
                                         .Dest = "$TargetDeployDirectory$/"
                                     }
 
-                                    ^CurrentTargets_Unused + '$ProjectTarget$-$Step$-binary'
+                                    ^CurrentTargets_Unused + { '$ProjectTarget$-$Step$-binary' }
                                 }
                             }
                         }
@@ -1187,12 +1211,17 @@ ForEach( .Pipeline in .AvailablePipelines )
         If ( .HasTargets )
         {
             .Target = 'all-$PipelineName$-$PipelineConfig$'
-
             Alias( .Target )
             {
                 .Targets = .PipelineTargets
             }
+            ^Final_AliasList + .Target
 
+            .Target = 'all-$PipelineName$-$PipelineConfig$-clean'
+            Alias( .Target )
+            {
+                .Targets = .PipelineCleanTargets
+            }
             ^Final_AliasList + .Target
         }
     }

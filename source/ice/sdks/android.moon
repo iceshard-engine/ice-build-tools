@@ -49,7 +49,7 @@ class SDK_Android extends Locator
             -- Allowed Android 'Platforms'
             allowed = { }
 
-            android_flavour = (toolchain, ndkmajor, apilevel, abi) ->
+            android_api_flavour = (toolchain, ndkmajor, apilevel, abi) ->
                 return {
                     name: "Android#{apilevel}-NDK#{ndkmajor}-#{abi.arch}"
                     struct_name: "Flavour_Android#{apilevel}_NDK#{ndkmajor}_#{abi.arch}"
@@ -60,14 +60,43 @@ class SDK_Android extends Locator
                     }
                 }
 
+            -- Flavours for the standard library version (shared / static)
+            android_stdlib_flavours = (type, toolchain, ndkmajor, ndk_path, abi) ->
+                if type == "Shared"
+                    toolchain_path = Path\join ndk_path, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64'
+                    lib_path = Path\join toolchain_path, 'sysroot', 'usr', 'lib', abi.triple, 'libc++_shared.so'
+
+                    return {
+                        name: "Android-Std#{type}Lib-NDK#{ndkmajor}-#{abi.arch}"
+                        struct_name: "Favour_Android_Std#{type}Lib_NDK#{ndkmajor}_#{abi.arch}"
+                        requires: { "Std#{type}Lib", toolchain, abi.arch }
+                        variables: { }
+                        runtime: { lib_path }
+                    }
+                else -- if type == "Static"
+                    return {
+                        name: "Android-Std#{type}Lib"
+                        struct_name: "Favour_Android_Std#{type}Lib"
+                        requires: { "Std#{type}Lib" }
+                        variables: { { 'LinkLinkerOptions', { "-static-libstdc++" } } }
+                        runtime: { }
+                    }
+
             -- Go over all NDK packages
             flavours = { }
             for pkg in *sdk_packages
                 continue unless pkg.path\lower!\match "ndk"
                 if ndk = @_add_ndk sdk, pkg, allowed
+                    ndk_path = Path\join sdk.location, pkg.location
                     for _, abi in pairs ndk.abis
                         for apilevel=ndk.platforms.min, ndk.platforms.max
-                            table.insert flavours, android_flavour ndk.toolchain, ndk.version, apilevel, abi
+                            table.insert flavours, android_api_flavour ndk.toolchain, ndk.version, apilevel, abi
+
+                        table.insert flavours, android_stdlib_flavours "Shared", ndk.toolchain, ndk.version, ndk_path, abi
+
+            -- Static lib does not require specific values so only one to have is fine
+            table.insert flavours, android_stdlib_flavours "Static"
+            table.insert flavours, android_stdlib_flavours "" -- Not set is also known as 'Static'
 
             @\add_result {
                 tags: { 'Android' }
