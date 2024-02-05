@@ -22,6 +22,8 @@ class Path
     @is_absolute = (path) => path and (path\match os.osselect win:"^[a-zA-Z]+:\\", unix:'^/') ~= nil
     @is_relative = (path) => not @is_absolute path
 
+    @rename = (path, new_name) => @\join (@\parent path), new_name
+
     @normalize = (path, args = { }) =>
         return unless path
         separator = args.separator or @separator
