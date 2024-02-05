@@ -77,6 +77,6 @@ afterEvaluate {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.4.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 }
