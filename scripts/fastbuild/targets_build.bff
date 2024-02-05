@@ -606,7 +606,12 @@ ForEach( .Pipeline in .AvailablePipelines )
                 {
                     RemoveDir( '$ProjectTarget$-clean' )
                     {
-                        .RemovePaths = { .TargetOutputDirectory, .TargetDeployDirectory, .TargetImpLibDirectory }
+                        .RemovePaths = {
+                            .TargetOutputDirectory
+                            .TargetDeployDirectory
+                            .TargetImpLibDirectory
+                            .TargetIntermediateDirectory
+                        }
                         .RemovePathsRecurse = false
                     }
                     ^PipelineCleanTargets + '$ProjectTarget$-clean'

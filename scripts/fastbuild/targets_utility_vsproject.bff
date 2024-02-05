@@ -271,6 +271,7 @@
 
                                     .ProjectBuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$'
                                     .ProjectRebuildCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$ -c'
+                                    .ProjectCleanCommand = '^$(SolutionDir)$UserScriptFile$ build -t $ProjectTarget$-clean'
 
                                     .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
                                     .LocalDebuggerWorkingDirectory = .ProjectDebugDir

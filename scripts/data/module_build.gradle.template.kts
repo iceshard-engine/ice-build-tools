@@ -58,18 +58,21 @@ afterEvaluate {
     android.buildTypes.configureEach {
         val buildConfig = this.name.replaceFirstChar { it.titlecase() }
         val buildPipeline = "Android$(CompileSDK)"
-        val abiList = listOf("ARMv8" /*, "x64"*/)
+        val abiList = listOf("ARMv8", "x64")
 
+        var abiTargets = emptyArray<String>()
         for (abi in abiList)
         {
-            val fbuildTask = tasks.register<Exec>("compile${buildConfig}${abi}UsingFastbuild") {
-                workingDir("$(WorkspaceDir)")
-                executable("$(WorkspaceDir)/$(ScriptFile)")
-                commandLine(listOf("$(WorkspaceDir)/$(ScriptFile)", "build", "-t", "all-${buildPipeline}-${abi}-${buildConfig}"))
-            }
-
-            tasks["merge${buildConfig}NativeLibs"].dependsOn(fbuildTask)
+            abiTargets += "-t"
+            abiTargets += "all-${buildPipeline}-${abi}-${buildConfig}"
         }
+
+        val fbuildTask = tasks.register<Exec>("compile${buildConfig}UsingFastbuild") {
+            workingDir("$(WorkspaceDir)")
+            executable("$(WorkspaceDir)/$(ScriptFile)")
+            commandLine(listOf("$(WorkspaceDir)/$(ScriptFile)", "build") + abiTargets)
+        }
+        tasks["merge${buildConfig}NativeLibs"].dependsOn(fbuildTask)
     }
 }
 
