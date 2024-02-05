@@ -252,16 +252,35 @@ class LicenseCommand extends Command
             file\close!
         result
 
-    execute_mode_3rdparty: (args, project) =>
-        return unless Validation\ensure (File\exists 'build/conan_Debug/conandeps.bff'), "Missing file 'conandeps.bff' to gather dependency information!"
+    gather_deps_from_conan: (path) =>
+        conandeps_files = Dir\find_files path, recursive:true, filter: (filename) -> (filename\match "conandeps.bff") ~= nil
 
-        dependencies = { }
-        for line in File\lines 'build/conan_Debug/conandeps.bff'
-            if line\match '// "name":'
-                line = line\sub 4
-                line = line\gsub '\\', '/'
-                table.insert dependencies, Json\decode "{#{line}}"
-        @log\warning "No dependencies found!" if #dependencies == 0
+        conandeps_parse = (filepath) ->
+            dependencies = { }
+            for line in File\lines filepath
+                if line\match '// "name":'
+                    line = line\sub 4
+                    line = line\gsub '\\', '/'
+                    table.insert dependencies, Json\decode "{#{line}}"
+            @log\warning "No dependencies found in '#{filepath}'" if #dependencies == 0
+            return dependencies
+
+        deps_final = { }
+        deps_seen = { }
+        for depsfile in *conandeps_files
+            for dependency in *conandeps_parse depsfile
+                unless deps_seen[dependency.name]
+                    deps_seen[dependency.name] = true
+                    dependency.conanfile = Path\rename depsfile, "conanfile.txt"
+                    table.insert deps_final, dependency
+
+        table.sort deps_final, (a, b) -> a.name < b.name
+        return deps_final
+
+    execute_mode_3rdparty: (args, project) =>
+        return unless Validation\ensure (Dir\exists 'build/conan'), "Missing Conan dependency configuration!"
+
+        dependencies = @gather_deps_from_conan 'build/conan'
 
         -- Check all dependencies for license files
         license_files = {}
@@ -323,8 +342,11 @@ class LicenseCommand extends Command
 
                     for { dep, conanfile, license_file } in *license_files
                         -- Parse graph info and get the first entry
-                        conaninfo = Json\decode Conan!\graph_info package:"#{dep.name}/*", format:'json', conanfile:'source/conanfile.txt'
-                        conaninfo = Validation\ensure conaninfo.nodes[1], "Package '#{dep.name}' info  not found!"
+                        conaninfo_json = Conan!\graph_info package:"#{dep.name}/*", format:'json', conanfile:dep.conanfile
+                        conaninfo = Json\decode conaninfo_json
+                        -- Gather all nodes and pick the first one
+                        conaninfo_node = [node for _, node in pairs conaninfo.graph.nodes]
+                        conaninfo = Validation\ensure conaninfo_node[1], "Package '#{dep.name}' info  not found!"
                         conaninfo.version = conaninfo.label\match "[^/]+/([^@]+)"
 
                         readme\write "\n## #{dep.name}\n"
