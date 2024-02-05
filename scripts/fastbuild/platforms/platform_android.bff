@@ -14,7 +14,7 @@
     .Name = 'Android-SharedLib-LinkOptions'
     .Requires = { 'Android', 'Step-Link', 'SharedLib' }
     .LinkOptions = {
-        '-shared'
+        '-landroid -shared'
     }
 ]
 
@@ -85,8 +85,8 @@
     [
         .VSEnabled = true
         // Set name for each arch defined. Is specific arch unsupported by VS set EmptyString
-        .VSArch_arm64 = 'ARM64'
-        .VSArch_x86_64 = 'x64'
-        .VSArch_x64 = 'x64' // Alias
+        .VSArch_arm64 = 'Android-arm64-v8a'
+        .VSArch_x86_64 = 'Android-x86_64'
+        .VSArch_x64 = 'Android-x86_64'
     ]
 ]
