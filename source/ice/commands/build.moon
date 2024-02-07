@@ -62,6 +62,7 @@ class BuildCommand extends Command
     execute: (args) =>
         -- Remove lines we don't want
         bad_matches = {
+            'clean'
             'devenv_targets.txt'
             'devenv%-targets'
             'vstudio'
