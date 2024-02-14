@@ -46,6 +46,7 @@
 //
 .Final_GlobalRules = { }
 .Final_AliasList = { }
+.Final_CleanAliasList = { }
 
 ForEach( .GlobalRule in .GlobalRules )
 {
@@ -1227,7 +1228,7 @@ ForEach( .Pipeline in .AvailablePipelines )
             {
                 .Targets = .PipelineCleanTargets
             }
-            ^Final_AliasList + .Target
+            ^Final_CleanAliasList + .Target
         }
     }
 
@@ -1245,6 +1246,11 @@ ForEach( .Pipeline in .AvailablePipelines )
         Alias( 'all' )
         {
             .Targets = .Final_AliasList
+        }
+
+        Alias( 'all-clean' )
+        {
+            .Targets = .Final_CleanAliasList
         }
     }
 }
