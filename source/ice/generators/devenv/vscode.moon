@@ -182,7 +182,7 @@ class VSCodeProjectGen
                     stopAtEntry: false
                     cwd: config_target.working_dir
                     environment: { }
-                    console: "externalTerminal"
+                    console: "newExternalTerminal"
                 }
 
         -- Clear the previous configuration list
