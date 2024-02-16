@@ -248,6 +248,7 @@ install_conan_dependencies = (profiles, force_update) ->
         'conf'
         'buildenv'
         'runenv'
+        'tool_requires'
     }
 
     for profile in *profiles
