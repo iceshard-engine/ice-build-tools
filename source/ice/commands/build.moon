@@ -4,7 +4,7 @@ import FastBuild from require "ice.tools.fastbuild"
 
 import Validation from require "ice.core.validation"
 import Log from require "ice.core.logger"
-import Dir from require "ice.core.fs"
+import Dir, Path, File from require "ice.core.fs"
 
 class BuildCommand extends Command
     @settings {
@@ -85,15 +85,8 @@ class BuildCommand extends Command
                     table.insert new_targets, target for target in *(@gather_targets target_pattern, bad_matches)
                 args.target = new_targets
 
-            FastBuild!\build
-                config:@settings.build.fbuild_config_file
-                target:table.concat args.target, ' '
-                clean:args.clean
-                monitor:args.monitor
-                distributed:args.dist
-                summary:args.summary == 'always'
-                nosummaryonerror:args.summary == 'success'
-                verbose:args.verbose
+            -- Execute fastbuild with given arguments
+            BuildCommand\fbuild args
 
     -- Helpers
     gather_targets: (pattern, excluded = { }) =>
@@ -124,5 +117,25 @@ class BuildCommand extends Command
         -- Sort and show
         table.sort targets, (a, b) -> a < b
         targets
+
+    @fbuild: (args = {}) =>
+        if (type args.target) ~= 'table'
+            args.target = { tostring(args.target) }
+
+        config_file = Setting\get 'build.fbuild_config_file'
+        unless File\exists config_file
+            output_dir = Setting\get 'project.output_dir'
+            config_file = Path\join output_dir, config_file
+            Validation\assert (File\exists config_file), "Failed to find fbuild config file."
+
+        FastBuild!\build
+            config:config_file
+            target:table.concat args.target, ' '
+            clean:args.clean
+            monitor:args.monitor
+            distributed:args.dist
+            summary:args.summary == 'always'
+            nosummaryonerror:args.summary == 'success'
+            verbose:args.verbose
 
 { :BuildCommand }

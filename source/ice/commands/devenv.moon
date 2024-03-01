@@ -45,13 +45,8 @@ class DevenvCommand extends Command
     execute: (args, project) =>
         @fail "The 'xcode' target is not yet implemented" if args.devenv == 'xcode'
 
-        config_file = Setting\get 'build.fbuild_config_file'
-
         if args.devenv == 'vscode'
-            FastBuild!\build
-                config:config_file
-                target:'devenv-targets'
-                clean:args.update ~= nil
+            BuildCommand\fbuild target:'devenv-targets', clean:(args.update~=nil)
 
             -- If we can open devenv_targets we continue generation
             with config = INIConfig\open "devenv_targets.txt", debug: false
@@ -116,10 +111,7 @@ class DevenvCommand extends Command
                 Log\warning "The 'modify' behaves like 'replace' for the Visual Studio enviroment."
                 args.update = 'replace'
 
-            FastBuild!\build
-                config:config_file
-                target:'vstudio'
-                clean:args.update ~= nil
+            BuildCommand\fbuild target:'vstudio', clean:(args.update~=nil)
 
             -- Run Visual Studio
             VStudio!\start open:"../#{project.fastbuild_solution_name}" if args.start
