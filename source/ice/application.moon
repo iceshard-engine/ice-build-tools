@@ -3,7 +3,7 @@ argparse = require "argparse"
 package.moonpath ..= ";?.moon;?/init.moon"
 
 import IBT from require "ibt.ibt"
-import Logger, LogCategory, Log from require "ice.core.logger"
+import Logger, LogCategory, LogLevel, Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 import Dir from require "ice.core.fs"
 
@@ -57,15 +57,19 @@ class Application
         args = @args
         if args.command
             old_dir = os.cwd!
+            command = @commands[args.command]
+
+            -- Recreate the logger with additional verbosity if set
+            command.log = Logger\create command.log.category, stdout:{level:LogLevel.Verbose} if args.verbose
 
             -- We only validate setting for the current command to avoid setting everything when not necessary!
-            errors = @commands[args.command]\validate_settings!
+            errors = command\validate_settings!
             for errmsg in *errors
                 Log\error errmsg if errmsg ~= ""
             return if #errors > 0
 
-            fn_prepare = @commands[args.command]\run_prepare
-            fn_execute = @commands[args.command]\run_execute
+            fn_prepare = command\run_prepare
+            fn_execute = command\run_execute
 
             if (fn_prepare args, project)\validate!
                 exec_result = (fn_execute args, project)\validate!

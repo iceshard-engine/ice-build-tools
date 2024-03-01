@@ -178,7 +178,7 @@ class Logger
             global_instance.raw_logger = Logger LogCategory.Global, args, true
             Log.raw = global_instance.raw_logger
 
-    @create = (category, args) => Logger category, global_instance.init_args or args
+    @create = (category, args) => Logger category, args or global_instance.init_args
 
 class Log
     @format = (msg, level, ...) => global_instance.get!\format msg, level, ...
