@@ -4,8 +4,8 @@ import Log from require "ice.core.logger"
 import File from require "ice.core.fs"
 
 class Exec
-    new: (@exec) =>
-        Log\warning "#{@exec} does not exist!" unless File\exists @exec
+    new: (@exec, opts = {}) =>
+        Log\warning "#{@exec} does not exist!" unless opts.nocheck or File\exists @exec
 
     run: (arguments) =>
         os.execute "\"#{@exec}\" #{arguments or ''}"
@@ -59,20 +59,22 @@ class PowerShell
         result
 
 
-class Where extends Exec
-    @exec = os.iswindows and 'where.exe' or 'which'
+class Where
     @path: (name, err_log) =>
         args = name
         args ..= " 2>>#{err_log}" if err_log
 
         if os.iswindows
+            -- Previously (Exec 'where.exe') but couldn't find all possible executables / scripts
             line = ((PowerShell "Get-Command")\lines name, "Path")[1]
             line = nil if line\match "is not recognized"
             return line
         else
-            (Where!\lines args)[1]
+            ((Exec 'which')\lines args)[1]
 
-    new: => @exec = @@exec
-
+    @exec: (name, err_log) =>
+        path = Where\path name, err_log
+        if path ~= nil
+            return Exec path, nocheck:true
 
 { :PowerShell, :Exec, :Where }
