@@ -28,7 +28,7 @@ class WebAsm
 
         return nil, is_empty
 
-    @install_webasm_sdk: (location, opts = { }) =>
+    @install_emscripten_sdk: (location, opts = { }) =>
         is_emsdk, is_empty = @find_webasm_sdk location
 
         return true if is_emsdk and (not opts.force)
@@ -49,9 +49,12 @@ class WebAsm
 
     @detect_webasm_sdk: =>
         possible_paths = {
-            { source:'settings', location: Setting\get "webasm.sdk_root" }
-            { source:'environment', location: os.env.EMSDK }
+            -- Default local path
             { source:'local-setup', location: "build/webasm" }
+            -- Environment provided path
+            { source:'environment', location: os.env.EMSDK }
+            -- Setings specific path
+            { source:'settings', location: Setting\get "webasm.emscripten.location" }
         }
 
         sdk_root = nil
@@ -72,6 +75,5 @@ class WebAsm
         emsdk_location = @find_webasm_sdk sdk_root
         return nil unless emsdk_location
         return { location: Path\join Dir\current!, emsdk_location }
-
 
 { :WebAsm }
