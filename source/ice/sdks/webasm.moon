@@ -55,6 +55,7 @@ class SDK_WebAsm extends Locator
                 cxx: Path\join em_path, os.osselect win:"em++.bat", unix:"em++",
                 ar: Path\join em_path, os.osselect win:"emar.bat", unix:"emar",
                 clang: Path\join llvm_path, os.osselect win:"clang.exe", unix:"clang",
+                file_packager: Path\join em_path, 'tools/file_packager.bat'
                 -- clangpp: Path\join llvm_path, os.osselect win:"clang++.exe", unix:"clang++",
             }
 
@@ -79,7 +80,9 @@ class SDK_WebAsm extends Locator
                 libdirs: { }
                 libs: { }
                 compilers: { }
-                tools: { }
+                tools: {
+                    { name: 'EmScripten_FilePackager', path:em_tools.file_packager }
+                }
             }
 
 { :SDK_WebAsm }

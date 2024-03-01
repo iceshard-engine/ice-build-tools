@@ -150,6 +150,7 @@ class IceBuildToolsConan(ConanFile):
             f.write("    user: '{}'\n".format(self.user))
             f.write("    version: '{}'\n".format(self.version))
             f.write("  fbuild_scripts: os.getenv 'ICE_FBUILD_SCRIPTS'\n")
+            f.write("  python_scripts: os.getenv 'ICE_PYTHON_SCRIPTS'\n")
             f.write("\n")
             f.write("{ :IBT }\n")
             f.close()
@@ -199,6 +200,7 @@ class IceBuildToolsConan(ConanFile):
 
         self.runenv_info.define("ICE_BUILT_TOOLS_VER", self.version)
         self.runenv_info.define("ICE_FBUILD_SCRIPTS", os.path.join(self.package_folder, "scripts/fastbuild"))
+        self.runenv_info.define("ICE_PYTHON_SCRIPTS", os.path.join(self.package_folder, "scripts/python"))
         if self.settings.os == "Windows":
             self.runenv_info.define("ICE_SCRIPT", os.path.join(self.package_folder, "scripts/shell/build_win.bat"))
         if self.settings.os == "Linux":
