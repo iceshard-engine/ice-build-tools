@@ -13,10 +13,6 @@ class SDKManager extends Exec
     list: (opts = { }) =>
 
 class WebAsm
-    @settings: {
-        Setting "webasm.sdk_root"
-    }
-
     @find_webasm_sdk: (location) =>
         required_file = os.osselect win:'emsdk_env.bat', unix:'emsdk_env.sh'
         is_empty = true
