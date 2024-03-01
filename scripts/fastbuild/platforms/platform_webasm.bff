@@ -31,7 +31,7 @@
         .OutputPrefix_StaticLib = ''
 
         .OutputExtension_StaticLib = '.a'
-        .OutputExtension_SharedLib = '.wasm'
+        .OutputExtension_SharedLib = '.so'
         .OutputExtension_ConsoleApp = '.js'
         .OutputExtension_WindowedApp = '.html'
         .OutputExtension_HeaderOnly = ''
