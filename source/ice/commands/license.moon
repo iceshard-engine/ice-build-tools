@@ -14,24 +14,24 @@ class LicenseCommand extends Command
         Setting 'license.authors', required:true
 
         -- 'Mode: Thirdparty settings'
-        Setting 'license.thirdparty.details_file', required:true, default:'thirdparty/details.json'
-        Setting 'license.thirdparty.generate_location', required:true, default:'thirdparty'
+        Setting 'license.thirdparty.details_file', default:'thirdparty/details.json'
+        Setting 'license.thirdparty.generate_location', default:'thirdparty'
 
         -- 'Mode: Sources settings'
-        Setting 'license.mode_sources.file_extensions', required:true, default:{
+        Setting 'license.mode_sources.file_extensions', default:{
             ".bff": true, ".inl": true
             ".h": true, ".c": true
             ".hxx": true, ".cxx": true
             ".hpp": true, ".cpp": true
         }
-        Setting 'license.mode_sources.spdx_headers.match_pattern.args', required:true, default:{
+        Setting 'license.mode_sources.spdx_headers.match_pattern.args', default:{
             'year_created', 'year_modified', 'authors', 'license'
         }
-        Setting 'license.mode_sources.spdx_headers.match_pattern.lines', required:true, default:{
+        Setting 'license.mode_sources.spdx_headers.match_pattern.lines', default:{
             '^[/!*]+ Copyright (%d+) %- (%d+), (.+)$'
             '^[/!*]+ SPDX%-License%-Identifier: (.+)$'
         }
-        Setting 'license.mode_sources.spdx_headers.generate', required:true, default:{
+        Setting 'license.mode_sources.spdx_headers.generate', default:{
             "/// Copyright %d - %d, %s"
             "/// SPDX-License-Identifier: %s"
         }
@@ -344,8 +344,11 @@ class LicenseCommand extends Command
                         -- Parse graph info and get the first entry
                         conaninfo_json = Conan!\graph_info package:"#{dep.name}/*", format:'json', conanfile:dep.conanfile
                         conaninfo = Json\decode conaninfo_json
+
+                        Validation\assert conaninfo.nodes or (conaninfo.graph and conaninfo.graph.nodes), "Conan 'graph info --format json' result changed and is no longer supported!"
+                        conaninfo_nodes = conaninfo.nodes or conaninfo.graph.nodes
                         -- Gather all nodes and pick the first one
-                        conaninfo_node = [node for _, node in pairs conaninfo.graph.nodes]
+                        conaninfo_node = [node for _, node in pairs conaninfo_nodes]
                         conaninfo = Validation\ensure conaninfo_node[1], "Package '#{dep.name}' info  not found!"
                         conaninfo.version = conaninfo.label\match "[^/]+/([^@]+)"
 

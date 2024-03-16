@@ -9,7 +9,6 @@ class ScriptCommand extends Command
     @settings {
         Setting 'script.directory',
             default:'./tools/scripts'
-            required:true
             predicate:(path) -> (Dir\exists path) or false, "The setting 'script.directory' points to a invalid location: '#{path}'"
     }
     @arguments {

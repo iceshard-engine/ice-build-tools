@@ -40,6 +40,8 @@ class Setting
         }
 
         if args.default ~= nil
+            Log\warning "(#{@key}) The 'required' property is not functional when a default value is set" if args.required
+
             if args.type_hint
                 Validation\assert (type args.default) == args.type_hint, "The 'default' property does not match 'type_hint' value in setting '#{key}'"
             else
@@ -64,6 +66,7 @@ class Setting
 
     validate: (value, force) =>
         return @validation_result, "" if @validated and not force
+        @value = @properties.default unless @value -- Set the value from the default value
         value = @value unless force
 
         @validated = not force
@@ -82,7 +85,7 @@ class Setting
                 return true, errmsg
 
         if @properties.type_hint ~= "ANY" and (type value) ~= @properties.type_hint
-            return false, errmsg or "Value '#{value}' does not match the expected type '#{type value}' != '#{@properties.type_hint}'" unless success
+            return false, errmsg or "Setting '#{@key}' value '#{value}' does not match the expected type '#{type value}' != '#{@properties.type_hint}'" unless success
 
         @validation_result = true
         return true

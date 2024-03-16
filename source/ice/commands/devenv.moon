@@ -14,7 +14,7 @@ import Path, File, Dir from require "ice.core.fs"
 
 class DevenvCommand extends Command
     @settings {
-        Setting 'devenv.default_environment', default:(os.osselect win:'vstudio', mac:'xcode', unix: 'vscode'), required:true
+        Setting 'devenv.default_environment', default:(os.osselect win:'vstudio', mac:'xcode', unix: 'vscode')
     }
 
     @arguments {

@@ -23,9 +23,9 @@ class AndroidCommand extends Command
         Setting 'android.gradle.settings_template',
             default:loc_project_settings_template
             predicate:(v) -> v == nil or File\exists v
-        Setting 'android.gradle.wrapper', required:true, default:'build/android_gradle'
-        Setting 'android.gradle.version', required:true, default:'8.1.1'
-        Setting 'android.gradle.package_url', required:true, default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
+        Setting 'android.gradle.wrapper', default:'build/android_gradle'
+        Setting 'android.gradle.version', default:'8.1.1'
+        Setting 'android.gradle.package_url', default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
     }
     @arguments {
         group 'general', description: "Basic options"

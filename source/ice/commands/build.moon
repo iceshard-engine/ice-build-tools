@@ -8,8 +8,8 @@ import Dir, Path, File from require "ice.core.fs"
 
 class BuildCommand extends Command
     @settings {
-        Setting 'build.fbuild_config_file', required:true, default:'fbuild.bff'
-        Setting 'build.default_target', required:true, default:'all'
+        Setting 'build.fbuild_config_file', default:'fbuild.bff'
+        Setting 'build.default_target', default:'all'
     }
 
     @arguments {

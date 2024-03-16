@@ -29,9 +29,9 @@ install_conan_dependencies = ->
 
 project_settings = {
     Setting 'project.script_file', required:true, predicate:File\exists
-    Setting 'project.source_dir', required:true, default:'source/code', predicate:Dir\create
-    Setting 'project.output_dir', required:true, default:'build', predicate:Dir\create
-    Setting 'project.fbuild.config_file', required:true, default:'source/fbuild.bff', predicate:File\exists
+    Setting 'project.source_dir', default:'source/code', predicate:Dir\create
+    Setting 'project.output_dir', default:'build', predicate:Dir\create
+    Setting 'project.fbuild.config_file', default:'source/fbuild.bff', predicate:File\exists
     Setting 'project.fbuild.user_includes', default:{ }, predicate:(list) ->
         for file in *(list or { })
             return false unless File\exists file
@@ -39,8 +39,8 @@ project_settings = {
     Setting 'project.fbuild.vstudio_solution_file', predicate:(v) -> (type v) == 'string'
 
     -- Conan related settings
-    Setting 'project.conan.profiles', required:false, default:'source/conanprofiles.txt', predicate:File\exists
-    Setting 'project.conan.dependencies', required:false, default:'source/conanfile.txt', predicate:File\exists
+    Setting 'project.conan.profiles', default:'source/conanprofiles.txt', predicate:File\exists
+    Setting 'project.conan.dependencies', default:'source/conanfile.txt', predicate:File\exists
 }
 
 class Project
