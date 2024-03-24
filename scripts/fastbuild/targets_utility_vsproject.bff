@@ -139,7 +139,7 @@
             .ProjectBasePath = .ProjectBaseDir
             .ProjectInputPaths = .ProjectVStudioInputPaths
             .ProjectFiles = {
-                '$ProjectBaseDir$/$ProjectName$.bff'
+                '$ProjectBaseDir$/$ProjectScriptFile$'
             }
             .ProjectAllowedFileExtensions = {
                 '*.h', '*.c', '*.hpp', '*.cpp', '*.cxx', '*.hxx', '*.inl',

@@ -11,7 +11,7 @@ import json
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "1.7.1"
+    version = "1.7.2"
     user = "iceshard"
     channel = "stable"
 

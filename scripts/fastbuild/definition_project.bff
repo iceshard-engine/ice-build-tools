@@ -45,12 +45,19 @@ ForEach( .Project in .Projects )
 
     .Android = [ ]
     .Deploy = false
+    .ScriptFile = .EmptyString
 
     Using( .Project )
+
+    If ( .ScriptFile == .EmptyString )
+    {
+        ^ScriptFile = "$Name$.bff"
+    }
 
     .ResolvedProject =
     [
         .ProjectName = .Name
+        .ProjectScriptFile = .ScriptFile
         .ProjectKind = .Kind
         .ProjectTags = .Tags
         .ProjectBaseDir = .BaseDir

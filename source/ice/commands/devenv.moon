@@ -52,6 +52,8 @@ class DevenvCommand extends Command
             with config = INIConfig\open "devenv_targets.txt", debug: false
                 build_targets = \section 'build_targets', 'array'
                 run_targets = \section 'run_targets', 'array'
+
+                config_file = Setting\get 'build.fbuild_config_file'
                 vscode_gen = VSCodeProjectGen project, exe:FastBuild!.exec, script:(Path\join project.output_dir, config_file)
 
                 -- Known VSCode workspace files

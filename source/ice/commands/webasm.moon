@@ -68,8 +68,8 @@ class WebAsmCommand extends Command
     prepare: (args, project) =>
 
     execute: (args, project) =>
-        @execute_setup args, project if args.mode == 'setup'
-        @execute_host args, project
+        return @execute_setup args, project if args.mode == 'setup'
+        return @execute_host args, project
 
     execute_host: (args, project) =>
         return unless Validation\ensure args.project, "Missing valid 'project' to be hosted"
