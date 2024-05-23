@@ -172,13 +172,20 @@ class Project
 
         @build_system\generate!
 
-        -- Execute FBuild to generate conan_profiles.txt
-        build_conan_profiles @workspace_root, @output_directory, @
-        install_conan_dependencies @profiles.list, false
+        -- If we use conanfile.py instead of conanfile.txt we generate things a bit different.
+        --   In such a case conan is the main caller not 'IBT' so we need to follow CONAN workflow
+        --   NOTE: Projects should use 'conan create .' to build in such a case
+        file_conan_py = File\exists 'conanfile.py'
 
-        -- Secondary call to generate 'fbuild_conanmodules.bff' file
-        -- We can do it in two stages, becase the first stage only checks for available pipelines, it does not require any compile data to be present yet
-        @build_system\generate_conanmodules @profiles.list
+        -- Don't generate anything if conanfile.py is present, the 'conan' is responsible for generating necessary files.
+        unless file_conan_py
+            -- Execute FBuild to generate conan_profiles.txt
+            build_conan_profiles @workspace_root, @output_directory, @
+            install_conan_dependencies @profiles.list, false
+
+            -- Secondary call to generate 'fbuild_conanmodules.bff' file
+            -- We can do it in two stages, becase the first stage only checks for available pipelines, it does not require any compile data to be present yet
+            @build_system\generate_conanmodules @profiles.list
 
         command_result = application\run
             script: @project_script
@@ -189,6 +196,7 @@ class Project
             settings_file:@project_settings_file
             action: {
                 build_conan_profiles: -> build_conan_profiles @workspace_root, @output_directory, @, force:true
+                build_conan_modules: (list) -> @build_system\generate_conanmodules list
                 install_conan_dependencies: -> install_conan_dependencies @profiles.list, true
                 generate_build_system_files: -> @build_system\generate force:true
             }
@@ -208,7 +216,7 @@ install_conan_dependencies = (profiles, force_update) ->
     file_conan_profiles = Setting\get 'project.conan.profiles'
     file_conan_dependencies = Setting\get 'project.conan.dependencies'
     unless (File\exists file_conan_profiles) and (File\exists file_conan_dependencies)
-        Log\info "No description for source dependencies found, skipping..."
+        Log\info "No description for source dependencies found, skipping..." unless file_conan_py
         return
 
     create_resolver = (base_sections) ->

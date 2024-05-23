@@ -26,6 +26,7 @@ class FastBuild extends Exec
 
     list_targets: (args) =>
         cmd = ""
+        cmd ..= " -config #{args.config}" if args.config
         cmd ..= " -showtargets"
 
         @\capture cmd

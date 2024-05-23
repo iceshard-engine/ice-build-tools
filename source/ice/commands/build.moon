@@ -72,8 +72,9 @@ class BuildCommand extends Command
         }
 
         if args.list_targets
-            pattern = args.list_targets\gsub '*', '%.*'
-            targets = @gather_targets pattern, bad_matches
+            pattern = args.list_targets\gsub '-', '%-'
+            pattern = pattern\gsub '*', '%.*'
+            targets = BuildCommand\gather_targets pattern, bad_matches
 
             Log\info "List of targets matching the pattern '#{args.list_targets}'"
             Log.raw\info target for target in *targets
@@ -82,15 +83,21 @@ class BuildCommand extends Command
             if args.match
                 new_targets = { }
                 for target_pattern in *args.target
-                    table.insert new_targets, target for target in *(@gather_targets target_pattern, bad_matches)
+                    table.insert new_targets, target for target in *(BuildCommand\gather_targets target_pattern, bad_matches)
                 args.target = new_targets
 
             -- Execute fastbuild with given arguments
             BuildCommand\fbuild args
 
     -- Helpers
-    gather_targets: (pattern, excluded = { }) =>
-        fn = FastBuild!\list_targets!\gmatch "([%w_%-:%. ]+)\n"
+    @gather_targets: (pattern, excluded = { }) =>
+        config_file = Setting\get 'build.fbuild_config_file'
+        unless File\exists config_file
+            output_dir = Setting\get 'project.output_dir'
+            config_file = Path\join output_dir, config_file
+            Validation\assert (File\exists config_file), "Failed to find fbuild config file."
+
+        fn = (FastBuild!\list_targets config:config_file)\gmatch "([%w_%-:%. ]+)\n"
         lines = [line for line in fn]
 
         -- Helper method
