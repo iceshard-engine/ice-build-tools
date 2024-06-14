@@ -1,5 +1,6 @@
 import VSWhere from require "ice.tools.vswhere"
 import Locator from require "ice.locator"
+import Dir, Path from require "ice.core.fs"
 
 toolchain_definitions = {
     --[[ Toolchain: MSVC - v142 ]]
@@ -148,6 +149,68 @@ toolchain_definitions = {
     }
 }
 
+default_toolchain_definition = (path, platform_toolset, override_libs) ->
+    extra_files = Dir\find_files path, filter:(p) -> (Path\extension p) == '.dll'
+    extra_files = [(Path\normalize name) for name in *extra_files]
+    override_libs = nil unless (type override_libs) == 'table'
+
+    return {
+        name: "msvc-x64-#{platform_toolset}"
+        struct_name: "Toolchain_MSVC_#{platform_toolset}"
+        compiler_name: "compiler-msvc-#{platform_toolset}"
+
+        generate_structure: (gen, toolchain_bin_dir, toolchain_dir, tools_version) ->
+            struct_name = "Toolchain_MSVC_#{platform_toolset}"
+            compiler_name = "compiler-msvc-#{platform_toolset}"
+
+            gen\structure struct_name, (gen) ->
+                gen\variables { { 'ToolchainPath', toolchain_bin_dir } }
+
+                gen\line!
+                gen\compiler
+                    name: compiler_name
+                    executable: "$ToolchainPath$\\cl.exe"
+                    extra_files: ["$ToolchainPath$\\#{file}" for file in *extra_files]
+
+                gen\line!
+                gen\variables {
+                    { 'ToolchainCompilerFamily', 'msvc' }
+                    { 'ToolchainSupportedArchitectures', { 'x64' } }
+                    { 'ToolchainToolset', "#{platform_toolset}" }
+                    { 'ToolchainFrontend', 'MSVC' }
+                    { 'ToolchainCompiler', compiler_name }
+                    { 'ToolchainLibrarian', "$ToolchainPath$\\lib.exe" }
+                    { 'ToolchainLinker', "$ToolchainPath$\\link.exe" }
+                    { 'ToolchainIncludeDirs', {
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\include",
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\atlmfc\\include",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\include",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\UnitTest\\include",
+                    } }
+                    { 'ToolchainLibDirs', {
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\lib\\x64",
+                        "#{toolchain_dir}\\Tools\\MSVC\\#{tools_version}\\atlmfc\\lib\\x64",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\lib\\x64",
+                        "#{toolchain_dir}\\Auxiliary\\VS\\UnitTest\\lib",
+                    } }
+                    { 'ToolchainLibs', override_libs or {
+                        'kernel32',
+                        'user32',
+                        'gdi32',
+                        'winspool',
+                        'comdlg32',
+                        'advapi32',
+                        'shell32',
+                        'ole32',
+                        'oleaut32',
+                        'uuid',
+                        'odbc32',
+                        'odbccp32',
+                        'delayimp',
+                    } }
+                }
+    }
+
 detect_compilers = (version, requirements) ->
     unless (type requirements) == "table" and #requirements > 0
         requirements = {
@@ -163,12 +226,28 @@ class Toolchain_MSVC extends Locator
     locate: =>
         @\add_result toolchain for toolchain in *@@detect!
 
+    -- Allow to override the libraries generated into the MSVC toolchain
+    @override_libraries = { }
+    @set_libraries: (vs_channel, libraries) =>
+        @override_libraries[vs_channel] = libraries if (type vs_channel) == 'string' and (type libraries) == 'table'
+
+    -- Allow to override the name of the toolset given the specific VisualStudio channel (version)
+    @override_toolset = {
+        ['VisualStudio.15.Release']: 'v141' -- Not checked
+        ['VisualStudio.16.Release']: 'v142' -- Not checked
+        ['VisualStudio.17.Release']: 'v143'
+        ['VisualStudio.18.Release']: 'v144' -- Just a prediction
+    }
+    @set_toolset: (vs_channel, toolset) =>
+        @override_toolset[vs_channel] = toolset if (type vs_channel) == 'string' and (type toolset) == 'string'
+
     @detect: (version, requirements) =>
         toolchain_list = { }
 
         -- Append all MSVC compilers
         for compiler in *detect_compilers version, requirements
             path = compiler.installationPath
+            channel_id = compiler.channelId
 
             -- Try to enter this directory,
             os.chdir "#{path}/VC", (current_dir) ->
@@ -191,13 +270,14 @@ class Toolchain_MSVC extends Locator
                     tools_version = get_version 'Tools'
                     redist_version = (get_version 'Redist') or tools_version
 
-                tools_version_short = ((tools_version\gsub '%.', '')\sub 0, 3) if tools_version
+                tools_version_short = (tools_version\gsub '(%d+)%.(%d)%d*%.%d+', '%1%2') if tools_version
                 toolchain_variable = "msvc_x64_v#{tools_version_short}"
                 tools_arch_x64_exist = os.isdir "Tools/MSVC/#{tools_version}/bin/Hostx64/x64"
 
-                if tools_version and tools_arch_x64_exist and toolchain_definitions[toolchain_variable]
-                    toolchain_definition = toolchain_definitions[toolchain_variable]
+                toolchain_definition = toolchain_definitions[toolchain_variable] or default_toolchain_definition
+                if tools_version and tools_arch_x64_exist and toolchain_definition
                     toolchain_path = "#{current_dir}\\Tools\\MSVC\\#{tools_version}\\bin\\Hostx64\\x64"
+                    toolchain_definition = toolchain_definition toolchain_path, @override_toolset[channel_id], @override_libraries[channel_id]
 
                     table.insert toolchain_list, {
                         name: toolchain_definition.name
