@@ -146,6 +146,7 @@ ForEach( .Project in .Projects )
                 .RuleRequires = .Requires
                 .RuleDependsOn = .DependsOn
                 .RuleUnitTests = .UnitTests
+                .RuleDeploy = .Deploy
 
                 .RuleProperties_Public =
                 [

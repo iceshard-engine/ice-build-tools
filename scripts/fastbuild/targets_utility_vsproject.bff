@@ -210,6 +210,43 @@
                                 }
                             }
                         }
+
+                        // Apply some rule specific values
+                        If ( .VSFeature_Enabled in .ProjectEnabledFeatures )
+                        {
+                            // First iteration to search for rules changing the project kind
+                            // We check with limited tags
+                            ForEach( .ProjectRule in .ProjectRules )
+                            {
+                                .RuleDeploy = false
+                                .RuleKind = .Kind_None
+                                Using( .ProjectRule )
+
+                                .RuleRequirementsSatisfied = true
+                                ForEach( .Requirement in .RuleRequires )
+                                {
+                                    If ( .Requirement not in .AvailableTags )
+                                    {
+                                        ^RuleRequirementsSatisfied = false
+                                    }
+                                }
+
+                                If ( .RuleRequirementsSatisfied )
+                                {
+                                    // // Update project kind if needed
+                                    // If ( .RuleKind != .Kind_None )
+                                    // {
+                                    //     Print( "$ProjectName$ ($PipelineConfig$)" )
+                                    //     ^ProjectKind = .RuleKind
+                                    // }
+
+                                    If ( .RuleDeploy )
+                                    {
+                                        ^ProjectDeploy = .RuleDeploy
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
@@ -219,11 +256,13 @@
 
                     .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
                     .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    .TargetDeployDirectory = '$WorkspaceBuildDir$/deploy/$ProjectName$/$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                     .TargetOutputName = "$ProjectName$$TargetExtension$"
 
                     If ( .PipelineOutputDirSuffix != .EmptyString )
                     {
                         ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                        ^TargetDeployDirectory = '$TargetDeployDirectory$/$PipelineOutputDirSuffix$'
                     }
 
                     If ( .ProjectKind in .Kind_Libraries )
@@ -275,6 +314,12 @@
 
                                     .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
                                     .LocalDebuggerWorkingDirectory = .ProjectDebugDir
+
+                                    If ( .ProjectDeploy )
+                                    {
+                                        ^LocalDebuggerCommand = '$TargetDeployDirectory$/$TargetOutputName$'
+                                        ^LocalDebuggerWorkingDirectory = .TargetDeployDirectory
+                                    }
                                 ]
                                 ^ProjectConfig_Extension + .ProjectConfig_BuildExtension
                             }

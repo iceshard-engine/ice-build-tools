@@ -139,6 +139,7 @@ ForEach( .Pipeline in .AvailablePipelines )
             // We check with limited tags
             ForEach( .ProjectRule in .ProjectRules )
             {
+                .RuleDeploy = false
                 .RuleKind = .Kind_None
                 Using( .ProjectRule )
 
@@ -158,6 +159,11 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                          Print( "$ProjectName$ ($PipelineConfig$)" )
                         ^ProjectKind = .RuleKind
+                    }
+
+                    If ( .RuleDeploy )
+                    {
+                        ^ProjectDeploy = .RuleDeploy
                     }
                 }
             }
@@ -699,6 +705,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     }
                 }
 
+
                 ForEach( .ConanModuleName in .ConanModulesNames, .ConanModule in .ConanModules )
                 {
                     Using( .FinalProperties )
@@ -723,11 +730,23 @@ ForEach( .Pipeline in .AvailablePipelines )
                                 // Only do this once
                                 ^Step_CopyDirsTargets + .CopyDirTargetName
 
-                                CopyDir( '$CopyDirTargetName$' )
+                                If ( .ProjectDeploy )
                                 {
-                                    .SourcePaths = .CopyDirsList
-                                    .SourcePathsPattern = { '*.dll', '*.so' }
-                                    .Dest = .TargetOutputDirectory
+                                    CopyDir( '$CopyDirTargetName$' )
+                                    {
+                                        .SourcePaths = .CopyDirsList
+                                        .SourcePathsPattern = { '*.dll', '*.so' }
+                                        .Dest = '$TargetDeployDirectory$/'
+                                    }
+                                }
+                                If ( !.ProjectDeploy )
+                                {
+                                    CopyDir( '$CopyDirTargetName$' )
+                                    {
+                                        .SourcePaths = .CopyDirsList
+                                        .SourcePathsPattern = { '*.dll', '*.so' }
+                                        .Dest = '$TargetOutputDirectory$/'
+                                    }
                                 }
                                 ^StepDependencies + '$ProjectTarget$-$ConanModuleName$-copydir'
                             }

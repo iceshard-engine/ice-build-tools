@@ -63,6 +63,7 @@
         'Build'
         'Link'
         'Test'
+        'Deploy'
     }
 
     .PipelineTasks = {
@@ -70,6 +71,7 @@
         .Task_BuildResources
         .Task_LinkExecutable
         .Task_TestExecutable
+        .Task_DeployBinaries
     }
 
     .PipelineVSInfo =
