@@ -277,7 +277,8 @@ class Toolchain_MSVC extends Locator
                 toolchain_definition = toolchain_definitions[toolchain_variable] or default_toolchain_definition
                 if tools_version and tools_arch_x64_exist and toolchain_definition
                     toolchain_path = "#{current_dir}\\Tools\\MSVC\\#{tools_version}\\bin\\Hostx64\\x64"
-                    toolchain_definition = toolchain_definition toolchain_path, @override_toolset[channel_id], @override_libraries[channel_id]
+                    if (type toolchain_definition) == 'function'
+                        toolchain_definition = toolchain_definition toolchain_path, @override_toolset[channel_id], @override_libraries[channel_id]
 
                     table.insert toolchain_list, {
                         name: toolchain_definition.name

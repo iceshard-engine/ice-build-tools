@@ -24,7 +24,7 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
 
                 gen\line!
                 gen\variables {
-                    { 'EMSDKPath', em_path }
+                    { 'EMSDKPath', Path.Unix\normalize em_path }
                     { 'EMSDKVersion', emver_full }
                     { 'ToolchainCompilerFamily', 'em-clang' }
                     { 'ToolchainSupportedArchitectures', arch_list or { } }
