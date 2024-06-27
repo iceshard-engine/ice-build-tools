@@ -247,7 +247,7 @@ class Toolchain_MSVC extends Locator
         -- Append all MSVC compilers
         for compiler in *detect_compilers version, requirements
             path = compiler.installationPath
-            channel_id = compiler.channelId
+            channel_id = compiler.channelId\match "%w+%.%d+.%w+"
 
             -- Try to enter this directory,
             os.chdir "#{path}/VC", (current_dir) ->
