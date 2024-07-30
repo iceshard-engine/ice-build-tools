@@ -36,6 +36,10 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
                     { 'ToolchainIncludeDirs', { } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
+                    -- We force response files and pretend to be a 'clang-orbis' linker.
+                    -- This writes paths in the response file with additional slashes fixing an error when linking from a response file.
+                    { 'LinkerForceResponseFile', true }
+                    { 'LinkerType', 'clang-orbis' }
                 }
     }
 
