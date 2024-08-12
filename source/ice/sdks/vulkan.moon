@@ -55,6 +55,7 @@ class SDK_Vulkan extends Locator
                 struct_name: 'SDK_Vulkan'
                 supported_platforms: { 'Windows' }
                 location: vulkan_sdk
+                binaries: Path\join vulkan_sdk, "Bin"
                 defines: { 'VK_USE_PLATFORM_WIN32_KHR' }
                 includedirs: {
                     Path\join vulkan_sdk, "Include"
@@ -64,6 +65,9 @@ class SDK_Vulkan extends Locator
                 }
                 libs: {
                     "vulkan-1"
+                }
+                runtime_libs: {
+                    "shaderc_shared"
                 }
             }
 

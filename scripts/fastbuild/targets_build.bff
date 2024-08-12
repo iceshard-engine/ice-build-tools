@@ -40,6 +40,7 @@
 
 .Piepline_CompileVSTargetsNames = { }
 .Piepline_CompileVSTargets = [ ]
+.Pipeline_LocalCompilerTargets = [ ]
 
 //
 // Prepare global build rules
@@ -84,6 +85,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 {
     .PipelineSolutionInfo = []
     .PipelineProjectRequirements = { }
+    .PipelineDefinesCompilers = false
 
     Using( .Pipeline )
 
@@ -678,6 +680,46 @@ ForEach( .Pipeline in .AvailablePipelines )
                     + .PipelineProperties_SDKs
                     + .PipelineProperties_Toolchain
 
+                // Extenral dynamic libararies
+                //--------------------------------------------------------------------------
+                {
+                    .Runtime = { }
+                    .RuntimeExternal = { }
+                    .RuntimeLibsPaths = [ ]
+                    .KnownLibs = { }
+                    Using( .FinalProperties )
+                    Using( .ProjectStepDependencies )
+                    Using( .RuntimeLibsPaths )
+
+                    .RuntimeNew = { }
+                    ForEach( .Dependency in .Runtime )
+                    {
+                        If ( .Dependency in .KnownLibs )
+                        {
+                            ForEach( .KnownLib in .KnownLibs, .KnownLibPath in .KnownLibsPath )
+                            {
+                                If ( .Dependency == .KnownLib )
+                                {
+                                    .Extension = .'OutputExtension_SharedLib'
+                                    ^RuntimeExternal + '$KnownLibPath$$Extension$'
+                                }
+                            }
+                        }
+                        If ( .Dependency not in .KnownLibs )
+                        {
+                            ^RuntimeNew + .Dependency
+                        }
+                    }
+
+                    .ProjectStepDependenciesNew =
+                    [
+                        Using( .ProjectStepDependencies )
+                        .Runtime = .RuntimeNew
+                        .RuntimeExternal = ^RuntimeExternal
+                    ]
+                    ^ProjectStepDependencies = .ProjectStepDependenciesNew
+                }
+
                 // Conan Modules
                 //--------------------------------------------------------------------------
                 .ConanModules = { }
@@ -1047,6 +1089,27 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                             ^CurrentOutputs + .LinkerOutput
                             ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
+
+                            .Name = .ProjectName
+                            .LocalCompilerConfig = .EmptyString
+                            .LocalCompilerModule = false
+
+                            Using ( .ProjectLocalCompiler )
+                            If ( .PipelineDefinesCompilers && .LocalCompilerModule && (.LocalCompilerConfig == .PipelineConfig) )
+                            {
+                                Alias( '$Name$-compiler-module' )
+                                {
+                                    .Targets = '$ProjectTarget$-$TaskIdx$-$Step$'
+                                }
+
+                                Using( .ProjectStepDependencies )
+
+                                .Pipeline_LocalCompilerTarget =
+                                [
+                                    .'LocalCompilerTarget_$Name$' = { '$ProjectTarget$-$TaskIdx$-$Step$' } + .RuntimeExternal
+                                ]
+                                ^Pipeline_LocalCompilerTargets + .Pipeline_LocalCompilerTarget
+                            }
                         }
 
                         // Executable targets
@@ -1068,6 +1131,93 @@ ForEach( .Pipeline in .AvailablePipelines )
 
                             ^CurrentOutputs + .LinkerOutput
                             ^'$TargetsList$' + '$ProjectTarget$-$TaskIdx$-$Step$'
+
+                            .Type = 'compiler'
+                            .Name = .ProjectName
+                            .LocalCompilerConfig = .EmptyString
+                            .LocalCompilerModule = false
+                            .LocalCompilerModuleList = { }
+
+                            Using ( .ProjectLocalCompiler )
+                            If ( .PipelineDefinesCompilers && (.LocalCompilerConfig == .PipelineConfig) )
+                            {
+                                If ( !.LocalCompilerModule )
+                                {
+
+                                    Using( .Pipeline_LocalCompilerTargets )
+
+                                    .Runtime = { }
+                                    .RuntimeExternal = { }
+                                    Using( .ProjectStepDependencies )
+                                    ForEach( .Dependency in .Runtime )
+                                    {
+                                        If ( .Dependency in .PipelineEnabledProjects )
+                                        {
+                                            ^LocalCompilerModuleList + .Dependency
+                                        }
+                                    }
+
+                                    // Resolve extra files
+                                    .BinaryFiles = { }
+                                    ForEach( .ModuleTarget in .LocalCompilerModuleList )
+                                    {
+                                        ^BinaryFiles + .'LocalCompilerTarget_$ModuleTarget$'
+                                    }
+
+                                    // External runtime dependencies (shared objects required by platforms)
+                                    ForEach( .Dependency in .RuntimeExternal )
+                                    {
+                                        If ( .Dependency not in .BinaryFiles )
+                                        {
+                                            ^BinaryFiles + .Dependency
+                                        }
+                                    }
+
+                                    Copy( '$ProjectTarget$-$TaskIdx$-$Step$-deploy-compiler-modules' )
+                                    {
+                                        .Source = .BinaryFiles
+                                        .Dest = "$TargetDeployDirectory$/"
+                                    }
+
+                                    .DeployOutput = '$TargetDeployDirectory$/$TargetOutputName$'
+                                    Copy( '$ProjectTarget$-$TaskIdx$-$Step$-deploy-compiler' )
+                                    {
+                                        .Source = .LinkerOutput
+                                        .Dest = .DeployOutput
+                                        .PreBuildDependencies = { '$ProjectTarget$-$TaskIdx$-$Step$-deploy-compiler-modules' }
+                                    }
+
+                                    If ( .Type == 'compiler' )
+                                    {
+                                        Compiler( '$Name$-compiler' )
+                                        {
+                                            .Executable = .DeployOutput
+                                            .ExtraFiles = .BinaryFiles
+                                            .CompilerFamily = "Custom"
+                                        }
+                                    }
+                                    If ( .Type != 'compiler' )
+                                    {
+                                        Alias( '$Name$-$Type$' )
+                                        {
+                                            .Targets = '$ProjectTarget$-$TaskIdx$-$Step$'
+                                        }
+                                    }
+                                }
+                                If ( .LocalCompilerModule )
+                                {
+                                    Alias( '$Name$-compiler-module' )
+                                    {
+                                        .Targets = '$ProjectTarget$-$TaskIdx$-$Step$'
+                                    }
+
+                                    .Pipeline_LocalCompilerTarget =
+                                    [
+                                        .'$Name$' = .LinkerOutput
+                                    ]
+                                    ^Pipeline_LocalCompilerTargets + .Pipeline_LocalCompilerTarget
+                                }
+                            }
                         }
                     }
 

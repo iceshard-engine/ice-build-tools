@@ -17,20 +17,24 @@ ForEach( .Project in .Projects )
     .AllowUnityBuilds = true
     .CopyModules = false
     .DependsOn = []
+    .LocalCompiler = []
 
     .Group = .DefaultGroup
 
     .InputPaths = {
         'private'
     }
+    .IncludePaths = {
+        'public'
+    }
     .ResourcePaths = {
         'resource'
         'metadata'
     }
     .VStudioPaths = .InputPaths
+        + .IncludePaths
         + .ResourcePaths
         + 'natvis'
-        + 'public'
 
     .DebugDir = '$WorkspaceBuildDir$'
 
@@ -62,6 +66,7 @@ ForEach( .Project in .Projects )
         .ProjectTags = .Tags
         .ProjectBaseDir = .BaseDir
         .ProjectDeploy = .Deploy
+        .ProjectLocalCompiler = .LocalCompiler
 
         // #TODO (#4): https://github.com/iceshard-engine/ice-build-tools/issues/4
         .ProjectRequires = .Requires
@@ -73,6 +78,12 @@ ForEach( .Project in .Projects )
         ForEach( .Path in .InputPaths )
         {
             ^ProjectSourcePaths + "$ProjectBaseDir$/$Path$"
+        }
+
+        .ProjectIncludePaths = { }
+        ForEach( .Path in .IncludePaths )
+        {
+            ^ProjectIncludePaths + "$ProjectBaseDir$/$Path$"
         }
 
         .ProjectResourcePaths = { }
@@ -108,9 +119,7 @@ ForEach( .Project in .Projects )
 
                 ^ProjectRequires + .Uses
 
-                .IncludeDirs + {
-                    '$ProjectBaseDir$/public'
-                }
+                .IncludeDirs + .ProjectIncludePaths
             ]
             .RuleProperties_Private =
             [
@@ -119,10 +128,7 @@ ForEach( .Project in .Projects )
 
                 ^ProjectRequires + .Uses
 
-                .IncludeResDirs + {
-                    '$ProjectBaseDir$/resource'
-                }
-
+                .IncludeResDirs + .ProjectResourcePaths
                 .CopyModules = ^CopyModules
             ]
         ]

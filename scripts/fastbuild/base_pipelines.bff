@@ -58,6 +58,7 @@
     .PipelineArchitecture = 'x64'
 
     .PipelineAllowUnityBuilds = false
+    .PipelineDefinesCompilers = false
 
     .PipelineSteps = {
         'Build'
