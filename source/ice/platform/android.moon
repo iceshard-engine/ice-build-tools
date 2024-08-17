@@ -72,13 +72,16 @@ class SDKManager extends Exec
 
 class Android
     @settings: {
-        Setting "android.sdk_root"
+        Setting "android.sdk_root" -- deprecated
+        Setting "android.sdk.root"
+        Setting "android.sdk.cmdline_tools_version", default:'13.0'
     }
 
     @detect_android_sdk: =>
         possible_paths = {
             { source:'implicit', location: "#{os.env.LOCALAPPDATA}/Android/Sdk" }
             { source:'environment', location: os.env.ANDROID_SDK_ROOT }
+            { source:'settings', location: Setting\get "android.sdk.root" }
             { source:'settings', location: Setting\get "android.sdk_root" }
         }
 
@@ -102,9 +105,10 @@ class Android
 
         Log\verbose "Selected Android SDK at location #{sdk_root}"
 
+        cmdline_tools_version = (Setting\get "android.sdk.cmdline_tools_version") or "latest"
         possible_paths = {
             { deprecated:true, source:'tools', location:Path\join sdk_root, "tools", "bin", "sdkmanager.bat" }
-            { source:'cmdline-tools', location:Path\join sdk_root, "cmdline-tools", "latest", "bin", "sdkmanager.bat" }
+            { source:'cmdline-tools', location:Path\join sdk_root, "cmdline-tools", cmdline_tools_version, "bin", "sdkmanager.bat" } -- This version is known to work better than latest
         }
 
         sdk_manager = nil
@@ -114,9 +118,8 @@ class Android
             if (File\exists entry.location) == false
                 Log\verbose "SdkManager (#{entry.source}) not found in path: #{entry.location}" -- TODO: Verbose
             else
-                Log\verbose "Selected SdkManager at path #{entry.path}"
+                Log\verbose "Selected SdkManager at path #{entry.location}"
                 sdk_manager = entry
-
 
         return nil unless sdk_manager
         Log\warning "Detected deprecated SDK manager tools, consider installing the 'cmdline-tools;latest' package to avoid issues!" if sdk_manager.deprecated

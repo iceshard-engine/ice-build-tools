@@ -4,6 +4,7 @@ package.moonpath ..= ";?.moon;?/init.moon"
 
 import IBT from require "ibt.ibt"
 import Logger, LogCategory, LogLevel, Log from require "ice.core.logger"
+import Command, group, argument, option, flag from require "ice.command"
 import Validation from require "ice.core.validation"
 import Dir from require "ice.core.fs"
 
@@ -14,10 +15,16 @@ class Application
             opts.name = opts.name or "--#{name}"
             @.args[name] = { :func, :name, :opts }
 
-    new: (settings) =>
-        -- Initialize global logger if it wasn't done yet
-        Logger\init { }
+    @arguments {
+        option 'log',
+            name: '-l --log'
+            description: 'Changes the log level for stdout.'
+            choices: {'d', 'debug', 'v', 'verbose', 'i', 'info', 'w', 'warning', 'e', 'error'}
+            default: 'info'
+            defmode: 'log-level'
+    }
 
+    new: (settings) =>
         Validation\assert (Dir\exists IBT.fbuild_scripts), "IBT.fbuild_scripts (#{IBT.fbuild_scripts}) does not exist! Are you running IBT in a proper conan environment?"
 
         @script_file = arg[1]
@@ -26,12 +33,34 @@ class Application
         @parser\command_target "command"
 
         init_cmd = @parser\command "init", "Used to initialize the workspace for development."
-        init_cmd\option "--update-tools", "Updates the tool dependencies."
-        init_cmd\option "-p --profile", "A profile that should be used to generate conan profile files. This profile will affect the picked dependencies."
+        -- init_cmd\option "--update-tools", "Updates the tool dependencies."
+        -- init_cmd\option "-p --profile", "A profile that should be used to generate conan profile files. This profile will affect the picked dependencies."
 
         if @@.args
             for _, { :func, :opts } in pairs @@.args
                 @parser[func] @parser, opts
+
+        logv = nil
+        for val in *arg
+            if logv == '.next'
+                logv = val
+                break
+            else if val == '-l' or val == '--log'
+                logv = '.next'
+            else if val[1] ~= '-'
+                break
+
+        if logv
+            lvlmap = {
+                'd':LogLevel.Debug, 'dbg':LogLevel.Debug, 'debug':LogLevel.Debug,
+                'v':LogLevel.Verbose, 'verbose':LogLevel.Verbose,
+                'i':LogLevel.Info, 'info':LogLevel.Info,
+                'w':LogLevel.Warning, 'warning':LogLevel.Warning,
+                'e':LogLevel.Error, 'error':LogLevel.Error
+            }
+
+            -- Initialize global logger if it wasn't done yet
+            Logger\init stdout:{ level:lvlmap[logv] }
 
         -- Go through all defined actions (table values)
         @commands = { }
@@ -48,7 +77,9 @@ class Application
             command\init_internal!
         @parser\add_help_command!
 
-        @args = @parser\parse arg
+        success, result = @parser\pparse arg
+        Validation\assert "Failed argument parsing with error: #{result}"
+        @args = result
 
     run: (project) =>
         result = nil

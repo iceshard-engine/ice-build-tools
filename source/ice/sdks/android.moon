@@ -68,7 +68,7 @@ class SDK_Android extends Locator
 
                     return {
                         name: "Android-Std#{type}Lib-NDK#{ndkmajor}-#{abi.arch}"
-                        struct_name: "Favour_Android_Std#{type}Lib_NDK#{ndkmajor}_#{abi.arch}"
+                        struct_name: "Flavour_Android_Std#{type}Lib_NDK#{ndkmajor}_#{abi.arch}"
                         requires: { "Std#{type}Lib", toolchain, abi.arch }
                         variables: { }
                         runtime: { lib_path }
@@ -76,7 +76,7 @@ class SDK_Android extends Locator
                 else -- if type == "Static"
                     return {
                         name: "Android-Std#{type}Lib"
-                        struct_name: "Favour_Android_Std#{type}Lib"
+                        struct_name: "Flavour_Android_Std#{type}Lib"
                         requires: { "Std#{type}Lib" }
                         variables: { { 'LinkLinkerOptions', { "-static-libstdc++" } } }
                         runtime: { }
