@@ -3,6 +3,7 @@ import Exec from require "ice.tools.exec"
 
 import Setting from require "ice.settings"
 import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
 
 class SDKManager extends Exec
     new: (path, @deprecated) => super path
@@ -55,6 +56,8 @@ class SDKManager extends Exec
         stage_available = stage_builder 'available packages', '%s*([^|%[]-)%s*|%s*([^|]-)%s*|%s*([^|]-)%s*$'
         stage_updates = stage_builder 'available updates', '%s*([^|%[]-)%s*|%s*([^|]-)%s*|%s*([^|]-)%s*$'
 
+        Log\debug "Invoking Android Manager with arguments: #{args}"
+
         lines = do
             tab = @\lines args
             idx = 0
@@ -63,8 +66,11 @@ class SDKManager extends Exec
                 return tab[idx]
 
         results = { }
+        Log\debug "Checking installed Android packages..."
         results.installed = stage_installed lines
+        Log\debug "Checking available Android packages..."
         results.available = stage_available lines unless opts.installed
+        Log\debug "Checking available Android package updates..."
         results.updates = stage_updates lines unless opts.installed
 
         return results.installed if opts.installed
@@ -123,6 +129,9 @@ class Android
 
         return nil unless sdk_manager
         Log\warning "Detected deprecated SDK manager tools, consider installing the 'cmdline-tools;latest' package to avoid issues!" if sdk_manager.deprecated
+
+        Validation\assert os.env.JAVA_HOME ~= nil, "The 'JAVA_HOME' variable does not exist"
+        Validation\assert (Dir\exists os.env.JAVA_HOME), "The 'JAVA_HOME' path does not exist: #{os.env.JAVA_HOME}"
 
         return {
             location:sdk_root

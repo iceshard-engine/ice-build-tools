@@ -3,6 +3,8 @@ import Android from require "ice.platform.android"
 import Path, Dir, File from require "ice.core.fs"
 import Json from require "ice.util.json"
 import Exec from require "ice.tools.exec"
+import Log from require "ice.core.logger"
+import Validation from require "ice.core.validation"
 
 create_toolchain = (ver_major, ndkver, arch_list) ->
     return {
@@ -44,6 +46,7 @@ class SDK_Android extends Locator
 
     locate: =>
         if sdk = Android\detect_android_sdk!
+            Validation\ensure sdk ~= nil and sdk.manager ~= nil, "Failed to find valid Android SDK Manager!"
             sdk_packages = sdk.manager\list installed:true
 
             -- Allowed Android 'Platforms'
@@ -86,6 +89,7 @@ class SDK_Android extends Locator
             flavours = { }
             for pkg in *sdk_packages
                 continue unless pkg.path\lower!\match "ndk"
+                Log\verbose "Checking NDK package at location: #{pkg.location}"
                 if ndk = @_add_ndk sdk, pkg, allowed
                     ndk_path = Path\join sdk.location, pkg.location
                     for _, abi in pairs ndk.abis

@@ -60,8 +60,11 @@ class UpdateCommand extends Command
                     @log\error "Failed to update IBT package ID in 'tools/conanfile.txt'"
 
         else
+            @log\info "Rebuilding Conan profiles..."
             project.action.build_conan_profiles!
+            @log\info "Installing Conan dependencies..."
             project.action.install_conan_dependencies!
+            @log\info "Creating build-system files..."
             project.action.generate_build_system_files!
 
 { :UpdateCommand }

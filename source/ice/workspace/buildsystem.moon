@@ -2,6 +2,7 @@
 import IBT from require "ibt.ibt"
 
 import Path, Dir, File from require "ice.core.fs"
+import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 import FastBuildGenerator from require "ice.generators.fastbuild"
 
@@ -30,6 +31,7 @@ class BuildSystem
     workspace_info: =>
         execute_locators = (locator_type, detected_info) ->
             for locator in *@locators[locator_type]
+                Log\verbose "Executing '#{locator.name}' locator ..."
                 results = locator\locate_internal detected_info
 
         detected_info = {
@@ -38,8 +40,11 @@ class BuildSystem
             additional_sdks: { }
         }
 
+        Log\info "Executing toolchain locators..."
         execute_locators Locator.Type.Toolchain, detected_info
+        Log\info "Executing platform SDK locators..."
         execute_locators Locator.Type.PlatformSDK, detected_info
+        Log\info "Executing 3rd-party SDK locators..."
         execute_locators Locator.Type.CommonSDK, detected_info
 
         -- Re-Enable after we make sure that the test package is able to test properly
@@ -84,10 +89,13 @@ class FastBuildBuildSystem extends BuildSystem
         toolchain_names = { }
 
         toolchain_generated = {}
+        Validation\assert toolchains != nil and #toolchains > 0, "No compatible toolchains found!"
+
         for toolchain in *toolchains
             continue if toolchain_generated[toolchain.name]
             toolchain_generated[toolchain.name] = true
 
+            Log\info "Generating toolchain info for '#{toolchain.name}'..."
             toolchain.generate gen
 
             table.insert toolchain_names, toolchain.name
