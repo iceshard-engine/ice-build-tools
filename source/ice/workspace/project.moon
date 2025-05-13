@@ -75,6 +75,7 @@ class Project
         Validation\assert File\exists @project_settings_file, "Settings file does not exist: #{@project_settings_file}"
 
         @raw_settings = File\load @project_settings_file, mode:'r', parser:Json\decode
+        @raw_settings = { } if (type @raw_settings) == 'string'
 
         override_values = (src_tab, target_tab) ->
             for key, value in pairs src_tab
