@@ -8,7 +8,6 @@ class Wget
 
         if os.iswindows
             @exec = PowerShell "Invoke-WebRequest"
-            print "-Uri \"#{url}\" -OutFile \"#{dest}\""
             @exec\run "-Uri '#{url}' -OutFile '#{dest}'"
         else
             @exec = Exec "wget"
