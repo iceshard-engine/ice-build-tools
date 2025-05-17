@@ -149,15 +149,15 @@ class Android
 
         cmdline_tools_basepath = Path\join sdk_root, "cmdline-tools"
         cmdline_tools_version = (Setting\get "android.sdk.cmdline_tools_version") or "latest"
-        if cmdline_tools_version == 'latest'
-            unless Dir\exists Path\join cmdline_tools_basepath, cmdline_tools_version
-                cmdline_tools_version = Version\from_str '0.0'
+        if cmdline_tools_version == "latest"
+            unless Dir\exists (Path\join cmdline_tools_basepath, cmdline_tools_version)
+                current_ver = Version\from_str "0.0"
 
                 -- Run over each path and compare versions
                 for path, m in Dir\list cmdline_tools_basepath, recursive:false
-                    path_ver =  Version\from_str path
-                    if path_ver and path_ver\newer cmdline_tools_version
-                        cmdline_tools_version = path_ver
+                    path_ver = Version\from_str path
+                    if path_ver and path_ver\newer current_ver
+                        cmdline_tools_version = path
                         Log\verbose "Selecting new version for android command-line tools: #{cmdline_tools_version}"
 
             Log\info "Selected version for android command-line tools: #{cmdline_tools_version}"

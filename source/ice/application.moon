@@ -87,6 +87,8 @@ class Application
         -- Execute the given command or the main handler
         args = @args
         if args.command
+            return true if args.command == 'init'
+
             old_dir = os.cwd!
             command = @commands[args.command]
 
