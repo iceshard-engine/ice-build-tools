@@ -160,7 +160,7 @@ class Android
                         cmdline_tools_version = path_ver
                         Log\verbose "Selecting new version for android command-line tools: #{cmdline_tools_version}"
 
-            Log\info "Selectied version for android command-line tools: #{cmdline_tools_version}"
+            Log\info "Selected version for android command-line tools: #{cmdline_tools_version}"
 
         possible_paths = {
             { deprecated:true, source:'tools', location:Path\join sdk_root, "tools", "bin", "sdkmanager.bat" }
