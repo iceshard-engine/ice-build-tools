@@ -1,4 +1,5 @@
 import Path, Dir, File from require "ice.core.fs"
+import Version from require "ice.core.version"
 import Exec, Where from require "ice.tools.exec"
 import Zip from require "ice.tools.zip"
 import Wget from require "ice.tools.wget"
@@ -149,11 +150,17 @@ class Android
         cmdline_tools_basepath = Path\join sdk_root, "cmdline-tools"
         cmdline_tools_version = (Setting\get "android.sdk.cmdline_tools_version") or "latest"
         if cmdline_tools_version == 'latest'
-            cmdline_tools_version = '0.0'
-            for path, m in Dir\list cmdline_tools_basepath, recursive:false
-                if m == 'directory' and cmdline_tools_version < path
-                    cmdline_tools_version = path
-                    Log\verbose "Selecting new version for android command-line tools: #{cmdline_tools_version}"
+            unless Dir\exists Path\join cmdline_tools_basepath, cmdline_tools_version
+                cmdline_tools_version = Version\from_str '0.0'
+
+                -- Run over each path and compare versions
+                for path, m in Dir\list cmdline_tools_basepath, recursive:false
+                    path_ver =  Version\from_str path
+                    if path_ver and path_ver\newer cmdline_tools_version
+                        cmdline_tools_version = path_ver
+                        Log\verbose "Selecting new version for android command-line tools: #{cmdline_tools_version}"
+
+            Log\info "Selectied version for android command-line tools: #{cmdline_tools_version}"
 
         possible_paths = {
             { deprecated:true, source:'tools', location:Path\join sdk_root, "tools", "bin", "sdkmanager.bat" }
