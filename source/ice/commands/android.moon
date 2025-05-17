@@ -23,9 +23,7 @@ class AndroidCommand extends Command
         Setting 'android.gradle.settings_template',
             default:loc_project_settings_template
             predicate:(v) -> v == nil or File\exists v
-        Setting 'android.gradle.wrapper', default:'build/android_gradle'
-        Setting 'android.gradle.version', default:'8.1.1'
-        Setting 'android.gradle.package_url', default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
+        Setting 'android.gradle.wrapper', default:'build/android_gradlew'
     }
     @arguments {
         group 'general', description: "Basic options"
@@ -52,6 +50,10 @@ class AndroidCommand extends Command
             description: 'Copies the template files stored in the package to the provided location. Skips files that arleady exist.'
             name: '--copy-templates'
             argname:'<path>'
+        flag 'install_gradle',
+            group: 'setup'
+            description: 'Downloads the gradle binary into the build directory to be used for Android projects. (Local installation)'
+            name: '--install-gradle'
         group 'sdk', description: "SDK management options"
         option 'list_sdks',
             group: 'sdk'
@@ -77,9 +79,11 @@ class AndroidCommand extends Command
                 java = Where\path 'java'
                 @fail "Missing valid java installation. Make sure the 'java' command is visible!" unless java ~= nil
 
-                gradle = Where\path 'gradle'
-                @fail "Missing valid gradle installation. Make sure the 'gradle' command is visible!" unless gradle ~= nil
-                @gradle = Exec gradle
+                -- Find a valid gradle installation
+                @gradle = Android\detect_gradle install_if_missing:args.install_gradle
+
+                @fail "Missing valid gradle installation. Make sure the 'gradle' command is visible or run this command with '--install-gradle' flag!" unless @gradle.exec ~= nil
+                @log\verbose "Gradle installation found at '#{@gradle.exec}'"
 
                 -- cmdline = Setting\get 'android.commandlinetools'
                 -- @fail "Missing valid android commandline-tools installation. Make sure you've installed the tools and set the setting properly!" unless Path\exists cmdline

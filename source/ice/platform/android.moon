@@ -1,5 +1,7 @@
 import Path, Dir, File from require "ice.core.fs"
-import Exec from require "ice.tools.exec"
+import Exec, Where from require "ice.tools.exec"
+import Zip from require "ice.tools.zip"
+import Wget from require "ice.tools.wget"
 
 import Setting from require "ice.settings"
 import Log from require "ice.core.logger"
@@ -81,7 +83,30 @@ class Android
         Setting "android.sdk_root" -- deprecated
         Setting "android.sdk.root"
         Setting "android.sdk.cmdline_tools_version", default:'13.0'
+        Setting 'android.gradle.version', default:'8.14'
+        Setting 'android.gradle.package_url', default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
+        Setting 'android.gradle.local_install', default:'build/gradle'
     }
+
+    @detect_gradle: (opts = {}) =>
+        gradle_ver = Setting\get 'android.gradle.version'
+        gradle_local = Setting\get 'android.gradle.local_install'
+
+        gradle_bin = Where\path 'gradle'
+        if gradle_bin == nil and opts.install_if_missing
+            gradle_package = (Setting\get 'android.gradle.package_url')\gsub "{ver}", gradle_ver
+            gradle_zip = "build/gradle-#{gradle_ver}-bin.zip"
+            gradle_bin = Path\join gradle_local, "gradle-#{gradle_ver}", "bin", os.osselect win:'gradle.bat', unix:'gradle'
+
+            -- Download and extract the gradle zip into the local install path
+            unless File\exists gradle_bin
+                Wget\url gradle_package, gradle_zip unless File\exists gradle_zip
+                Zip\extract gradle_zip, gradle_local, force:true
+                Log\verbose "Installed Gradle at '#{gradle_bin}'"
+            else
+                Log\verbose "Gradle already installed at '#{gradle_bin}'"
+
+        return (Exec gradle_bin) if File\exists gradle_bin
 
     @detect_android_sdk: =>
         possible_paths = {
