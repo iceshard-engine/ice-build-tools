@@ -92,11 +92,21 @@ class Android
         gradle_ver = Setting\get 'android.gradle.version'
         gradle_local = Setting\get 'android.gradle.local_install'
 
-        gradle_bin = Where\path 'gradle'
-        if gradle_bin == nil and opts.install_if_missing
+        gradle_paths = {
+            Path\join gradle_local, "gradle-#{gradle_ver}", "bin", os.osselect win:'gradle.bat', unix:'gradle'
+            Where\path 'gradle'
+        }
+
+        -- Check for common paths
+        unless opts.force_install
+            for path in *gradle_paths
+                return Exec path if File\exists path
+
+        -- Intall locally if requested
+        gradle_bin = gradle_paths[1]
+        if opts.install_if_missing or opts.force_install
             gradle_package = (Setting\get 'android.gradle.package_url')\gsub "{ver}", gradle_ver
             gradle_zip = "build/gradle-#{gradle_ver}-bin.zip"
-            gradle_bin = Path\join gradle_local, "gradle-#{gradle_ver}", "bin", os.osselect win:'gradle.bat', unix:'gradle'
 
             -- Download and extract the gradle zip into the local install path
             unless File\exists gradle_bin

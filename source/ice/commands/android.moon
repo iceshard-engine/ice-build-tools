@@ -82,7 +82,7 @@ class AndroidCommand extends Command
                 -- Find a valid gradle installation
                 @gradle = Android\detect_gradle install_if_missing:args.install_gradle
 
-                @fail "Missing valid gradle installation. Make sure the 'gradle' command is visible or run this command with '--install-gradle' flag!" unless @gradle.exec ~= nil
+                @fail "Missing valid gradle installation. Make sure the 'gradle' command is visible or run this command with '--install-gradle' flag!" unless @gradle ~= nil
                 @log\verbose "Gradle installation found at '#{@gradle.exec}'"
 
                 -- cmdline = Setting\get 'android.commandlinetools'
