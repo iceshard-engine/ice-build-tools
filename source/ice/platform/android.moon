@@ -82,7 +82,7 @@ class Android
     @settings: {
         Setting "android.sdk_root" -- deprecated
         Setting "android.sdk.root"
-        Setting "android.sdk.cmdline_tools_version", default:'13.0'
+        Setting "android.sdk.cmdline_tools_version"
         Setting 'android.gradle.version', default:'8.14'
         Setting 'android.gradle.package_url', default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
         Setting 'android.gradle.local_install', default:'build/gradle'
@@ -146,10 +146,18 @@ class Android
 
         Log\verbose "Selected Android SDK at location #{sdk_root}"
 
+        cmdline_tools_basepath = Path\join sdk_root, "cmdline-tools"
         cmdline_tools_version = (Setting\get "android.sdk.cmdline_tools_version") or "latest"
+        if cmdline_tools_version == 'latest'
+            cmdline_tools_version = '0.0'
+            for path, m in Dir\list cmdline_tools_basepath, recursive:false
+                if m == 'directory' and cmdline_tools_version < path
+                    cmdline_tools_version = path
+                    Log\verbose "Selecting new version for android command-line tools: #{cmdline_tools_version}"
+
         possible_paths = {
             { deprecated:true, source:'tools', location:Path\join sdk_root, "tools", "bin", "sdkmanager.bat" }
-            { source:'cmdline-tools', location:Path\join sdk_root, "cmdline-tools", cmdline_tools_version, "bin", "sdkmanager.bat" } -- This version is known to work better than latest
+            { source:'cmdline-tools', location:Path\join cmdline_tools_basepath, cmdline_tools_version, "bin", "sdkmanager.bat" } -- This version is known to work better than latest
         }
 
         sdk_manager = nil

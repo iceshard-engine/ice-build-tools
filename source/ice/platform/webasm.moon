@@ -65,9 +65,10 @@ class WebAsm
                 Log\verbose "Searching for WebAsm SDK in #{entry.source} path #{entry.location}..."
                 Log\warning "Overriden WebAsm SDK location from #{sdk_root} to #{entry.location}" if sdk_root and sdk_root != entry.location
                 sdk_root = entry.location
-        Log\verbose "Selected WebAsm SDK at location #{sdk_root}"
 
         return nil unless sdk_root
+        Log\verbose "Selected WebAsm SDK at location #{sdk_root}"
+
         emsdk_location = @find_webasm_sdk sdk_root
         return nil unless emsdk_location
         return { location: Path\join Dir\current!, emsdk_location }
