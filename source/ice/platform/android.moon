@@ -90,7 +90,7 @@ class Android
 
     @detect_gradle: (opts = {}) =>
         gradle_ver = Setting\get 'android.gradle.version'
-        gradle_local = Setting\get 'android.gradle.local_install'
+        gradle_local = Path\join Dir\current!, (Setting\get 'android.gradle.local_install')
 
         gradle_paths = {
             Path\join gradle_local, "gradle-#{gradle_ver}", "bin", os.osselect win:'gradle.bat', unix:'gradle'
