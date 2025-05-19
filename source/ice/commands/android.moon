@@ -190,7 +190,9 @@ class AndroidCommand extends Command
 
         -- If we can open android_targets.txt we continue generation
         android_project = @_load_android_ini INIConfig\open "android_targets.txt", debug:false
-        @fail "No Android projects found for setup!" unless android_project and Dir\exists android_project.location or ""
+        unless android_project and Dir\exists (android_project.location or '')
+            @log\warning "No Android projects found for setup, skipping..."
+            return true
 
         -- Setup the project files
         project_source_location = android_project.location

@@ -6,7 +6,7 @@ import IBT from require "ibt.ibt"
 import Logger, LogCategory, LogLevel, Log from require "ice.core.logger"
 import Command, group, argument, option, flag from require "ice.command"
 import Validation from require "ice.core.validation"
-import Dir from require "ice.core.fs"
+import Path, Dir, File from require "ice.core.fs"
 
 class Application
     @arguments = (defined_args) =>
@@ -33,6 +33,10 @@ class Application
         @parser\command_target "command"
 
         init_cmd = @parser\command "init", "Used to initialize the workspace for development."
+        opt = init_cmd\option "--usage"
+        opt\choices {"default", "ci"}
+        opt\description "Initializing for a specific usage scenario. 'ci' will generate additional files to reduce platform-specific code on CI workflows."
+
         -- init_cmd\option "--update-tools", "Updates the tool dependencies."
         -- init_cmd\option "-p --profile", "A profile that should be used to generate conan profile files. This profile will affect the picked dependencies."
 
@@ -86,8 +90,20 @@ class Application
 
         -- Execute the given command or the main handler
         args = @args
-        if args.command
-            return true if args.command == 'init'
+        if args.command == 'init'
+            if args.usage == 'ci'
+                script = ""
+                script = (Path\join os.cwd!, project.script) unless Path\is_absolute project.script
+                contents = "$ScriptArgs = ($Args -join ' ')\n"
+                contents ..= "$ScriptFile = \"#{script}\"\n"
+                contents ..= "if ($IsLinux) {\n"
+                contents ..= "  bash $ScriptFile $ScriptArgs\n"
+                contents ..= "} elseif ($IsWindows -or [System.Environment]::OSVersion.Platform -eq 'Win32NT') {\n"
+                contents ..= "  cmd /C $ScriptFile $ScriptArgs\n"
+                contents ..= "}\n"
+                File\save (Path\join os.cwd!, "ibt-ci.ps1"), contents
+
+        elseif args.command
 
             old_dir = os.cwd!
             command = @commands[args.command]
