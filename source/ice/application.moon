@@ -97,9 +97,9 @@ class Application
                 contents = "$ScriptArgs = ($Args -join ' ')\n"
                 contents ..= "$ScriptFile = \"#{script}\"\n"
                 contents ..= "if ($IsLinux) {\n"
-                contents ..= "  bash $ScriptFile $ScriptArgs\n"
+                contents ..= "  bash \"$ScriptFile $ScriptArgs\"\n"
                 contents ..= "} elseif ($IsWindows -or [System.Environment]::OSVersion.Platform -eq 'Win32NT') {\n"
-                contents ..= "  cmd /C $ScriptFile $ScriptArgs\n"
+                contents ..= "  cmd /C \"$ScriptFile $ScriptArgs\"\n"
                 contents ..= "}\n"
                 File\save (Path\join os.cwd!, "ibt-ci.ps1"), contents
 
