@@ -36,6 +36,7 @@ create_toolchain = (ver_major, ndkver, arch_list) ->
                     { 'ToolchainIncludeDirs', { } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
+                    { 'ConanCompilerVersion', ver_major }
                 }
     }
 

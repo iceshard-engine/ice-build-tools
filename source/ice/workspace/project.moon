@@ -9,6 +9,7 @@ import SDK_Cpp_WinRT from require "ice.sdks.winrt_cpp"
 import SDK_Android from require "ice.sdks.android"
 import SDK_WebAsm from require "ice.sdks.webasm"
 import TC_MSVC from require "ice.toolchain.vs_msvc"
+import TC_Clang from require "ice.toolchain.clang"
 
 import Conan from require "ice.tools.conan"
 import FastBuild from require "ice.tools.fastbuild"
@@ -36,7 +37,7 @@ project_settings = {
         for file in *(list or { })
             return false unless File\exists file
         return true
-    Setting 'project.fbuild.vstudio_solution_file', predicate:(v) -> (type v) == 'string'
+    Setting 'project.fbuild.vstudio_solution_file'
 
     -- Conan related settings
     Setting 'project.conan.profiles', default:'source/conanprofiles.txt', predicate:File\exists
@@ -46,6 +47,7 @@ project_settings = {
 class Project
     @locators: {
         TC_MSVC
+        TC_Clang
         SDK_Win32
         SDK_Linux
         SDK_Cpp_WinRT
@@ -204,7 +206,7 @@ class Project
 
 build_conan_profiles = (workspace_root, output_directory, out_table, opts = { }) ->
     -- Execute FBuild to generate conan_profiles.txt
-    profiles_file = Path\join  workspace_root, output_directory, 'conan_profiles.txt'
+    profiles_file = Path\join workspace_root, output_directory, 'conan_profiles.txt'
     if (not File\exists profiles_file) or opts.force
         FastBuild!\build
             config: Path\join workspace_root, output_directory, 'fbuild.bff'

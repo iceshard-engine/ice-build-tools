@@ -1,4 +1,5 @@
 import Where, Exec from require "ice.tools.exec"
+import Locator from require "ice.locator"
 
 toolchain_definitions = {
     generated: (ver_major) ->
@@ -30,19 +31,19 @@ toolchain_definitions = {
                         { 'ToolchainIncludeDirs', { } }
                         { 'ToolchainLibDirs', { } }
                         { 'ToolchainLibs', { } }
+                        { 'ConanCompilerVersion', ver_major }
                     }
         }
 }
 
 detect_compilers = (ver_major , log_file) ->
-    versions = { '9', '10', '11', '12', '13', '14', '15', '16' }
     results = { }
 
     ar_path = Where\path 'ar', log_file
     unless os.isfile ar_path
         return { }
 
-    for clang_ver in *versions
+    for clang_ver = 9,22 -- We assume Clang to go up to 22 (for now)
         clang_path = Where\path "clang++-#{clang_ver}", log_file
         if clang_path
             clang_major, clang_minor, clang_patch = (((Exec clang_path)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
@@ -60,16 +61,23 @@ detect_compilers = (ver_major , log_file) ->
 
     return results[ver_major] or { }
 
-class Clang
+class Toolchain_Clang extends Locator
+    new: => super Locator.Type.Toolchain, "Clang Compiler Locator"
+
+    locate: =>
+        @\add_result toolchain for toolchain in *@@detect!
+
     @detect: (conan_profile, log_file) =>
         toolchain_list = { }
 
-        -- Only check for clang compiler versions
-        unless conan_profile and conan_profile.compiler and conan_profile.compiler.name == 'clang'
-            return
+        -- -- Only check for clang compiler versions
+        -- unless conan_profile and conan_profile.compiler and conan_profile.compiler.name == 'clang'
+        --     return
 
-        if conan_profile.compiler.version
-            ver_major = conan_profile.compiler.version
+        -- if conan_profile.compiler.version
+        --     ver_major = conan_profile.compiler.version
+
+        for ver_major in *{'18','19','20'}
 
             compiler = detect_compilers ver_major, log_file
             if compiler.clang_path and compiler.ar_path
@@ -88,8 +96,9 @@ class Clang
                             struct_name: toolchain_definition.struct_name
                             compiler_name: toolchain_definition.compiler_name
                             generate: (gen) -> toolchain_definition.generate_structure gen, clang_exe, compiler.ar_path
+                            path:clang_exe
                         }
 
         toolchain_list
 
-{ :Clang }
+{ TC_Clang:Toolchain_Clang, :Toolchain_Clang }

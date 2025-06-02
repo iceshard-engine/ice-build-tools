@@ -49,9 +49,11 @@ class Path
             return l unless r
 
             trimed, sep = trim_separators l
+            abs = if os.isunix and Path\is_absolute l then '/' else ''
+
             return internal_join l, ... if r == "./" or r == ".\\" or r == ""
-            return internal_join "#{trimed}/#{trim_separators r}", ... unless sep
-            return internal_join "#{trimed}#{trim_separators r}", ...
+            return internal_join "#{abs}#{trimed}/#{trim_separators r}", ... unless sep
+            return internal_join "#{abs}#{trimed}#{trim_separators r}", ...
 
         @\normalize internal_join left, right, ...
 

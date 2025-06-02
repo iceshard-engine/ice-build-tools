@@ -1,14 +1,6 @@
-#include "pipelines/shader_pipelines.bff"
-
-.Task_BuildSources =
-[
-    .Step = 'Build'
-    .Type = 'Compile'
-
-    .AllowUnityBuilds = true
-
-    .TaskInputPattern = { '*.cpp', '*.cxx' }
-]
+#include "pipelines/pipeline_tasks.bff"
+#include "pipelines/pipeline_linux.bff"
+#include "pipelines/pipeline_shaders_glsl.bff"
 
 .Task_BuildResources =
 [
@@ -27,26 +19,6 @@
     .TaskCustomOptions = ' "%1"'
 
     .CompilerOutputExtension = '.res'
-]
-
-.Task_LinkExecutable =
-[
-    .Step = 'Link'
-    .Type = 'Link'
-]
-
-.Task_TestExecutable =
-[
-    .Step = 'Test'
-    .Type = 'Test'
-
-    .TaskRequires = { 'Debug' }
-]
-
-.Task_DeployBinaries =
-[
-    .Step = 'Deploy'
-    .Type = 'Deploy'
 ]
 
 .Pipeline_Windows_x64_v142 =
@@ -125,27 +97,6 @@
 ]
 
 
-.Pipeline_Linux_x64_gcc12 =
-[
-    .PipelineName = 'x64'
-
-    .PipelinePlatform = 'Linux'
-    .PipelineToolchain = 'gcc-12.0.0'
-    .PipelineArchitecture = 'x64'
-
-    .PipelineAllowUnityBuilds = false
-
-    .PipelineSteps = {
-        'Build'
-        'Link'
-    }
-
-    .PipelineTasks = {
-        .Task_BuildSources
-        .Task_LinkExecutable
-    }
-]
-
 .Pipeline_Android_armv8_clang =
 [
     .PipelineName = 'Android-arm64'
@@ -207,7 +158,7 @@
 // Default pipelines
 .Pipeline_Windows_x64 = .Pipeline_Windows_x64_v143
 .Pipeline_Windows_UWP = .Pipeline_Windows_UWP_v143
-.Pipeline_Linux_x64 = .Pipeline_Linux_x64_gcc12
+.Pipeline_Linux_x64 = .Pipeline_Linux_x64_clang
 .Piepline_Android_ARM64 = .Pipeline_Android_armv8_clang
 .Piepline_WebAsm = .Piepline_WebAsm_clang
 

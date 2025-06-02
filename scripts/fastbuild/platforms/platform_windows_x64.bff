@@ -52,7 +52,7 @@
 [
     .PlatformSystem = 'Windows'
     .PlatformSupportedFlavours = { }
-    .PlatformSupportedArchitectures = { 'x64' } // x86, arm64
+    .PlatformSupportedArchitectures = { 'x86_64', 'x64' } // x86, arm64
     .PlatformSupportedToolchainFamilies = { 'msvc', 'clang' }
 
     .PlatformRequiredSDKs = {
@@ -84,6 +84,7 @@
     [
         .VSEnabled = true
         // Set name for each arch defined. Is specific arch unsupported by VS set EmptyString
+        .VSArch_x86_64 = 'x64'
         .VSArch_x64 = 'x64'
     ]
 ]

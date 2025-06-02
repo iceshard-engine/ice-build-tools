@@ -31,8 +31,8 @@
 [
     .PlatformSystem = 'Linux'
     .PlatformSupportedFlavours = { }
-    .PlatformSupportedArchitectures = { 'x64' }
-    .PlatformSupportedToolchainFamilies = { 'clang', 'gcc' }
+    .PlatformSupportedArchitectures = { 'x86_64', 'x64' }
+    .PlatformSupportedToolchainFamilies = { 'clang' }
 
     .PlatformRequiredSDKs = {
         'SDK-Linux'

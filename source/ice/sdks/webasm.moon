@@ -40,6 +40,7 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
                     -- This writes paths in the response file with additional slashes fixing an error when linking from a response file.
                     { 'LinkerForceResponseFile', true }
                     { 'LinkerType', 'clang-orbis' }
+                    { 'ConanCompilerVersion', ver_major }
                 }
     }
 

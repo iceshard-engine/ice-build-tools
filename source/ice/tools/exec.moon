@@ -70,7 +70,7 @@ class Where
             line = nil if line\match "is not recognized"
             return line
         else
-            ((Exec 'which')\lines args)[1]
+            ((Exec 'which', nocheck:true)\lines args)[1]
 
     @exec: (name, err_log) =>
         path = Where\path name, err_log

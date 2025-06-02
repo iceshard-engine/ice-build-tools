@@ -1,0 +1,21 @@
+
+.Pipeline_Linux_x64_clang =
+[
+    .PipelineName = 'x64'
+
+    .PipelinePlatform = 'Linux'
+    .PipelineToolchain = 'clang-14.0.0'
+    .PipelineArchitecture = 'x64'
+
+    .PipelineAllowUnityBuilds = false
+
+    .PipelineSteps = {
+        'Build'
+        'Link'
+    }
+
+    .PipelineTasks = {
+        .Task_BuildSources
+        .Task_LinkExecutable
+    }
+]

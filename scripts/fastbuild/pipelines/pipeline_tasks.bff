@@ -1,0 +1,30 @@
+
+.Task_BuildSources =
+[
+    .Step = 'Build'
+    .Type = 'Compile'
+
+    .AllowUnityBuilds = true
+
+    .TaskInputPattern = { '*.cpp', '*.cxx' }
+]
+
+.Task_LinkExecutable =
+[
+    .Step = 'Link'
+    .Type = 'Link'
+]
+
+.Task_TestExecutable =
+[
+    .Step = 'Test'
+    .Type = 'Test'
+
+    .TaskRequires = { 'Debug' }
+]
+
+.Task_DeployBinaries =
+[
+    .Step = 'Deploy'
+    .Type = 'Deploy'
+]
