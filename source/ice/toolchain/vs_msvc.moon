@@ -1,4 +1,5 @@
 import VSWhere from require "ice.tools.vswhere"
+import Exec from require "ice.tools.exec"
 import Locator from require "ice.locator"
 import Dir, Path from require "ice.core.fs"
 
@@ -165,8 +166,8 @@ default_toolchain_definition = (path, platform_toolset, override_libs) ->
             struct_name = "Toolchain_MSVC_#{platform_toolset}"
             compiler_name = "compiler-msvc-#{platform_toolset}"
 
-            cv_major, cv_minor = ((Exec\lines "#{toolchain_bin_dir}\\cl.exe")\gmatch "Compiler Version (%d%d).(%d)")!
-            cv_full = "#{cv_major}#{cv_minor}"
+            version_lines = (Exec Path\join toolchain_bin_dir, "cl.exe")\lines '2>&1'
+            cv_full = (version_lines[1]\match "(%d%d%.%d)")\gsub "%.", ""
 
             gen\structure struct_name, (gen) ->
                 gen\variables { { 'ToolchainPath', toolchain_bin_dir } }

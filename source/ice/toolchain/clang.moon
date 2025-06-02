@@ -40,7 +40,7 @@ detect_compilers = (ver_major , log_file) ->
     results = { }
 
     ar_path = Where\path 'ar', log_file
-    unless os.isfile ar_path
+    unless ar_path and os.isfile ar_path
         return { }
 
     for clang_ver = 9,22 -- We assume Clang to go up to 22 (for now)
@@ -65,6 +65,9 @@ class Toolchain_Clang extends Locator
     new: => super Locator.Type.Toolchain, "Clang Compiler Locator"
 
     locate: =>
+        -- Clang currently only supports detection on Unix systems
+        return unless os.isunix
+
         @\add_result toolchain for toolchain in *@@detect!
 
     @detect: (conan_profile, log_file) =>
