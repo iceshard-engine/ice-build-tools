@@ -95,3 +95,17 @@
     'ToolchainFrontend'
     'ConanCompilerVersion'
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following script is used to setup the .Enviroment variable in a more controlled manner
+
+.Environment = { }
+ForEach( .Toolchain in .ToolchainList )
+{
+    .ToolchainEnvironment = { }
+    Using( .Toolchain )
+
+    // Merge the environment to the global list
+    ^Environment + .ToolchainEnvironment
+}
