@@ -75,7 +75,8 @@ class Dir
         if args.skip_parents
             result = lfs.mkdir path
         else
-            partial = ''
+            -- We need to manually start with an absolute parh '/' on unix
+            partial = os.osselect win:'', unix:((Path\is_absolute path) and '/') or ''
             for name in path\gmatch '[^/\\]+'
                 partial ..= "#{name}/"
                 unless os.isdir partial
