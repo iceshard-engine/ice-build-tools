@@ -104,9 +104,14 @@ ForEach( .Pipeline in .AvailablePipelines )
             + .PipelineTags
 
         // Check if we the project has all requirements covered
-        .ProjectRequirementsSatisfied = true
+        .ProjectRequirementsSatisfied = false
         {
             .AvailableTags + .PipelineEnabledProjects
+
+            If ( ( .RequiresAny_EmptyToken in .ProjectRequiresAny ) || ( .ProjectRequiresAny in .AvailableTags ) )
+            {
+                ^ProjectRequirementsSatisfied = true
+            }
 
             ForEach( .Requirement in .ProjectRequires )
             {
@@ -777,7 +782,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     CopyDir( '$CopyDirTargetName$' )
                                     {
                                         .SourcePaths = .CopyDirsList
-                                        .SourcePathsPattern = { '*.dll', '*.so' }
+                                        .SourcePathsPattern = { '*.dll', '*.so*' }
                                         .Dest = '$TargetDeployDirectory$/'
                                     }
                                 }
@@ -786,7 +791,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     CopyDir( '$CopyDirTargetName$' )
                                     {
                                         .SourcePaths = .CopyDirsList
-                                        .SourcePathsPattern = { '*.dll', '*.so' }
+                                        .SourcePathsPattern = { '*.dll', '*.so*' }
                                         .Dest = '$TargetOutputDirectory$/'
                                     }
                                 }

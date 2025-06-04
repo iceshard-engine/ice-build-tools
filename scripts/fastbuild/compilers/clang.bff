@@ -47,7 +47,7 @@
     .FrontendProperties =
     [
         .CompilerOptions + ' -c "%1" -o "%2" -g'
-        .LinkerOptions + ' %1 -o "%2"'
+        .LinkerOptions + ' -Wl,--start-group %1 -Wl,--end-group -o "%2"'
         .LibrarianOptions + 'rcs "%2" %1'
     ]
 ]

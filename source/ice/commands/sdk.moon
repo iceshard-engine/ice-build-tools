@@ -39,4 +39,4 @@ class SDKCommand extends Command
                 for part in *sdk_parts.additional_sdks
                     @log\info "  #{part.name} (installed)\n  - version: #{part.version}\n  - location: #{part.location}"
 
-{ :SDKCommand}
+{ :SDKCommand }

@@ -50,6 +50,7 @@ class SDK_Vulkan extends Locator
         if version == '' or version == 'latest'
             version = 'unknown'
             install_path = Setting\get 'vulkan.install_location'
+            return version unless Dir\exists install_path
             for version_dir in Dir\list install_path
                 if Dir\exists Path\join install_path, version_dir, "x86_64"
                     version = version_dir
@@ -75,7 +76,7 @@ class SDK_Vulkan extends Locator
 
             glslc_compiler = {
                 name: "vk-glslc-#{vk_version.major}-#{vk_version.minor}-#{vk_version.patch}"
-                executable: Path\join vulkan_sdk, "Bin/glslc.exe"
+                executable: os.osselect win:(Path\join vulkan_sdk, "Bin/glslc.exe"), unix:(Path\join vulkan_sdk, "bin/glslc")
                 compiler_family: 'custom'
             }
             glslc_struct_name = "Toolchain_VK_GLSLC_#{vk_version.major}_#{vk_version.minor}"

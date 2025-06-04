@@ -28,6 +28,7 @@
 }
 
 .DefaultGroup = 'Unspecified'
+.RequiresAny_EmptyToken = '::EmptyToken::'
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // The following defines are used to allow users project wide configuration changes
