@@ -28,21 +28,48 @@ class SDK_Vulkan extends Locator
             tags = Json\decode Wget\content @@tags_url
             version = tags[1].name\match "(%d+%.%d+%.%d+%.%d+)"
 
-        package_name = "vulkansdk-linux-x86_64-#{version}.tar.gz"
-        package_path = Path\join (Setting\get 'vulkan.install_location'), package_name
+        install_path = Setting\get 'vulkan.install_location'
+        package_name = "vulkansdk-linux-x86_64-#{version}.tar.xz"
+        package_path = Path\join install_path, package_name
 
         -- Create the location and download the package
         Dir\create Path\parent package_path
         Wget\url (@@download_url\gsub "{version}", version), package_path
 
         -- Unpack and setup variables
-        Zip\extract package_path, (Setting\get 'vulkan.install_location'), use_tar:true
+        sdk_root = Path\join install_path, version
+        sdk_path = Path\join sdk_root, 'x86_64'
 
+        unless Dir\exists sdk_root
+            Zip\extract package_path, install_path, use_tar:true, force:true
+
+        Log\info "Vulkan SDK v#{version} installed under '#{sdk_root}'"
+
+    _find_version: =>
+        version = Setting\get 'vulkan.version'
+        if version == '' or version == 'latest'
+            version = 'unknown'
+            install_path = Setting\get 'vulkan.install_location'
+            for version_dir in Dir\list install_path
+                if Dir\exists Path\join install_path, version_dir, "x86_64"
+                    version = version_dir
+                    break
+        version
 
     locate: =>
-        vulkan_sdk = os.getenv "VULKAN_SDK"
-        if vulkan_sdk ~= nil and Dir\exists vulkan_sdk
-            vk_version = { (Path\name vulkan_sdk)\match "(%d+)%.(%d+)%.(%d+)%.(%d+)" }
+        vulkan_sdk_locations = {
+            Path\join (Setting\get "vulkan.install_location"), @\_find_version!, 'x86_64'
+            os.getenv "VULKAN_SDK"
+        }
+
+        vulkan_sdk = nil
+        for candidate_path in *vulkan_sdk_locations
+            Log\debug "Vulkan-SDK: Checking candidate path: #{candidate_path}"
+            if Dir\exists candidate_path
+                vulkan_sdk = candidate_path
+
+        if vulkan_sdk ~= nil
+            vk_version = { vulkan_sdk\match "(%d+)%.(%d+)%.(%d+)%.(%d+)" }
             vk_version = { major:vk_version[1], minor:vk_version[2], patch:vk_version[3], build:vk_version[4] }
             vk_version_string = "#{vk_version.major}.#{vk_version.minor}.#{vk_version.patch}.#{vk_version.build}"
 

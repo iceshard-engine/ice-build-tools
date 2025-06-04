@@ -121,6 +121,7 @@ class Dir
         result
 
     @list = (path, args = { keep_meta_paths:false, recursive:false }) =>
+        Validation\assert (type args) == 'table', "Second arguments needs to be of type 'table' or 'nil', got '#{type args}'"
         unless (Dir\exists path) then ->
 
         -- Paths we want to skip

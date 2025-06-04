@@ -12,13 +12,13 @@ class Zip
             @exec\run "-LiteralPath \"#{file}\" -DestinationPath \"#{dir}\" " .. (options.force and '-Force' or '')
         else
             if options.use_tar
-                ext = Path\extension file, long:true
-                mode = if (ext == '.tar.gz') or (ext == '.tgz') then 'z' else ''
+                ext = Path\extension file
+                mode = if (ext == '.gz') or (ext == '.tgz') then 'z' else ''
 
-                @exec = Exec "tar"
-                @exec\run "-#{mode}xf #{file} -C #{dir}" .. (options.force and '-o' or '')
+                @exec = Exec "tar", nocheck:true
+                @exec\run "-#{mode}xf #{file} -C #{dir}"
             else
-                @exec = Exec "unzip"
+                @exec = Exec "unzip", nocheck:true
                 @exec\run "#{file} -d #{dir} " .. (options.force and '-o' or '')
 
 

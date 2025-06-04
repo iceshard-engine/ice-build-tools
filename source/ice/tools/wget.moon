@@ -11,14 +11,15 @@ class Wget
             @exec = PowerShell "Invoke-WebRequest"
             @exec\run "-Uri '#{url}' -OutFile '#{dest}'"
         else
-            @exec = Exec "wget"
-            @exec\run (options.allow_unsecure and '' or '--https-only') .. " -o #{dest} #{url}"
+            @exec = Exec "wget", nocheck:true
+            @exec\run (options.allow_unsecure and '' or '--https-only') .. " -O #{dest} #{url}"
 
     @content: (url) =>
         if os.iswindows
             @exec = PowerShell "Invoke-WebRequest"
             return @exec\capture "-Uri '#{url}'", 'Content'
         else
-            assert false
+            @exec = Exec "wget", nocheck:true
+            @exec\capture "-qO- #{url}"
 
 { :Wget }

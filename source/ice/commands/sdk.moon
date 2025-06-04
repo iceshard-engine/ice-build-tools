@@ -29,15 +29,14 @@ class SDKCommand extends Command
         @log\info "Located SDK's"
         SDKList\each (sdk) ->
             sdk_parts = toolchains:{}, platform_sdks:{}, additional_sdks:{}
-            sdk\install!
             sdk\locate_internal sdk_parts
 
             -- for part in *sdk_parts.platform_sdks
             --     @log\info "- #{part.name}"
             if #sdk_parts.additional_sdks == 0
-                @log\info "  #{part.name} (unavailable)"
+                @log\info "  #{sdk.name} (unavailable)"
             else
                 for part in *sdk_parts.additional_sdks
-                    @log\info "  #{part.name} (installed)\n  - version: #{part.version})\n  - location: #{part.location}"
+                    @log\info "  #{part.name} (installed)\n  - version: #{part.version}\n  - location: #{part.location}"
 
 { :SDKCommand}
