@@ -4,7 +4,8 @@ import File, Dir from require "ice.core.fs"
 
 class Wget
     @url: (url, dest, options = {}) =>
-        Validation\assert (File\exists dest) == false or options.force, "[Unzip] Destination file '#{dest}' already exists, use 'force:true' if that's expected."
+        unless Validation\ensure (File\exists dest) == false or options.force, "[Unzip] Destination file '#{dest}' already exists, use 'force:true' if that's expected."
+            return
 
         if os.iswindows
             @exec = PowerShell "Invoke-WebRequest"
@@ -12,5 +13,12 @@ class Wget
         else
             @exec = Exec "wget"
             @exec\run (options.allow_unsecure and '' or '--https-only') .. " -o #{dest} #{url}"
+
+    @content: (url) =>
+        if os.iswindows
+            @exec = PowerShell "Invoke-WebRequest"
+            return @exec\capture "-Uri '#{url}'", 'Content'
+        else
+            assert false
 
 { :Wget }

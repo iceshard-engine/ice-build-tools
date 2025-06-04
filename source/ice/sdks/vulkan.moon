@@ -1,13 +1,50 @@
+import Setting from require "ice.settings"
 import Locator from require "ice.locator"
 import Path, Dir, File from require "ice.core.fs"
+import Wget from require "ice.tools.wget"
+import Zip from require "ice.tools.zip"
+import Json from require "ice.util.json"
+import SDKList from require "ice.sdks"
+import Log from require "ice.core.logger"
 
 class SDK_Vulkan extends Locator
-    new: => super Locator.Type.CommonSDK, "Vulkan SDK Locator"
+    @tags_url = "https://api.github.com/repos/KhronosGroup/Vulkan-Headers/tags"
+    @download_url = "https://sdk.lunarg.com/sdk/download/{version}/linux/vulkansdk-linux-x86_64-{version}.tar.xz"
+
+    @settings: {
+        Setting "vulkan.version", default:'latest'
+        Setting "vulkan.install_location", default:'build/vulkan'
+    }
+
+    new: =>
+        super Locator.Type.CommonSDK, "Vulkan SDK Locator"
+        SDKList\add @
+
+    install: (version) =>
+        Log\error "Currently Vulkan SDK installation is only available on Linux distributions." unless os.isunix
+
+        version = Setting\get 'vulkan.version'
+        if version == 'latest' or version == ''
+            tags = Json\decode Wget\content @@tags_url
+            version = tags[1].name\match "(%d+%.%d+%.%d+%.%d+)"
+
+        package_name = "vulkansdk-linux-x86_64-#{version}.tar.gz"
+        package_path = Path\join (Setting\get 'vulkan.install_location'), package_name
+
+        -- Create the location and download the package
+        Dir\create Path\parent package_path
+        Wget\url (@@download_url\gsub "{version}", version), package_path
+
+        -- Unpack and setup variables
+        Zip\extract package_path, (Setting\get 'vulkan.install_location'), use_tar:true
+
+
     locate: =>
         vulkan_sdk = os.getenv "VULKAN_SDK"
         if vulkan_sdk ~= nil and Dir\exists vulkan_sdk
-            vk_version = { (Path\name vulkan_sdk)\match "(%d+)%.(%d+)%.(%d+)%.%d+" }
+            vk_version = { (Path\name vulkan_sdk)\match "(%d+)%.(%d+)%.(%d+)%.(%d+)" }
             vk_version = { major:vk_version[1], minor:vk_version[2], patch:vk_version[3], build:vk_version[4] }
+            vk_version_string = "#{vk_version.major}.#{vk_version.minor}.#{vk_version.patch}.#{vk_version.build}"
 
             glslc_compiler = {
                 name: "vk-glslc-#{vk_version.major}-#{vk_version.minor}-#{vk_version.patch}"
@@ -52,6 +89,7 @@ class SDK_Vulkan extends Locator
 
             @\add_result {
                 name: 'SDK-Vulkan'
+                version: vk_version_string
                 struct_name: 'SDK_Vulkan'
                 supported_platforms: { 'Windows' }
                 location: vulkan_sdk

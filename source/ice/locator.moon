@@ -19,6 +19,9 @@ class Locator
         else
             Log\error "Unknown result type '#{@type}' encountered while executing '#{type}' (#{@name}) locator"
 
+    install_internal: =>
+        @\install! if (type @.install) == 'function'
+
     locate_internal: (@context) =>
         @\locate @context
 
