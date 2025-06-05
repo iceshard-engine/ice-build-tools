@@ -73,6 +73,9 @@ class Project
         @add_locator locator_type! for locator_type in *(@@locators or {})
         @_load_settings 'tools/settings.json'
 
+        -- Deserialize all settings
+        Settings\deserialize @raw_settings
+
     _load_settings: (@project_settings_file) =>
         Validation\assert File\exists @project_settings_file, "Settings file does not exist: #{@project_settings_file}"
 

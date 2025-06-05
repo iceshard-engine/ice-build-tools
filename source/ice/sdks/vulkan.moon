@@ -13,22 +13,58 @@ class SDK_Vulkan extends Locator
 
     @settings: {
         Setting "vulkan.version", default:'latest'
-        Setting "vulkan.install_location", default:'build/vulkan'
+        Setting "vulkan.folder_name", default:'vulkan'
     }
 
     new: =>
-        super Locator.Type.CommonSDK, "Vulkan SDK Locator"
+        super Locator.Type.CommonSDK, "Vulkan SDK", "vulkan"
         SDKList\add @
+
+    latest_version: =>
+        tags = Json\decode Wget\content @@tags_url
+        tags[1].name\match "(%d+%.%d+%.%d+%.%d+)"
+
+    install_location: =>
+        location = Path\join SDKList\root!, (Setting\get 'vulkan.folder_name')
+        location
+
+    install_version: (version) =>
+        version = Setting\get 'vulkan.version'
+        if version == 'latest' or version == ''
+            version = @\latest_version!
+        version
+
+    installed_version: =>
+        version = Setting\get 'vulkan.version'
+        if version == '' or version == 'latest'
+            version = 'unknown'
+            install_path = @\install_location!
+            return version unless Dir\exists install_path
+            for version_dir in Dir\list install_path
+                if Dir\exists Path\join install_path, version_dir, "x86_64"
+                    version = version_dir
+                    break
+        version
+
+    installed_location: =>
+        vulkan_sdk_locations = {
+            Path\join Dir\current!, @\install_location!, @\installed_version!, 'x86_64'
+            os.getenv "VULKAN_SDK"
+        }
+
+        vulkan_sdk = nil
+        for candidate_path in *vulkan_sdk_locations
+            Log\debug "Vulkan-SDK: Checking candidate path: #{candidate_path}"
+            if Dir\exists candidate_path
+                vulkan_sdk = candidate_path
+        vulkan_sdk
 
     install: (version) =>
         Log\error "Currently Vulkan SDK installation is only available on Linux distributions." unless os.isunix
 
-        version = Setting\get 'vulkan.version'
-        if version == 'latest' or version == ''
-            tags = Json\decode Wget\content @@tags_url
-            version = tags[1].name\match "(%d+%.%d+%.%d+%.%d+)"
+        version = @\install_version version
 
-        install_path = Setting\get 'vulkan.install_location'
+        install_path = @\install_location!
         package_name = "vulkansdk-linux-x86_64-#{version}.tar.xz"
         package_path = Path\join install_path, package_name
 
@@ -45,30 +81,8 @@ class SDK_Vulkan extends Locator
 
         Log\info "Vulkan SDK v#{version} installed under '#{sdk_root}'"
 
-    _find_version: =>
-        version = Setting\get 'vulkan.version'
-        if version == '' or version == 'latest'
-            version = 'unknown'
-            install_path = Setting\get 'vulkan.install_location'
-            return version unless Dir\exists install_path
-            for version_dir in Dir\list install_path
-                if Dir\exists Path\join install_path, version_dir, "x86_64"
-                    version = version_dir
-                    break
-        version
-
     locate: =>
-        vulkan_sdk_locations = {
-            Path\join (Setting\get "vulkan.install_location"), @\_find_version!, 'x86_64'
-            os.getenv "VULKAN_SDK"
-        }
-
-        vulkan_sdk = nil
-        for candidate_path in *vulkan_sdk_locations
-            Log\debug "Vulkan-SDK: Checking candidate path: #{candidate_path}"
-            if Dir\exists candidate_path
-                vulkan_sdk = candidate_path
-
+        vulkan_sdk = @\installed_location!
         if vulkan_sdk ~= nil
             vk_version = { vulkan_sdk\match "(%d+)%.(%d+)%.(%d+)%.(%d+)" }
             vk_version = { major:vk_version[1], minor:vk_version[2], patch:vk_version[3], build:vk_version[4] }
@@ -119,18 +133,18 @@ class SDK_Vulkan extends Locator
                 name: 'SDK-Vulkan'
                 version: vk_version_string
                 struct_name: 'SDK_Vulkan'
-                supported_platforms: { 'Windows' }
+                supported_platforms: { 'Windows', 'Linux' }
                 location: vulkan_sdk
                 binaries: Path\join vulkan_sdk, "Bin"
-                defines: { 'VK_USE_PLATFORM_WIN32_KHR' }
+                defines: { os.osselect win:'VK_USE_PLATFORM_WIN32_KHR', unix:'VK_USE_PLATFORM_WAYLAND_KHR' }
                 includedirs: {
-                    Path\join vulkan_sdk, "Include"
+                    Path\join vulkan_sdk, os.osselect win:"Include", unix:'include'
                 }
                 libdirs: {
-                    Path\join vulkan_sdk, "Lib"
+                    Path\join vulkan_sdk, os.osselect win:"Lib", unix:'lib'
                 }
                 libs: {
-                    "vulkan-1"
+                    os.osselect win:"vulkan-1", unix:'vulkan'
                 }
                 runtime_libs: {
                     "shaderc_shared"

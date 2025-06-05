@@ -7,7 +7,7 @@ class Locator
         @PlatformSDK: 'Platform SDK'
         @CommonSDK: 'Common SDK'
 
-    new: (@type, @name) =>
+    new: (@type, @name, @id) =>
 
     add_result: (object, type=@type) =>
         if type == Locator.Type.Toolchain

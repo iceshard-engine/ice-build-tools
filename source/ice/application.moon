@@ -7,6 +7,7 @@ import Logger, LogCategory, LogLevel, Log from require "ice.core.logger"
 import Command, group, argument, option, flag from require "ice.command"
 import Validation from require "ice.core.validation"
 import Path, Dir, File from require "ice.core.fs"
+import Settings from require "ice.settings"
 
 class Application
     @arguments = (defined_args) =>
@@ -82,7 +83,8 @@ class Application
         @parser\add_help_command!
 
         success, result = @parser\pparse arg
-        Validation\assert "Failed argument parsing with error: #{result}"
+        unless Validation\ensure success, "Failed argument parsing with error: #{result}"
+            os.exit -1
         @args = result
 
     run: (project) =>
