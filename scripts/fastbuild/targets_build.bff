@@ -111,14 +111,14 @@ ForEach( .Pipeline in .AvailablePipelines )
             If ( ( .RequiresAny_EmptyToken in .ProjectRequiresAny ) || ( .ProjectRequiresAny in .AvailableTags ) )
             {
                 ^ProjectRequirementsSatisfied = true
-            }
 
-            ForEach( .Requirement in .ProjectRequires )
-            {
-                If ( .Requirement not in .AvailableTags )
+                ForEach( .Requirement in .ProjectRequires )
                 {
-                    // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
-                    ^ProjectRequirementsSatisfied = false
+                    If ( .Requirement not in .AvailableTags )
+                    {
+                        // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
+                        ^ProjectRequirementsSatisfied = false
+                    }
                 }
             }
 
@@ -150,12 +150,18 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .RuleKind = .Kind_None
                 Using( .ProjectRule )
 
-                .RuleRequirementsSatisfied = true
-                ForEach( .Requirement in .RuleRequires )
+                .RuleRequirementsSatisfied = false
+
+                If ( ( .RequiresAny_EmptyToken in .RuleRequiresAny ) || ( .RuleRequiresAny in .AvailableTags ) )
                 {
-                    If ( .Requirement not in .AvailableTags )
+                    ^RuleRequirementsSatisfied = true
+
+                    ForEach( .Requirement in .RuleRequires )
                     {
-                        ^RuleRequirementsSatisfied = false
+                        If ( .Requirement not in .AvailableTags )
+                        {
+                            ^RuleRequirementsSatisfied = false
+                        }
                     }
                 }
 
@@ -349,21 +355,27 @@ ForEach( .Pipeline in .AvailablePipelines )
                     // Check if we ment the rule requirements
                     .Name = "<null>"
                     .RuleRequires = { }
+                    .RuleRequiresAny = { .RequiresAny_EmptyToken }
 
                     Using( .EmptyProperties )
                     Using( .Rule )
 
-                    ForEach( .Dependency in .Uses )
+                    .RuleRequirementsSatisfied = false
+                    If ( ( .RequiresAny_EmptyToken in .RuleRequiresAny ) || ( .RuleRequiresAny in .AvailableTags ) )
                     {
-                        ^RuleRequires + '$Dependency$-$PipelineName$-$ConfigPlatform$-$ConfigName$'
-                    }
+                        ^RuleRequirementsSatisfied = true
 
-                    .RuleRequirementsSatisfied = true
-                    ForEach( .Requirement in .RuleRequires )
-                    {
-                        If ( .Requirement not in .AvailableTags )
+                        ForEach( .Dependency in .Uses )
                         {
-                            ^RuleRequirementsSatisfied = false
+                            ^RuleRequires + '$Dependency$-$PipelineName$-$ConfigPlatform$-$ConfigName$'
+                        }
+
+                        ForEach( .Requirement in .RuleRequires )
+                        {
+                            If ( .Requirement not in .AvailableTags )
+                            {
+                                ^RuleRequirementsSatisfied = false
+                            }
                         }
                     }
 
@@ -692,6 +704,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     .RuntimeExternal = { }
                     .RuntimeLibsPaths = [ ]
                     .KnownLibs = { }
+
                     Using( .FinalProperties )
                     Using( .ProjectStepDependencies )
                     Using( .RuntimeLibsPaths )

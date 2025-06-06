@@ -111,6 +111,7 @@ ForEach( .Project in .Projects )
         [
             .RuleName = "$Name$_DefaultRule"
             .RuleRequires = { }
+            .RuleRequiresAny = { .RequiresAny_EmptyToken }
             .RuleDependsOn = ^DependsOn
             .RuleUnitTests = .UnitTests
 
@@ -141,6 +142,7 @@ ForEach( .Project in .Projects )
         {
             .Kind = .Kind_None
             .Requires = { }
+            .RequiresAny = { .RequiresAny_EmptyToken }
             .DependsOn = []
             .Public = []
             .Private = []
@@ -152,6 +154,7 @@ ForEach( .Project in .Projects )
                 .RuleName = .Name
                 .RuleKind = .Kind
                 .RuleRequires = .Requires
+                .RuleRequiresAny = .RequiresAny
                 .RuleDependsOn = .DependsOn
                 .RuleUnitTests = .UnitTests
                 .RuleDeploy = .Deploy
