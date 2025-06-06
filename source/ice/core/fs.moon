@@ -155,11 +155,13 @@ class Dir
                                 -- while path_type != 'file'
 
                 while path_type != 'file'
-                    if (not child_path) and #next_dirs > 0
-                        path = next_dirs[1]
-                        it = Dir\list path, keep_meta_paths:false, recursive:false, metadata:'mode'
-                        table.remove next_dirs, 1
-                        return path, 'directory'
+                    if (not child_path)
+                        if #next_dirs > 0
+                            path = next_dirs[1]
+                            it = Dir\list path, keep_meta_paths:false, recursive:false, metadata:'mode'
+                            table.remove next_dirs, 1
+                            return path, 'directory'
+                        else break
 
                     if path_type == 'directory'
                         table.insert next_dirs, 1, "#{path}/#{child_path}"

@@ -165,13 +165,11 @@ class VSCodeProjectGen
                     referenced: true
                     name: "#{config_target.name} (#{config_target.pipeline}-#{config_target.platform}-#{config_target.config})"
                     request: "launch"
-                    type: os.osselect win:'cppvsdbg', unix:'gdb'
+                    type: os.osselect win:'cppvsdbg', unix:'lldb-dap'
                     program: config_target.executable
-                    args: { }
-                    stopAtEntry: false
                     cwd: config_target.working_dir
-                    environment: { }
-                    console: "newExternalTerminal"
+                    presentation: { group:config_target.name, order:(config_target.config == 'Develop' and 1 or 2), hidden:(config_target.config == 'Release') }
+                    args: { }
                 }
 
         -- Clear the previous configuration list

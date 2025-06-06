@@ -147,11 +147,11 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            @log\verbose "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified if args.verbose
+            @log\debug "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified if args.verbose
         elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
-            @log\info "Modification of authors or license values in #{file}", r.authors, r.license
-            @log\verbose "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors and args.verbose == 2
-            @log\verbose "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx and args.verbose == 2
+            @log\verbose "Modification of authors or license values in #{file}", r.authors, r.license
+            @log\debug "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors and args.verbose == 2
+            @log\debug "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx and args.verbose == 2
 
             -- Let's don't end up reversing years...
             r.file_modified = r.year_modified
@@ -173,7 +173,7 @@ class LicenseCommand extends Command
             r.license = lic_spdx if r.license ~= lic_spdx
             final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
 
-            @log\info "Generating copyright and SPDX header in file: #{file}"
+            @log\verbose "Generating copyright and SPDX header in file: #{file}"
             contents = File\load file, mode:'rb'
             contents = contents\sub header_size + 1
             contents = final_header .. contents
@@ -181,11 +181,12 @@ class LicenseCommand extends Command
             if f = File\open file, mode:"wb"
                 f\write contents
                 f\close!
+                return true
             else
                 @log\warning "Failed to update file #{file}"
         elseif args.generate
-            @log\verbose "No updated required for file #{file}"
-
+            @log\debug "No updated required for file #{file}"
+        return false
 
     search_dir: (args, project) =>
         sdpx_extensions = @settings.license.mode_sources.file_extensions
@@ -199,11 +200,15 @@ class LicenseCommand extends Command
         else
             files = [change.filename for change in *(Git!\status path:project.source_dir) when sdpx_extensions[Path\extension change.filename]]
 
+        @log\verbose "Selected #{#files} files." if #files > 0
+        updated = 0
         for file in *files
-            @check_license_header file, args
+            updated += 1 if @check_license_header file, args
+        @log\info "Updated license headers in #{updated} files."
 
 
     execute_mode_sources: (args, project) =>
+        @log\info "Checking source files for necessary license header changes..."
         @log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
         @log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
 

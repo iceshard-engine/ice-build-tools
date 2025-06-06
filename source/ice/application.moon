@@ -64,8 +64,10 @@ class Application
                 'e':LogLevel.Error, 'error':LogLevel.Error
             }
 
+            @loglvl = lvlmap[logv]
+
             -- Initialize global logger if it wasn't done yet
-            Logger\init stdout:{ level:lvlmap[logv] }
+            Logger\init stdout:{ level:@loglvl }
 
         -- Go through all defined actions (table values)
         @commands = { }
@@ -111,7 +113,7 @@ class Application
             command = @commands[args.command]
 
             -- Recreate the logger with additional verbosity if set
-            command.log = Logger\create command.log.category, stdout:{level:LogLevel.Verbose} if args.verbose
+            command.log = Logger\create command.log.category, stdout:{level:@loglvl}
 
             -- We only validate setting for the current command to avoid setting everything when not necessary!
             errors = command\validate_settings!
