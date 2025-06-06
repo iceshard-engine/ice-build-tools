@@ -106,7 +106,6 @@ class WebAsmCommand extends Command
 
         @fail "Target for project #{args.project} (#{args.config}) does not exist" if selected_target == nil
         serving_path = Path\parent selected_target.executable
-        print serving_path
         Dir\enter serving_path, ->
             -- Build the parameter list
             params = "#{http_server}"

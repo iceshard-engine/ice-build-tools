@@ -1,4 +1,4 @@
-import Command, option, flag, group from require "ice.command"
+import Command, argument, option, flag, group from require "ice.command"
 import Setting from require "ice.settings"
 import FastBuild from require "ice.tools.fastbuild"
 
@@ -14,12 +14,17 @@ class BuildCommand extends Command
 
     @arguments {
         group 'build', description: "Configuring build behavior"
-        option 'target',
+        argument 'target',
             description: 'One or more targets to build.'
+            group: 'build'
+            name: 'target'
+            args: '*'
+            default: Setting\ref 'build.default_target'
+        option 'target',
+            description: 'One or more targets to build. (deprecated)'
             group: 'build'
             name: '-t --target'
             count: '*'
-            default: Setting\ref 'build.default_target'
         flag 'match',
             description: 'Enables simple matching for target selection.'
             group: 'build'
@@ -72,7 +77,7 @@ class BuildCommand extends Command
         }
 
         if args.list_targets
-            pattern = args.list_targets\gsub '-', '%-'
+            pattern = args.list_targets\gsub '-', '%%-'
             pattern = pattern\gsub '*', '%.*'
             targets = BuildCommand\gather_targets pattern, bad_matches
 
@@ -83,6 +88,9 @@ class BuildCommand extends Command
             if args.match
                 new_targets = { }
                 for target_pattern in *args.target
+                    target_pattern = target_pattern\gsub '-', '%%-'
+                    target_pattern = target_pattern\gsub '*', '%.*'
+
                     table.insert new_targets, target for target in *(BuildCommand\gather_targets target_pattern, bad_matches)
                 args.target = new_targets
 

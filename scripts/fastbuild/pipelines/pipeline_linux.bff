@@ -12,10 +12,13 @@
     .PipelineSteps = {
         'Build'
         'Link'
+        'Deploy'
     }
 
     .PipelineTasks = {
         .Task_BuildSources
         .Task_LinkExecutable
+        .Task_TestExecutable
+        .Task_DeployBinaries
     }
 ]
