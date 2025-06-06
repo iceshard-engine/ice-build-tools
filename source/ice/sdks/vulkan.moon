@@ -148,7 +148,7 @@ class SDK_Vulkan extends Locator
                         "vulkan-1"
                     }
                     runtime_libs: {
-                        shaderc_shared: Path\join vulkan_sdk, "Bin", "shaderc_shared.dll"
+                        shaderc_shared: { Path\join vulkan_sdk, "Bin", "shaderc_shared.dll" }
                     }
                 }
 

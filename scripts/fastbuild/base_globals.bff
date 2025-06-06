@@ -98,14 +98,25 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// The following script is used to setup the .Enviroment variable in a more controlled manner
+// The following script is used to setup the .Environment variable in a more controlled manner
 
 .Environment = { }
+
+#if __WINDOWS__
+
+#import SystemRoot
+.Environment + {
+    "SystemRoot=$SystemRoot$"
+    "TMP=$SystemRoot$\temp"
+}
+
+#endif
+
 ForEach( .Toolchain in .ToolchainList )
 {
     .ToolchainEnvironment = { }
     Using( .Toolchain )
 
     // Merge the environment to the global list
-    ^Environment + .ToolchainEnvironment
+    ^Environment + { .ToolchainEnvironment }
 }

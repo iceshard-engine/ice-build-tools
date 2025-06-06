@@ -736,16 +736,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                                 // Only do this once
                                 ^Step_CopyDirsTargets + .CopyExternalTargetName
-
-                                If ( .ProjectDeploy )
-                                {
-                                    Copy( '$CopyExternalTargetName$' )
-                                    {
-                                        .Source = .CopyExternalFiles
-                                        .Dest = '$TargetDeployDirectory$/'
-                                    }
-                                }
-                                If ( !.ProjectDeploy )
+                                If ( !.ProjectDeploy ) // Only copy for non-deploy projects
                                 {
                                     Copy( '$CopyExternalTargetName$' )
                                     {
