@@ -129,27 +129,56 @@ class SDK_Vulkan extends Locator
                 libs: { }
             }, Locator.Type.PlatformSDK
 
-            @\add_result {
-                name: 'SDK-Vulkan'
-                version: vk_version_string
-                struct_name: 'SDK_Vulkan'
-                supported_platforms: { 'Windows', 'Linux' }
-                location: vulkan_sdk
-                binaries: Path\join vulkan_sdk, "Bin"
-                defines: { os.osselect win:'VK_USE_PLATFORM_WIN32_KHR', unix:'VK_USE_PLATFORM_WAYLAND_KHR' }
-                includedirs: {
-                    Path\join vulkan_sdk, os.osselect win:"Include", unix:'include'
+            if os.iswindows
+                @\add_result {
+                    name: 'SDK-Vulkan'
+                    version: vk_version_string
+                    struct_name: 'SDK_Vulkan'
+                    supported_platforms: { 'Windows' }
+                    location: vulkan_sdk
+                    binaries: Path\join vulkan_sdk, "Bin"
+                    defines: { 'VK_USE_PLATFORM_WIN32_KHR' }
+                    includedirs: {
+                        Path\join vulkan_sdk, "Include"
+                    }
+                    libdirs: {
+                        Path\join vulkan_sdk, "Lib"
+                    }
+                    libs: {
+                        "vulkan-1"
+                    }
+                    runtime_libs: {
+                        shaderc_shared: Path\join vulkan_sdk, "Bin", "shaderc_shared.dll"
+                    }
                 }
-                libdirs: {
-                    Path\join vulkan_sdk, os.osselect win:"Lib", unix:'lib'
+
+            elseif os.isunix
+                lib_path = Path\join vulkan_sdk, "lib"
+
+                @\add_result {
+                    name: 'SDK-Vulkan'
+                    version: vk_version_string
+                    struct_name: 'SDK_Vulkan'
+                    supported_platforms: { 'Windows', 'Linux' }
+                    location: vulkan_sdk
+                    binaries: Path\join vulkan_sdk, "bin"
+                    defines: {
+                        'VK_USE_PLATFORM_WAYLAND_KHR'
+                        'VK_USE_PLATFORM_XLIB_KHR'
+                    }
+                    includedirs: {
+                        Path\join vulkan_sdk, 'include'
+                    }
+                    libdirs: {
+                        Path\join vulkan_sdk, 'lib'
+                    }
+                    libs: {
+                        'vulkan'
+                    }
+                    runtime_libs: {
+                        shaderc_shared: Dir\find_files lib_path, full_path:true, filter: (name, path) -> name\match "libshaderc_shared.so%.*"
+                    }
                 }
-                libs: {
-                    os.osselect win:"vulkan-1", unix:'vulkan'
-                }
-                runtime_libs: {
-                    "shaderc_shared"
-                }
-            }
 
 
 { :SDK_Vulkan }

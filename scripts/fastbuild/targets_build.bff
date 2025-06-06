@@ -685,7 +685,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                     + .PipelineProperties_SDKs
                     + .PipelineProperties_Toolchain
 
-                // Extenral dynamic libararies
+                // External dynamic libararies
                 //--------------------------------------------------------------------------
                 {
                     .Runtime = { }
@@ -705,8 +705,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                                 If ( .Dependency == .KnownLib )
                                 {
-                                    .Extension = .'OutputExtension_SharedLib'
-                                    ^RuntimeExternal + '$KnownLibPath$$Extension$'
+                                    ^RuntimeExternal + '$KnownLibPath$'
                                 }
                             }
                         }
@@ -715,6 +714,49 @@ ForEach( .Pipeline in .AvailablePipelines )
                             ^RuntimeNew + .Dependency
                         }
                     }
+
+                    If ( .CopyModules )
+                    {
+                        .CopyExternal = false
+                        .CopyExternalFiles = { }
+                        ForEach( .External in .RuntimeExternal )
+                        {
+                            ^CopyExternal = true
+                            If ( .External not in .CopyExternalFiles )
+                            {
+                                ^CopyExternalFiles + .External
+                            }
+                        }
+
+                        If ( .CopyExternal )
+                        {
+                            .CopyExternalTargetName = '$ProjectTarget$-copyexternal'
+
+                            If ( .CopyExternalTargetName not in .Step_CopyDirsTargets )
+                            {
+                                // Only do this once
+                                ^Step_CopyDirsTargets + .CopyExternalTargetName
+
+                                If ( .ProjectDeploy )
+                                {
+                                    Copy( '$CopyExternalTargetName$' )
+                                    {
+                                        .Source = .CopyExternalFiles
+                                        .Dest = '$TargetDeployDirectory$/'
+                                    }
+                                }
+                                If ( !.ProjectDeploy )
+                                {
+                                    Copy( '$CopyExternalTargetName$' )
+                                    {
+                                        .Source = .CopyExternalFiles
+                                        .Dest = '$TargetOutputDirectory$/'
+                                    }
+                                }
+                                ^StepDependencies + .CopyExternalTargetName
+                            }
+                        }
+                    } // If ( .CopyModules )
 
                     .ProjectStepDependenciesNew =
                     [
@@ -795,7 +837,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                         .Dest = '$TargetOutputDirectory$/'
                                     }
                                 }
-                                ^StepDependencies + '$ProjectTarget$-$ConanModuleName$-copydir'
+                                ^StepDependencies + .CopyDirTargetName
                             }
                         }
                     } // If ( .CopyModules )

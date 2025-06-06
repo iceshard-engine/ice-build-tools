@@ -122,17 +122,20 @@ class FastBuildBuildSystem extends BuildSystem
             { 'IncludeDirs', sdk.includedirs }
             { 'LibDirs', sdk.libdirs }
             { 'Libs', sdk.libs }
-            { 'RuntimeLibs', sdk.runtime_libs or { } }
+            -- { 'RuntimeLibs', sdk.runtime_libs or { } }
         }
 
-        if sdk.runtime_libs and sdk.binaries
+        if sdk.runtime_libs
             gen\line!
             gen\structure 'RuntimeLibsPaths', (gen) ->
+                lib_names = { }
                 lib_paths = { }
-                for lib in *sdk.runtime_libs
-                    table.insert lib_paths, Path\normalize Path\join sdk.binaries, "#{lib}"
+                for name, libs in pairs sdk.runtime_libs
+                    for lib_path in *libs
+                        table.insert lib_names, name
+                        table.insert lib_paths, lib_path
                 gen\variables {
-                    { "KnownLibs", sdk.runtime_libs },
+                    { "KnownLibs", lib_names },
                     { "KnownLibsPath", lib_paths }
                 }
 

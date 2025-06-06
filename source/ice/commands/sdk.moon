@@ -47,7 +47,9 @@ class SDKCommand extends Command
     _execute_install: (args, project) =>
         sdk = SDKList\find args.sdkid
         @fail "Selected unknown SDK with id '#{args.sdkid}'" unless sdk
-        if Path\exists sdk\installed_location!
+
+        location = sdk\installed_location!
+        if location and Path\exists location
             @log\info "The #{sdk.name} is already installed under '#{sdk\installed_location!}'"
             @success!
 

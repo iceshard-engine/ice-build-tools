@@ -181,13 +181,16 @@ class Dir
                         result = iter dir_obj
                     return result, Path\info (Path\join path, result), (args.metadata or 'mode')
 
-    @find_files = (path, args = { recursive:false }) =>
+    @find_files = (path, args = { recursive:false, full_path:false }) =>
         return { } unless Dir\exists path
 
         result = { }
         for child_path, child_type in Dir\list path, recursive:args.recursive
             if child_type == 'file'
-                table.insert result, child_path if not args.filter or args.filter child_path, path
+                if args.full_path
+                    table.insert result, (Path\join path, child_path) if not args.filter or args.filter child_path, path
+                else
+                    table.insert result, child_path if not args.filter or args.filter child_path, path
         result
 
 class File
