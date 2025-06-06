@@ -50,6 +50,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             {
                 .VSSuffix = ''
                 .VSEnabled = false
+                .PipelineProjectRequirements = { }
 
                 Using( .Pipeline )
                 Using( .PipelineVSInfo )
@@ -59,7 +60,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                 If ( .ProjectKind in .Kind_Applications )
                 {
                     // Check if we the project has all requirements covered
-                    .ProjectRequirementsSatisfied = true
+                    .ProjectRequirementsSatisfied = false
                     {
                         .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                         .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
@@ -70,11 +71,29 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                             + .PipelineTags
                             + .'PipelineAvailableProjects_$PipelineIdentifier$'
 
-                        ForEach( .Requirement in .ProjectRequires )
+                        If ( ( .RequiresAny_EmptyToken in .ProjectRequiresAny ) || ( .ProjectRequiresAny in .AvailableTags ) )
                         {
-                            If ( .Requirement not in .AvailableTags )
+                            ^ProjectRequirementsSatisfied = true
+
+                            ForEach( .Requirement in .ProjectRequires )
                             {
-                                ^ProjectRequirementsSatisfied = false
+                                If ( .Requirement not in .AvailableTags )
+                                {
+                                    // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
+                                    ^ProjectRequirementsSatisfied = false
+                                }
+                            }
+                        }
+
+                        If ( .ProjectRequirementsSatisfied )
+                        {
+                            ForEach ( .Requirement in .PipelineProjectRequirements )
+                            {
+                                If ( .Requirement not in .ProjectTags )
+                                {
+                                    // Print( "INFO: $ProjectName$ is not enabled for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$) missing `$Requirement$`" )
+                                    ^ProjectRequirementsSatisfied = false
+                                }
                             }
                         }
 
