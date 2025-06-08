@@ -103,6 +103,7 @@ ForEach( .Pipeline in .AvailablePipelines )
 
         .AvailableTags = .PipelineAvailableSDKs
             + .PipelineTags
+            + .Final_GlobalTags
 
         // Check if we the project has all requirements covered
         .ProjectRequirementsSatisfied = false
