@@ -9,6 +9,8 @@ import Validation from require "ice.core.validation"
 import Path, File, Dir from require "ice.core.fs"
 
 class LicenseCommand extends Command
+    @resolve_conan_modules!
+
     @settings {
         Setting 'license.spdx', required:true
         Setting 'license.authors', required:true

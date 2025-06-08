@@ -37,6 +37,9 @@ class CommandResult
         @result
 
 class Command
+    @requires_conan = false
+    @resolve_conan_modules = (@requires_conan = true) =>
+
     @settings = (defined_settings) =>
         @settings = { }
         @settings_list = { }
@@ -68,6 +71,7 @@ class Command
 
     new: (@parser, settings) =>
         @settings = { }
+        @requires_conan = @@requires_conan
 
         -- Load settings before continuing
         @\load_settings settings

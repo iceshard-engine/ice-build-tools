@@ -13,6 +13,8 @@ import Validation from require "ice.core.validation"
 import Path, File, Dir from require "ice.core.fs"
 
 class DevenvCommand extends Command
+    @resolve_conan_modules!
+
     @settings {
         Setting 'devenv.default_environment', default:(os.osselect win:'vstudio', mac:'vscode', unix: 'vscode')
     }

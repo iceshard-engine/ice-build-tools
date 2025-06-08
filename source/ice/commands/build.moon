@@ -7,6 +7,8 @@ import Log from require "ice.core.logger"
 import Dir, Path, File from require "ice.core.fs"
 
 class BuildCommand extends Command
+    @resolve_conan_modules!
+
     @settings {
         Setting 'build.fbuild_config_file', default:'fbuild.bff'
         Setting 'build.default_target', default:'all'

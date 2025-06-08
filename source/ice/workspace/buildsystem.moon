@@ -239,10 +239,13 @@ class FastBuildBuildSystem extends BuildSystem
             gen\line ".ConanProfiles + '#{profile.name}'"
             gen\line '{'
             gen\indented (gen) ->
-                gen\line ".ConanModules = [ ]"
-                conandeps_file = Path.Unix\join @workspace_dir, profile.location, 'conandeps.bff'
+                conandeps_file = Path.Unix\join profile.location, 'conandeps.bff'
                 gen\line "#if file_exists(\"#{conandeps_file}\")"
                 gen\include conandeps_file
+                gen\line ".ConanModulesExt = [ .ConanModulesDefined = true ]"
+                gen\line ".ConanModules + .ConanModulesExt"
+                gen\line "#else"
+                gen\line ".ConanModules = [ .ConanModulesDefined = false ]"
                 gen\line "#endif"
                 gen\line '^ConanProfilesModules + .ConanModules'
             gen\line '}'

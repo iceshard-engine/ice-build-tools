@@ -47,6 +47,9 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
     }
 
 class SDK_WebAsm extends Locator
+    id: 'web'
+    name: 'WebAssembly (Emscripten)'
+
     new: =>
         super Locator.Type.PlatformSDK, "WebAssembly Platform Locator"
         @settings = WebAsm.settings

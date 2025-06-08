@@ -15,6 +15,8 @@ loc_project_settings_template = Path\join (os.getenv 'IBT_DATA'), 'project_setti
 loc_module_build_template = Path\join (os.getenv 'IBT_DATA'), 'module_build.gradle.template.kts'
 
 class AndroidCommand extends Command
+    @resolve_conan_modules!
+
     @settings {
         Setting 'android.projects', default:{}
         Setting 'android.gradle.build_template',
@@ -25,6 +27,7 @@ class AndroidCommand extends Command
             predicate:(v) -> v == nil or File\exists v
         Setting 'android.gradle.wrapper', default:'build/android_gradlew'
     }
+
     @arguments {
         group 'general', description: "Basic options"
         argument 'mode',

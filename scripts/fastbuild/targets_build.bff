@@ -45,6 +45,7 @@
 //
 // Prepare global build rules
 //
+.Final_GlobalTags = { }
 .Final_GlobalRules = { }
 .Final_AliasList = { }
 .Final_CleanAliasList = { }
@@ -111,6 +112,9 @@ ForEach( .Pipeline in .AvailablePipelines )
             If ( ( .RequiresAny_EmptyToken in .ProjectRequiresAny ) || ( .ProjectRequiresAny in .AvailableTags ) )
             {
                 ^ProjectRequirementsSatisfied = true
+
+                // Expand project requirements for this scope only
+                .ProjectRequires + .PipelineDynamicRequirements
 
                 ForEach( .Requirement in .ProjectRequires )
                 {
@@ -782,16 +786,19 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         If ( .ConanProfile == .PipelineConfigConanProfile )
                         {
-                            Using( .FinalProperties )
-                            // Using( .'ConanModules_$PipelineConfigConan$' )
                             Using( .ConanProfileModules )
-
-                            ForEach( .ConanModule in .Modules )
+                            If ( .ConanModulesDefined )
                             {
-                                If ( .ConanModule not in .ConanModulesNames )
+                                Using( .FinalProperties )
+                                // Using( .'ConanModules_$PipelineConfigConan$' )
+
+                                ForEach( .ConanModule in .Modules )
                                 {
-                                    ^ConanModulesNames + .ConanModule
-                                    ^ConanModules + .'ConanModule_$ConanModule$'
+                                    If ( .ConanModule not in .ConanModulesNames )
+                                    {
+                                        ^ConanModulesNames + .ConanModule
+                                        ^ConanModules + .'ConanModule_$ConanModule$'
+                                    }
                                 }
                             }
                         }
@@ -1246,6 +1253,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                                             .ExtraFiles = .BinaryFiles
                                             .CompilerFamily = "Custom"
                                         }
+
+                                        ^Final_GlobalTags + '$Name$-compiler'
                                     }
                                     If ( .Type != 'compiler' )
                                     {
@@ -1253,6 +1262,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                                         {
                                             .Targets = '$ProjectTarget$-$TaskIdx$-$Step$'
                                         }
+
+                                        ^Final_GlobalTags + '$Name$-$Type$'
                                     }
                                 }
                                 If ( .LocalCompilerModule )
@@ -1267,6 +1278,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                                         .'$Name$' = .LinkerOutput
                                     ]
                                     ^Pipeline_LocalCompilerTargets + .Pipeline_LocalCompilerTarget
+
+                                    ^Final_GlobalTags + '$Name$-compiler-module'
                                 }
                             }
                         }

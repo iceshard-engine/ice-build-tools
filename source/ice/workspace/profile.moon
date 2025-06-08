@@ -1,88 +1,143 @@
-import Json from require "ice.util.json"
 import ConanProfileGenerator from require "ice.generators.conan_profile"
+import FastBuild from require "ice.tools.fastbuild"
+import Conan from require "ice.tools.conan"
+import Setting from require "ice.settings"
 
 import Path, File, Dir from require "ice.core.fs"
 import Validation from require "ice.core.validation"
 import INIConfig from require "ice.util.iniconfig"
 
-class Profile
-    new: (@location, info) =>
-        @id = info.id
-        @compiler = info.compiler
-        @os = info.os
-        @arch = info.arch
-        @build_type = info.build_type
-        @profile = ConanProfileGenerator!
-        @profile\set_compiler info.compiler.name, (info.compiler.conan_version or info.compiler.version), info.compiler.libcxx
-        @profile\set_system info.os
-        @profile\set_architecture info.arch
-        @profile\set_build_type info.build_type
-        @profile\set_envvar name, value for name, value in pairs info.envs or { }
+-- Conan related settings
+Setting 'project.conan.profiles', default:'source/conanprofiles.txt', predicate:File\exists
+Setting 'project.conan.dependencies', default:'source/conanfile.txt', predicate:File\exists
 
-    get_file: => Path\join @get_location!, "conan_profile.txt"
-    get_location: => Path\join @location, "conan_#{@id}"
-    get_build_type: => @profile.build_type
+_ini_template_files = ->
+    file_conan_profiles = Setting\get 'project.conan.profiles'
+    file_conan_dependencies = Setting\get 'project.conan.dependencies'
+    unless (File\exists file_conan_profiles) and (File\exists file_conan_dependencies)
+        Log\info "No description for source dependencies found, skipping..." unless file_conan_py
+        return
+    file_conan_profiles, file_conan_dependencies
 
-    generate: =>
-        profile_path = @get_location!
-        Dir\create profile_path
+-- Checks for multiple section targets and collapses them (in-order) into the final base section
+_ini_template_resolver = (base_sections) ->
+    (template, profile, config) ->
+        sections = { }
+        for section in *base_sections
+            table.insert sections, { base:section, template:section }
+            table.insert sections, { base:section, template:"#{section}-#{config}" }
+            table.insert sections, { base:section, template:"#{section}-#{profile}" }
+            table.insert sections, { base:section, template:"#{section}-#{profile}-#{config}" }
 
-        @profile\generate @get_file!
+        result = { }
+        for section in *sections
+            values, meta = template\section section.template
+            if values and meta
+                result[section.base] = { } unless result[section.base]
 
-class ProfileList
-    @from_file: (path) =>
-        @from_string File\load path, mode:'r'
+                if meta.type == 'array'
+                    table.insert result[section.base], val for val in *values
+                if meta.type == 'map'
+                    result[section.base][key] = value for key, value in pairs values
+            elseif not result[section.base]
+                result[section.base] = { }
+        result
 
-    @from_string = (string) =>
-        @from_json Json\decode string if string ~= ""
+class ConanProfile
+    @conanfile_resolver = _ini_template_resolver {
+        'requires'
+        'tool_requires'
+        'options'
+        'generators'
+    }
 
-    @from_json: (config) =>
-        return unless Validation\ensure config ~= nil, "Cannot't parse profile from 'nil', Json object expected!"
+    @conanprofile_resolver = _ini_template_resolver {
+        'settings'
+        'options'
+        'buildenv'
+        'conf'
+        'buildenv'
+        'runenv'
+        'tool_requires'
+    }
 
-        profiles = { }
-        for entry in *config
-            Validation\assert entry.os ~= nil, "#{entry.name} is missing 'os' value."
-            Validation\assert entry.arch ~= nil, "#{entry.name} is missing 'arch' value."
-            Validation\assert entry.compiler ~= nil, "#{entry.name} is missing 'compiler' value."
-            Validation\assert entry.build_type ~= nil, "#{entry.name} is missing 'build_type' value."
-            Validation\assert entry.id ~= nil, "#{entry.name} is missing 'id' value."
+    new: (@name, @location, @variables = {}) =>
+        @profile, @config = @name\match "([a-zA-Z0-9_%-]+)%-([a-zA-Z0-9_]+)$"
 
-            if os.iswindows
-                table.insert profiles, entry if entry.os\lower! == "windows"
-            else if os.isunix
-                table.insert profiles, entry if entry.os\lower! == "linux"
-            else
-                Log\error "System '#{entry.os}' in profile '#{entry.name}' is not supported."
+        @hostprofile = Path\join @location, 'host_profile.txt'
+        @conanfile = Path\join @location, 'conanfile.txt'
 
-        profile_map = { }
-        for profile in *profiles
-            Validation\assert profile_map[profile.id] == nil
-            profile_map[profile.id] = profile_map
 
-        return ProfileList profiles
+    install: (opts={force:false}) =>
+        profile_template_file, conanfile_template_file = _ini_template_files!
+        unless Dir\exists @location then Dir\create @location
 
-    new: (@profiles_list) =>
+        -- Execute conan for the generated profile
+        if opts.force or not ((File\exists @hostprofile) and (File\exists @conanfile))
+            INIConfig\save @hostprofile, @_build_profile_object profile_template_file
+            INIConfig\save @conanfile, @_build_conanfile_object conanfile_template_file
 
-    has_profiles: => @profiles_list ~= nil and #@profiles_list > 0
-    prepare_profiles: (location) =>
-        profiles = { }
-        for profile_info in *@profiles_list
-            table.insert profiles, Profile location, profile_info
-        profiles
+            Conan!\install
+                conanfile:@location
+                update:false
+                profile:@hostprofile
+                install_folder:@location
+                build_policy:'missing'
+
+    _build_profile_object: (profile_template_file) =>
+        profile_template = INIConfig\open profile_template_file
+        profile_info = @@.conanprofile_resolver profile_template, @profile, @config
+        Validation\check profile_info, "Missing profile definition for profile: #{@name} (#{@profile})"
+        profile_info.settings.build_type = @config
+
+        for section, values in pairs profile_info
+            updated_values = {}
+            for key, value in pairs values
+                updated_values[key] = value\gsub '$%(([a-zA-Z0-9_]+)%)', (val) ->
+                    @variables[val] or ''
+            profile_info[section] = updated_values
+        profile_info
+
+    _build_conanfile_object: (conanfile_template_file) =>
+        conanfile_template = INIConfig\open conanfile_template_file
+        conanfile_info = @@.conanfile_resolver conanfile_template, @profile, @config
+
+        for section, values in pairs conanfile_info
+            updated_values = {}
+            for key, value in pairs values
+                updated_values[key] = value\gsub '$%(([a-zA-Z0-9_]+)%)', (val) ->
+                    @variables[val] or ''
+            conanfile_info[section] = updated_values
+        conanfile_info
 
 class ConanProfiles
-    new: (@file, output_dir) =>
+    @find_required_profiles = (outdir, opts = {force:false}) =>
+        conan_dir = Path\join outdir, 'conan'
+        conan_profiles_file = Path\join conan_dir, 'required_profiles.txt'
+        unless Dir\exists conan_dir then Dir\create conan_dir
+
+        fbuild_config = Path\join outdir, 'fbuild.bff'
+        Validation\assert (File\exists fbuild_config), "Can't generate '#{conan_profiles_file}' file, missing fastbuild config expected at '#{fbuild_config}'"
+
+        -- Execute FBuild to generate conan_profiles.txt
+        if (not File\exists conan_profiles_file) or opts.force
+            FastBuild!\build
+                config:fbuild_config
+                target:'conan-profiles'
+
+        Validation\assert (File\exists conan_profiles_file), "The `profiles` file is not valid! No valid profile lists where loaded! => '#{profiles_file}'"
+        ConanProfiles conan_profiles_file, conan_dir
+
+    new: (@file, conan_dir) =>
+        @list = { }
         if @config = INIConfig\open @file
             @rawlist = @config\section 'conan-profiles', 'list'
-            @list = { }
             for name in *@rawlist
-                profile, config = name\match "([a-zA-Z0-9_%-]+)%-([a-zA-Z0-9_]+)$"
-                table.insert @list, {
-                    name:name
-                    location:Path\join output_dir, 'conan', (name\lower!\gsub '%-', '_')
-                    profile:profile,
-                    config:config
-                    variables:(@config\section name, 'map') or { }
-                }
+                location = Path\join conan_dir, (name\lower!\gsub '%-', '_')
+                table.insert @list, ConanProfile name, location, @config\section name, 'map'
 
-{ :ProfileList, :Profile, :ConanProfiles }
+    install_all: (opts = {force:false}) =>
+        profile\install opts for profile in *@list
+
+
+{ :ConanProfiles }

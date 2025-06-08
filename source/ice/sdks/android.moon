@@ -41,6 +41,9 @@ create_toolchain = (ver_major, ndkver, arch_list) ->
     }
 
 class SDK_Android extends Locator
+    id: 'android'
+    name: 'Android'
+
     new: =>
         super Locator.Type.PlatformSDK, "Android Platform Locator"
         @settings = Android.settings

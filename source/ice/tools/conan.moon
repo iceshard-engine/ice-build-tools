@@ -45,7 +45,6 @@ class Conan extends Exec
         cmd ..= " --profile:build default" if args.profile
         cmd ..= " --profile:host #{args.profile}" if args.profile
         cmd ..= " --update" if args.update
-
         @\run cmd
 
 { :Conan }
