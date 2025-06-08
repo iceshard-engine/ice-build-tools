@@ -15,8 +15,6 @@ loc_project_settings_template = Path\join (os.getenv 'IBT_DATA'), 'project_setti
 loc_module_build_template = Path\join (os.getenv 'IBT_DATA'), 'module_build.gradle.template.kts'
 
 class AndroidCommand extends Command
-    @resolve_conan_modules!
-
     @settings {
         Setting 'android.projects', default:{}
         Setting 'android.gradle.build_template',
@@ -73,6 +71,7 @@ class AndroidCommand extends Command
     }
 
     prepare: (args, project) =>
+        @requires_conan = args.mode != 'setup'
         @_wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
         @_wrapper_script = Path\join @_wrapper_location, (os.osselect win:'gradlew.bat', unix:'gradlew')
 

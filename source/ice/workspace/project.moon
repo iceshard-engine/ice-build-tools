@@ -164,22 +164,23 @@ class Project
             }
         }
 
-        @build_system\generate!
+        conan_soft_init = ->
+            @build_system\generate!
 
-        -- If we use conanfile.py instead of conanfile.txt we generate things a bit different.
-        --   In such a case conan is the main caller not 'IBT' so we need to follow CONAN workflow
-        --   NOTE: Projects should use 'conan create .' to build in such a case
-        file_conan_py = File\exists 'conanfile.py'
+            -- If we use conanfile.py instead of conanfile.txt we generate things a bit different.
+            --   In such a case conan is the main caller not 'IBT' so we need to follow CONAN workflow
+            --   NOTE: Projects should use 'conan create .' to build in such a case
+            file_conan_py = File\exists 'conanfile.py'
 
-        -- Don't generate anything if conanfile.py is present, the 'conan' is responsible for generating necessary files.
-        if file_conan_py == false and application.requires_conan
-            -- Execute FBuild to generate conan_profiles.txt
-            @profiles = ConanProfiles\find_required_profiles @output_directory_abs
-            @profiles\install_all!
+            -- Don't generate anything if conanfile.py is present, the 'conan' is responsible for generating necessary files.
+            if file_conan_py == false
+                -- Execute FBuild to generate conan_profiles.txt
+                @profiles = ConanProfiles\find_required_profiles @output_directory_abs
+                @profiles\install_all!
 
-            -- Secondary call to generate 'fbuild_conanmodules.bff' file
-            -- We can do it in two stages, becase the first stage only checks for available pipelines, it does not require any compile data to be present yet
-            @build_system\generate_conanmodules @profiles.list
+                -- Secondary call to generate 'fbuild_conanmodules.bff' file
+                -- We can do it in two stages, becase the first stage only checks for available pipelines, it does not require any compile data to be present yet
+                @build_system\generate_conanmodules @profiles.list
 
         command_result = application\run
             script: @project_script
@@ -190,6 +191,7 @@ class Project
             settings_file:@project_settings_file
             forced_platform_file:forced_platform_file
             action: {
+                init_conan: -> conan_soft_init!
                 generate_build_system_files: -> @build_system\generate force:true
                 build_conan_profiles: -> @profiles = ConanProfiles\find_required_profiles @output_directory_abs, force:true
                 build_conan_modules: (list) -> @build_system\generate_conanmodules list

@@ -93,9 +93,8 @@ class Application
             os.exit -1
 
         @args = result
-        @requires_conan = @commands[@args.command].requires_conan if @commands[@args.command] else false
 
-    run: (project) =>
+    run: (project, init_conan) =>
         result = nil
 
         -- Execute the given command or the main handler
@@ -138,6 +137,7 @@ class Application
             fn_execute = command\run_execute
 
             if (fn_prepare args, project)\validate!
+                project.action.init_conan! if command.requires_conan
                 exec_result = (fn_execute args, project)\validate!
 
             os.chdir old_dir

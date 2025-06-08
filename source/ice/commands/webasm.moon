@@ -13,8 +13,6 @@ import Json from require "ice.util.json"
 import IBT from require "ibt.ibt"
 
 class WebAsmCommand extends Command
-    @resolve_conan_modules!
-
     @settings {
         Setting 'webasm.projects', default:{}
         Setting 'webasm.emscripten.location', default:'build/emscripten'
@@ -68,6 +66,7 @@ class WebAsmCommand extends Command
     }
 
     prepare: (args, project) =>
+        @requires_conan = args.mode != 'setup'
 
     execute: (args, project) =>
         return @execute_setup args, project if args.mode == 'setup'
