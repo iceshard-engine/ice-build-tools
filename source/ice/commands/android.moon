@@ -71,7 +71,7 @@ class AndroidCommand extends Command
     }
 
     prepare: (args, project) =>
-        @requires_conan = args.mode != 'setup'
+        @requires_conan = args.mode == 'build'
         @_wrapper_location = Path\join project.workspace_dir, (Setting\get 'android.gradle.wrapper')
         @_wrapper_script = Path\join @_wrapper_location, (os.osselect win:'gradlew.bat', unix:'gradlew')
 

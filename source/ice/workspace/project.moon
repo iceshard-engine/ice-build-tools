@@ -164,9 +164,9 @@ class Project
             }
         }
 
-        conan_soft_init = -> Dir\enter @workspace_root, ->
-            @build_system\generate!
+        @build_system\generate!
 
+        conan_soft_init = -> Dir\enter @workspace_root, ->
             -- If we use conanfile.py instead of conanfile.txt we generate things a bit different.
             --   In such a case conan is the main caller not 'IBT' so we need to follow CONAN workflow
             --   NOTE: Projects should use 'conan create .' to build in such a case
