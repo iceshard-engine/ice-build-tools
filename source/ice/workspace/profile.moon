@@ -6,6 +6,7 @@ import Setting from require "ice.settings"
 import Path, File, Dir from require "ice.core.fs"
 import Validation from require "ice.core.validation"
 import INIConfig from require "ice.util.iniconfig"
+import Log from require "ice.core.logger"
 
 -- Conan related settings
 Setting 'project.conan.profiles', default:'source/conanprofiles.txt', predicate:File\exists
