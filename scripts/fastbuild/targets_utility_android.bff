@@ -58,6 +58,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                     Using( .Pipeline )
                     Using( .PipelineVSInfo )
                     Using( .PipelinePlatformInfo )
+                    Using( .PipelineToolchainInfo )
                     Using( .PipelineOutputExtensions )
 
                     // Check if we the project has all requirements covered
@@ -131,6 +132,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                             [
                                 .MinSDK = .AndroidAPILevel
                                 .TargetSDK = .AndroidAPILevel
+                                .NDKVersion = .NDKVersion
 
                                 Using( .ProjectAndroid )
                                 .CompileSDK = ^AndroidAPILevel
@@ -209,6 +211,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                 + 'android_applicationid=$ApplicationID$'
                 + 'android_versioncode=$VersionCode$'
                 + 'android_versionname=$VersionName$'
+                + 'android_ndkversion=$NDKVersion$'
                 + ' '
 
             ^DetailTargetLines + '[$Target$-Android-Dependencies]'

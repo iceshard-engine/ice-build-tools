@@ -113,8 +113,14 @@
         'Deploy'
     }
 
+    .Task_BuildSourcesAndroid =
+    [
+        Using( .Task_BuildSources )
+        .CompilerOutputExtension = '.o'
+    ]
+
     .PipelineTasks = {
-        .Task_BuildSources
+        .Task_BuildSourcesAndroid
         .Task_LinkExecutable
         .Task_DeployBinaries
     }
