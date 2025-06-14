@@ -11,8 +11,11 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
 {
     .SolutionConfigs = { }
 
+    .ProjectLibs =
+    [
+        .List = { }
+    ]
     .ProjectConfigs = { }
-    .AllProjectConfigs = { }
     .HasAnyConfig = false
 
     Print( '[IBT] Creating android targets...' )
@@ -21,15 +24,18 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
     {
         Using( .Pipeline )
         Using( .PipelinePlatformInfo )
+        Using( .PipelineToolchainInfo )
 
-        .AllProjectConfig =
-        [
-            .Config = .PipelineConfig
-            .Platform = .PipelinePlatform
-            .PipelineName = .PipelineName
-            .Target = 'all-$PipelineName$-$PipelineConfig$'
-        ]
-        ^AllProjectConfigs + .AllProjectConfig
+        If ( .PipelinePlatform == 'Android' )
+        {
+            .PipelineID = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-NDK$NDKVersion$'
+            .ProjectLibsExt =
+            [
+                .List = { '$PipelineID$' }
+                .'Libs_$PipelineID$' = { }
+            ]
+            ^ProjectLibs + .ProjectLibsExt
+        }
 
         ^HasAnyConfig = true
     }
@@ -54,6 +60,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                 {
                     .VSSuffix = ''
                     .VSEnabled = false
+                    .PipelineProjectRequirements = { }
 
                     Using( .Pipeline )
                     Using( .PipelineVSInfo )
@@ -62,7 +69,8 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                     Using( .PipelineOutputExtensions )
 
                     // Check if we the project has all requirements covered
-                    .ProjectRequirementsSatisfied = true
+                    .ProjectRequirementsSatisfied = false
+                    .GradleProjectRequirementsSatisfied = false
                     {
                         .PipelineIdentifier = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
                         .'PipelineAvailableProjects_$PipelineIdentifier$' = { }
@@ -75,21 +83,49 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                             + .ProjectTags
                             + .'PipelineAvailableProjects_$PipelineIdentifier$'
 
-                        .ProjectAndroidRequires = .ProjectRequires
-                            + 'SDK-Android'
-                            + 'Android-Gradle'
+                        .ProjectRequires + { 'Android' }
+                        .ProjectAndroidRequires = { 'SDK-Android', 'Android-Gradle' }
 
-                        ForEach( .Requirement in .ProjectAndroidRequires )
+                        If ( ( .RequiresAny_EmptyToken in .ProjectRequiresAny ) || ( .ProjectRequiresAny in .AvailableTags ) )
                         {
-                            If ( .Requirement not in .AvailableTags )
+                            ^ProjectRequirementsSatisfied = true
+
+                            ForEach( .Requirement in .ProjectRequires )
                             {
-                                ^ProjectRequirementsSatisfied = false
+                                If ( .Requirement not in .AvailableTags )
+                                {
+                                    // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
+                                    ^ProjectRequirementsSatisfied = false
+                                }
+                            }
+
+                            ^GradleProjectRequirementsSatisfied = .ProjectRequirementsSatisfied
+                            ForEach( .Requirement in .ProjectAndroidRequires )
+                            {
+                                If ( .Requirement not in .AvailableTags )
+                                {
+                                    // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
+                                    ^GradleProjectRequirementsSatisfied = false
+                                }
+                            }
+                        }
+
+                        If ( .ProjectRequirementsSatisfied )
+                        {
+                            ForEach ( .Requirement in .PipelineProjectRequirements )
+                            {
+                                If ( .Requirement not in .ProjectTags )
+                                {
+                                    // Print( "INFO: $ProjectName$ is not enabled for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$) missing `$Requirement$`" )
+                                    ^ProjectRequirementsSatisfied = false
+                                    ^GradleProjectRequirementsSatisfied = false
+                                }
                             }
                         }
 
                         If ( .ProjectDeploy == false )
                         {
-                            ^ProjectRequirementsSatisfied = false
+                            ^GradleProjectRequirementsSatisfied = false
                         }
                     }
 
@@ -110,7 +146,62 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                         If ( .PipelineOutputDirSuffix != .EmptyString )
                         {
                             ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
-                            ^TargetDeployDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                            ^TargetDeployDirectory = '$TargetOutputDirectory$'
+                        }
+
+                        If ( .ProjectKind in .Kind_Libraries )
+                        {
+                            .Prefix = .'OutputPrefix_$ProjectKind$'
+                            ^TargetOutputName = '$Prefix$$TargetOutputName$'
+                        }
+
+                        .ProjectConfig =
+                        [
+                            .Name = .ProjectName
+                            .BasePath = .ProjectBasePath
+                            .Config = .PipelineConfig
+                            .Platform = .PipelinePlatform
+                            .PipelineName = .PipelineName
+                            .Target = .ProjectTarget
+
+                            .OutputDir = .TargetOutputDirectory
+                            .DeployDir = .TargetDeployDirectory
+                            .AndroidOutputDir = .TargetAndroidOutputDirectory
+                            .AndroidDeployDir = .TargetAndroidDeployDirectory
+                            .TargetOutputName = .TargetOutputName
+                            .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
+                            .DebugWorkingDir = .ProjectDebugDir
+                        ]
+
+                        .PipelineID = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-NDK$NDKVersion$'
+                        .ProjectLibsExt =
+                        [
+                            .'Libs_$PipelineID$' = { .ProjectConfig }
+                        ]
+                        ^ProjectLibs + .ProjectLibsExt
+
+                        // ^ProjectLibs + .ProjectLibs
+                        // ^ProjectConfigs + .ProjectConfig
+                    }
+
+                    If ( .GradleProjectRequirementsSatisfied )
+                    {
+                        .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+
+                        .OutDirName = .'KindOutDir_$ProjectKind$'
+                        .TargetExtension = .'OutputExtension_$ProjectKind$'
+
+                        .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                        .TargetDeployDirectory = '$WorkspaceBuildDir$/deploy/$ProjectName$/$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                        .TargetAndroidOutputDirectory = .TargetOutputDirectory
+                        .TargetAndroidDeployDirectory = .TargetDeployDirectory
+                        .TargetOutputName = "$ProjectName$$TargetExtension$"
+
+                        If ( .PipelineOutputDirSuffix != .EmptyString )
+                        {
+                            ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                            ^TargetDeployDirectory = '$TargetOutputDirectory$'
                         }
 
                         If ( .ProjectKind in .Kind_Libraries )
@@ -168,17 +259,52 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             ^PipelineEnabledProjects + .ProjectName
         }
 
+
+        {
+            .PipelineLines = { '[pipelines]' }
+            .PipelineLibs = { }
+            .LibsLines = { }
+
+            Using( .ProjectLibs )
+            ForEach( .Entry in .List )
+            {
+                ^PipelineLines
+                    + '$Entry$'
+
+                ^PipelineLibs
+                    + ' '
+                    + '[$Entry$]'
+
+                .Libs = .'Libs_$Entry$'
+                ForEach( .Lib in .Libs )
+                {
+                    Using( .Lib )
+                    ^PipelineLibs
+                        + '$Target$'
+
+                    ^LibsLines
+                        + ' '
+                        + '[$Target$]'
+                        + 'name=$TargetOutputName$'
+                        + 'path=$Executable$'
+                }
+            }
+
+            TextFile( 'android-libs' )
+            {
+                .TextFileOutput = '$WorkspaceBuildDir$/android_libs.txt'
+                .TextFileAlways = false
+
+                .TextFileInputStrings = { ':: IBT Generated File ::' }
+                    + ' '
+                    + .PipelineLines
+                    + .PipelineLibs
+                    + .LibsLines
+            }
+        }
+
         .TargetsLines = { }
-        .RunTargetsLines = { }
         .DetailTargetLines = { }
-
-        // ForEach( .Config in .AllProjectConfigs )
-        // {
-        //     Using( .Config )
-        //     ^BuildTargetsLines
-        //         + .Target
-        // }
-
         ForEach( .Config in .ProjectConfigs )
         {
             Using( .Config )
@@ -227,7 +353,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             }
         }
 
-        TextFile( 'android-targets' )
+        TextFile( 'android-gradle-projects' )
         {
             .TextFileOutput = '$WorkspaceBuildDir$/android_targets.txt'
             .TextFileAlways = false
@@ -238,6 +364,11 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                 + .TargetsLines
                 + ' '
                 + .DetailTargetLines
+        }
+
+        Alias( 'android-targets' )
+        {
+            .Targets = { 'android-gradle-projects', 'android-libs' }
         }
     }
 }
