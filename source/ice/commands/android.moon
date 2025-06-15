@@ -10,18 +10,18 @@ import Android from require "ice.platform.android"
 import INIConfig from require "ice.util.iniconfig"
 import Json from require "ice.util.json"
 
-loc_project_build_template = Path\join (os.getenv 'IBT_DATA'), 'project_build.gradle.template.kts'
-loc_project_settings_template = Path\join (os.getenv 'IBT_DATA'), 'project_settings.gradle.template.kts'
-loc_module_build_template = Path\join (os.getenv 'IBT_DATA'), 'module_build.gradle.template.kts'
+loc_workspace_build_template = Path\join (os.getenv 'IBT_DATA'), 'project_build.gradle.template.kts'
+loc_workspace_settings_template = Path\join (os.getenv 'IBT_DATA'), 'project_settings.gradle.template.kts'
+loc_project_build_template = Path\join (os.getenv 'IBT_DATA'), 'module_build.gradle.template.kts'
 
 class AndroidCommand extends Command
     @settings {
         Setting 'android.projects', default:{}
         Setting 'android.gradle.build_template',
-            default:loc_project_build_template
+            default:loc_workspace_build_template
             predicate:(v) -> v == nil or File\exists v
         Setting 'android.gradle.settings_template',
-            default:loc_project_settings_template
+            default:loc_workspace_settings_template
             predicate:(v) -> v == nil or File\exists v
         Setting 'android.gradle.wrapper', default:'build/android_gradlew'
         Setting 'android.gradle.abi_pipeline_mapping', default:{'x86_64':'x64', 'arm64-v8a':'ARMv8'}
@@ -72,15 +72,18 @@ class AndroidCommand extends Command
 
         -- Work In Progress
         group 'configure', description: "Configuration options"
+        option 'name',
+            group: 'configure',
+            name: '--name'
         option 'builddb',
             group: 'configure',
             name: '--db'
         option 'config',
             group: 'configure'
-            name: '--config -p:Configuration'
+            name: '--config'
         option 'abi',
             group: 'configure'
-            name: '--abi -p:Platform'
+            name: '--abi'
         option 'pipeline',
             group: 'configure'
             name: '--pipeline'
@@ -217,27 +220,29 @@ class AndroidCommand extends Command
             clean:true
 
         -- If we can open android_targets.txt we continue generation
-        android_project = @_load_android_ini INIConfig\open "android_targets.txt", debug:false
-        unless android_project and Dir\exists (android_project.location or '')
-            @log\warning "No Android projects found for setup, skipping..."
+        workspace = @_load_android_projects_all project, INIConfig\open "android_projects.txt", debug:false
+        unless #workspace.projects > 0
+            @log\warning "No valid Android projects found, skipping..."
             return true
 
         -- Setup the project files
-        project_source_location = android_project.location
-        project_build_location = @_wrapper_location
+        workspace_source_location = workspace.templates_location
+        workspace_build_location = @_wrapper_location
 
-        target_settings_template = Path\join project_source_location, "settings.gradle.template.kts"
-        target_build_template = Path\join project_source_location, "build.gradle.template.kts"
+
+        target_settings_template = Path\join workspace_source_location, "settings.gradle.template.kts"
+        target_build_template = Path\join workspace_build_location, "build.gradle.template.kts"
         if args.copy_templates
             @fail "[--copy-templates] Target directory '#{args.copy_templates}' does not exist!" unless Dir\exists args.copy_templates
-            if File\copy loc_project_settings_template, target_settings_template
-                @log\info "Copied project settings template from '#{loc_project_settings_template}' to '#{target_settings_template}'"
-            if File\copy loc_project_build_template, target_build_template
-                @log\info "Copied project build template from '#{loc_project_build_template}' to '#{target_build_template}'"
+            if File\copy loc_workspace_settings_template, target_settings_template
+                @log\info "Copied project settings template from '#{loc_workspace_settings_template}' to '#{target_settings_template}'"
+            if File\copy loc_workspace_build_template, target_build_template
+                @log\info "Copied project build template from '#{loc_workspace_build_template}' to '#{target_build_template}'"
 
-        -- Generate Gradle project directories
-        Dir\create project_build_location
-        Dir\enter project_build_location, ->
+        -- Generate Gradle workspace directories
+        @log\info "Preparing workspace location..."
+        Dir\create workspace_build_location
+        Dir\enter workspace_build_location, ->
             settings_path = Setting\get 'android.gradle.settings_template'
             build_path = Setting\get 'android.gradle.build_template'
 
@@ -252,94 +257,106 @@ class AndroidCommand extends Command
             @log\info "Selected project settings template from: #{settings_path}"
             @log\info "Selected project build template from: #{build_path}"
 
-            @log\info "Writing settings file to: " .. (Path\join project_build_location, 'settings.gradle.kts')
-            @log\info "Writing build file to: " .. (Path\join project_build_location, 'build.gradle.kts')
-            File\save (Path\join project_build_location, 'settings.gradle.kts'), @_fill_template_file settings_path, android_project.context
-            File\save (Path\join project_build_location, 'build.gradle.kts'), @_fill_template_file build_path, android_project.context
+            @log\info "Writing settings file to: " .. (Path\join workspace_build_location, 'settings.gradle.kts')
+            @log\info "Writing build file to: " .. (Path\join workspace_build_location, 'build.gradle.kts')
+            File\save (Path\join workspace_build_location, 'settings.gradle.kts'), @_fill_template_file settings_path, workspace.context
+            File\save (Path\join workspace_build_location, 'build.gradle.kts'), @_fill_template_file build_path, workspace.context
 
             sdk = Android\detect_android_sdk!
-            File\save (Path\join project_build_location, 'local.properties'), table.concat {
-                "sdk.dir=#{Path.Unix\normalize sdk.location}"
+            sdk_location = Path.Unix\normalize sdk.location
+            sdk_location = sdk_location\gsub ':', '\\:' if os.iswindows
+
+            File\save (Path\join workspace_build_location, 'local.properties'), table.concat {
+                "sdk.dir=#{sdk_location}" -- TODO: Escape on windows only
             }, '\n'
-            File\save (Path\join project_build_location, 'gradle.properties'), table.concat {
+            File\save (Path\join workspace_build_location, 'gradle.properties'), table.concat {
                 "android.useAndroidX=true"
             }, '\n'
 
-        -- Go over the configuration file and find all android-gradle enabled projects
-        processed_modules = { }
-        for module_name, module_info in pairs android_project.modules
-            module_info.name = module_name
-            module_source_location = module_info.source_dir
-            module_build_location = Path\join project_build_location, module_name
+        for project in *workspace.projects
+            context = project.context
+            project_source_location = project.location
+            project_build_location = Path\join workspace_build_location, project.name
+            @log\info "Preparing project location '#{project_build_location}'..."
 
             -- Generate module gradle project files
-            Dir\create module_build_location
-            Dir\enter module_build_location, ->
-                module_info.context.ScriptFile = project.script
-                module_info.context.WorkspaceDir = project.workspace_dir
-                module_info.context.BuildDir = project.output_dir
-                module_info.context.DeployDir = project.deploy_dir
-                template_file = Path\join module_source_location, "build.gradle.template.kts"
+            Dir\create project_build_location
+            Dir\enter project_build_location, ->
+                template_file = Path\join project_source_location, "build.gradle.template.kts"
 
-                if args.copy_templates and File\copy loc_module_build_template, template_file
-                    @log\info "Copied module build template from '#{loc_module_build_template}' to '#{template_file}'"
+                if args.copy_templates and File\copy loc_project_build_template, template_file
+                    @log\info "Copied module build template from '#{loc_project_build_template}' to '#{template_file}'"
 
-                File\save 'build.gradle.kts', @_fill_template_file template_file, module_info.context
+                File\save 'build.gradle.kts', @_fill_template_file template_file, context
 
-        Dir\enter project_build_location, ->
+        Dir\enter workspace_build_location, ->
             -- Create a wrapper in the build location
             @gradle\run 'wrapper'
 
-    _load_android_ini: (ini) =>
-        android_targets = ini\section 'android_targets', 'array'
+    _load_android_projects_all: (ibt_project, projects_ini) =>
+        project_list = projects_ini\section 'projects', 'array'
 
-        module_names = { }
-        project = modules:{}, plugins:{}, context:{}
-        for target in *android_targets
+        plugins = { }
+        workspace = projects:{ }, context:{ }
+        for project_name in *project_list
+            project = @_load_android_project ibt_project, INIConfig\open "android_targets_#{project_name}.txt"
+
+            plugins[plugin] = true for plugin in *project.plugins
+            table.insert workspace.projects, project
+
+        if #project_list > 0
+            workspace.templates_location = Path\join workspace.projects[1].location, '..'
+
+            plugins = [plugin for plugin in pairs plugins]
+            table.sort plugins, (a, b) -> a < b
+            workspace.context.Plugins = plugins
+
+        -- Prepare a list of modules
+        workspace.context.ModuleIncludes = ["include(\":#{project.name}\")" for project in *workspace.projects]
+        workspace
+
+    _load_android_project: (ibt_project, ini) =>
+        info_general = ini\section 'general', 'map'
+        info_plugins = ini\section 'gradle_plugins', 'array'
+        info_abis = ini\section 'supported_abis', 'array'
+        info_targets = ini\section 'android_targets', 'array'
+
+        project = info_general
+        project.plugins = info_plugins
+        project.targets = { }
+        project.abis = info_abis
+        project.jnis = { }
+        project.context = {
+            ProjectName: info_general.name
+            ProjectDir: info_general.location
+            CompileSDK: info_general.android_compilesdk
+            MinSDK: info_general.android_minsdk or target_info.android_compilesdk
+            TargetSDK: info_general.android_targetsdk or target_info.android_compilesdk
+            ApplicationId: info_general.android_applicationid
+            Namespace: info_general.android_namespace
+            VersionCode: info_general.android_versioncode
+            VersionName: info_general.android_versionname
+            NDKVersion: info_general.android_ndkversion
+            ProjectPlugins: info_plugins
+            ProjectJNISources: { }
+            ProjectCustomConfigurationTypes: {}
+            IBTBuildSystemIntegration: @_generate_gradle_ninja_proxy ibt_project, project
+        }
+
+        @log\verbose "Finished context creation for '#{project.name}'"
+
+        seen_configs = { }
+        for target in *info_targets
             target_info = ini\section target, 'map'
-
-            module_info = project.modules[target_info.android_module]
-            unless module_info ~= nil
-                project.location = Path\join target_info.source_dir, '..' unless project.location
-
-                module_plugins = [{val\match '((id%(".+"%)) version ".+")'} for val in *(ini\section "#{target}-Gradle-Plugins", 'array') or { }]
-                project.plugins[val[1]] = true for val in *module_plugins
-
-                module_info = { targets:{ } }
-                module_info.source_dir = target_info.source_dir
-                module_info.config_sources = { }
-                module_info.context = {
-                    ProjectDir: target_info.source_dir
-                    ProjectOutputDir: target_info.output_dir\gsub target_info.config, "${buildConfig}"
-                    ProjectDeployDir: target_info.deploy_dir\gsub target_info.config, "${buildConfig}"
-                    ProjectPlugins: [val[2] for val in *module_plugins]
-                    CompileSDK: target_info.android_compilesdk
-                    MinSDK: target_info.android_minsdk or target_info.android_compilesdk
-                    TargetSDK: target_info.android_targetsdk or target_info.android_compilesdk
-                    -- AndroidBuildToolsVersion: target_info.android_buildtoolsversion
-                    ApplicationId: target_info.android_applicationid
-                    Namespace: target_info.android_namespace
-                    VersionCode: target_info.android_versioncode
-                    VersionName: target_info.android_versionname
-                    NDKVersion: target_info.android_ndkversion
-                    ProjectJNISources: {}
-                    ProjectCustomConfigurationTypes: {}
-                }
-
-                table.sort module_info.context.ProjectPlugins, (l, r) -> l < r
-
-                -- module_info.flavourDimensions = { }
-                -- module_info.flavours = { }
-                -- module_info.dependencies = ini\section "#{target}-Android-Dependencies", 'array'
-                project.modules[target_info.android_module] = module_info
-                table.insert module_names, target_info.android_module
+            @log\verbose "Checking target '#{target}'..."
 
             config_lower = target_info.config\lower!
-
-            macro_lines = module_info.context.ProjectCustomConfigurationTypes
-            unless module_info.config_sources[config_lower]
-                module_info.config_sources[config_lower] = { }
+            macro_lines = project.context.ProjectCustomConfigurationTypes
+            unless seen_configs[config_lower]
+                seen_configs[config_lower] = { }
                 unless (config_lower == 'debug') or (config_lower == 'release')
+                    @log\info "Generating new config '#{config_lower}' for Gradle"
+
                     table.insert macro_lines, "create(\"#{config_lower}\") {"
                     if config_lower\match 'debug'
                         table.insert macro_lines, "    initWith(getByName(\"debug\"))"
@@ -348,9 +365,10 @@ class AndroidCommand extends Command
                     table.insert macro_lines, "}"
 
             -- Store all ABI related JNI locations that will be later set
-            table.insert module_info.config_sources[config_lower], target_info.android_deploy_dir
+            project.jnis[config_lower] = { } unless project.jnis[config_lower]
+            table.insert project.jnis[config_lower], target_info.android_deploy_dir
 
-            table.insert module_info.targets, {
+            table.insert project.targets, {
                 target:target
                 executable:target_info.executable
                 output_dir:target_info.output_dir
@@ -359,24 +377,17 @@ class AndroidCommand extends Command
                 platform:target_info.platform
                 config:target_info.config
                 pipeline:target_info.pipeline
-                name:target_info.name
+                name:project.name
             }
 
         -- Generate final macro lines for JNI sources
-        for _, module_info in pairs project.modules
-            macro_lines = module_info.context.ProjectJNISources
-            for config_lower, config_sources in pairs module_info.config_sources
-                table.insert macro_lines, "getByName(\"#{config_lower}\") {"
-                for config_src in *config_sources
-                    table.insert macro_lines, "    jniLibs.srcDir(\"#{config_src}\")"
-                table.insert macro_lines, "}"
+        macro_lines = project.context.ProjectJNISources
+        for config_lower, paths in pairs project.jnis
+            table.insert macro_lines, "getByName(\"#{config_lower}\") {"
+            for path in *paths
+                table.insert macro_lines, "    jniLibs.srcDir(\"#{path}\")"
+            table.insert macro_lines, "}"
 
-        -- Prepare a sorted array of plugins
-        project.context.Plugins = [plugin for plugin in pairs project.plugins]
-        table.sort project.context.Plugins, (l, r) -> l < r
-
-        -- Prepare a list of modules
-        project.context.ModuleIncludes = ["include(\":#{name}\")" for name in *module_names]
         project
 
     _fill_template_file: (template_file, context) =>
@@ -394,6 +405,32 @@ class AndroidCommand extends Command
             else
                 return "#{spaces}<unknown-tag:#{key}>" unless value
         template
+
+    _generate_gradle_ninja_proxy: (ibt, project) =>
+        abis_string = table.concat ["\"#{abi}\"" for abi in pairs project.abis], ', '
+        makefile_file = Path.Unix\join ibt.workspace_dir, ibt.output_dir, 'fbuild.windows.fdb' -- TODO: is this right?
+        configure_batch = Path.Unix\join ibt.workspace_dir, ibt.output_dir, 'ibt_android.bat'
+        return {
+            "// IBT Generated - BEGIN"
+            "externalNativeBuild {"
+            "    experimentalProperties[\"ninja.abiFilters\"] = listOf(#{abis_string})"
+            "    experimentalProperties[\"ninja.path\"] = \"E:/Projects/GitHub/engine/build/fbuild.windows.fdb\""
+            "    experimentalProperties[\"ninja.configure\"] = \"#{configure_batch}\""
+            "    experimentalProperties[\"ninja.arguments\"] = listOf("
+            "        \"--db=\\${ndk.moduleMakeFile}\","
+            "        \"--name=#{project.name}\","
+            "        \"--abi=\\${ndk.abi}\","
+            "        \"--config=\\${ndk.variantName}\","
+            "        \"--out=\\${ndk.buildRoot}\","
+            "        \"--pipeline=Android#{project.android_compilesdk}\","
+            "        \"--ndk-version=\\${ndk.moduleNdkVersion}\","
+            "        \"-p:Configuration=\\${ndk.variantName}\"," -- This and the following line are necessary so gradle does not complain about missing values not passed to the config script.
+            "        \"-p:Platform=\\${ndk.abi}\","
+            "    )"
+            "}"
+            "// IBT Generated - END"
+        }
+
 
     _generate_gradle_batch_proxy: (project) =>
         script = (Path\join project.workspace_dir, project.script) unless Path\is_absolute project.script
@@ -431,8 +468,13 @@ class AndroidCommand extends Command
         script_file = (Path\join project.workspace_dir, project.script) unless Path\is_absolute project.script
         config_file = Path\join project.workspace_dir, project.output_dir, (Setting\get 'build.fbuild_config_file')
         compdb_file = Path\join args.out, "compile_commands.json"
-        @fail "Failed to generate compile commands for selected target!" unless FastBuild!\compdb output:args.out, target:target, config:config_file
+        -- libs_file = Path\join project.workspace_dir, project.output_dir, 'android_libs.txt'
+        targets_file = Path\join project.workspace_dir, project.output_dir, "android_targets_#{args.name}.txt"
+        @fail "Failed to generate compile commands for '#{target}'!" unless FastBuild!\compdb output:args.out, target:target, config:config_file
+        @fail "Failed to generate android lib targets for '#{target}'!" unless FastBuild!\build target:'android-targets', config:config_file
         compdb = File\load compdb_file, parser:Json\decode
+        -- libs = INIConfig\open libs_file
+        targets = INIConfig\open targets_file
 
         first_entry = compdb[1]
         compiler = first_entry.arguments[1]
@@ -462,42 +504,24 @@ class AndroidCommand extends Command
             idx += 1
 
         table.insert ninja_file_contents, "\n"
+        table.insert ninja_file_contents, "build linker_dummy.o : FBUILD\n"
 
-        idx = 0
-        objects = {}
-        for entry in *compdb
-            table.insert objects, "OBJ#{idx}"
-            table.insert ninja_file_contents, "build OBJ#{idx} : phony #{entry.output\gsub ':', '$:'}"
-            idx += 1
+        target_id = "#{args.name}-#{args.pipeline}#{pipeline_arch}-Android-#{config}-NDK#{args.ndk_version}"
+        target_info = targets\section target_id, 'map'
+        target_path = target_info.executable\gsub ':', '$:'
+        target_libs = {}
 
-        table.insert ninja_file_contents, "\n"
-        -- table.insert ninja_file_contents, "build E$:/Projects/GitHub/engine/build/deploy/simple/Android35-x64-Android-Debug-ndk28-clang-19.0.0/x86_64/libsimple.so : phony " .. table.concat objects, ' '
-        f = "E$:/Projects/GitHub/engine/build/deploy/simple/Android35-x64-Android-Debug-ndk28-clang-19.0.0/x86_64/libsimple.so"
-        table.insert ninja_file_contents, "build #{f} : LINK " .. compdb[1].output\gsub ':', '$:'
-        table.insert ninja_file_contents, "build libsimple.so : phony #{f}"
-        table.insert ninja_file_contents, "\n"
-        table.insert ninja_file_contents, "build all : phony #{f}"
-        table.insert ninja_file_contents, "build all.passthrough : FBUILD\n"
-            -- print entry.file
+        table.insert ninja_file_contents, "build #{target_path} : LINK linker_dummy.o"
+        table.insert ninja_file_contents, "build #{target_info.libname} : phony #{target_path}"
+        table.insert target_libs, name:args.name, libname:target_info.libname
 
-        -- contents = {
-        --     "rule COMPILE"
-        --     "  command = C$:/Users/dandi/AppData/Local/Android/Sdk/ndk/28.1.13356709/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe -c $in -o $out -target x86_64-none-linux-android35"
-        --     "rule LINK"
-        --     "  command = C$:/Users/dandi/AppData/Local/Android/Sdk/ndk/28.1.13356709/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe $in -o $out -target x86_64-none-linux-android35"
-        --     "rule FBUILD"
-        --     "  command = #{script_file} build all-Android35-x64-Debug"
-        --     ""
-        --     "build test0.o : COMPILE E$:/Projects/GitHub/engine/source/code/core/core/private/test.cxx"
-        --     "build test1.o : COMPILE E$:/Projects/GitHub/engine/source/code/core/memsys/private/test.cxx"
-        --     "build libtest.so : LINK test0.o"
-        --     "build test : phony libtest.so"
-        --     "build all : phony test"
-        --     "build test.passthrough : FBUILD"
-        --     ""
-        -- }
+        for lib in *target_libs
+            table.insert ninja_file_contents, "build #{lib.name} : phony #{lib.libname}"
+
+        -- table.insert ninja_file_contents, "build all : phony #{all_targets}"
+        -- table.insert ninja_file_contents, "build all.passthrough : FBUILD\n"
+        table.insert ninja_file_contents, '\n'
 
         File\save ninja_file, table.concat ninja_file_contents, "\n"
-        -- print k, v for k, v in pairs args
 
 { :AndroidCommand }

@@ -34,11 +34,14 @@ class FastBuild extends Exec
         @\capture cmd
 
     compdb: (args) =>
-        output = args.output or Dir\current!
-        return unless Dir\create output
-
         -- Fixup the passed args
         args.compilation_database = true
+        @build_from args.output, args
+
+    build_from: (output, args) =>
+        return unless Dir\create output
+        args.output = nil
+
         Dir\enter output, ->
             @build args
         true
