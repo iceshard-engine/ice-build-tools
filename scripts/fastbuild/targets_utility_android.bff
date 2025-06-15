@@ -134,60 +134,60 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                         }
                     }
 
-                    If ( .ProjectRequirementsSatisfied )
-                    {
-                        .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                    // If ( .ProjectRequirementsSatisfied )
+                    // {
+                    //     .ProjectTarget = '$ProjectName$-$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
 
-                        .OutDirName = .'KindOutDir_$ProjectKind$'
-                        .TargetExtension = .'OutputExtension_$ProjectKind$'
+                    //     .OutDirName = .'KindOutDir_$ProjectKind$'
+                    //     .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-                        .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                        .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
-                        .TargetDeployDirectory = '$WorkspaceBuildDir$/deploy/$ProjectName$/$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
-                        .TargetAndroidOutputDirectory = .TargetOutputDirectory
-                        .TargetAndroidDeployDirectory = .TargetDeployDirectory
-                        .TargetOutputName = "$ProjectName$$TargetExtension$"
+                    //     .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    //     .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$PipelineName$/$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$/$ProjectName$'
+                    //     .TargetDeployDirectory = '$WorkspaceBuildDir$/deploy/$ProjectName$/$PipelineName$-$PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$'
+                    //     .TargetAndroidOutputDirectory = .TargetOutputDirectory
+                    //     .TargetAndroidDeployDirectory = .TargetDeployDirectory
+                    //     .TargetOutputName = "$ProjectName$$TargetExtension$"
 
-                        If ( .PipelineOutputDirSuffix != .EmptyString )
-                        {
-                            ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
-                            ^TargetDeployDirectory = '$TargetOutputDirectory$'
-                        }
+                    //     If ( .PipelineOutputDirSuffix != .EmptyString )
+                    //     {
+                    //         ^TargetOutputDirectory = '$TargetOutputDirectory$/$PipelineOutputDirSuffix$'
+                    //         ^TargetDeployDirectory = '$TargetOutputDirectory$'
+                    //     }
 
-                        If ( .ProjectKind in .Kind_Libraries )
-                        {
-                            .Prefix = .'OutputPrefix_$ProjectKind$'
-                            ^TargetOutputName = '$Prefix$$TargetOutputName$'
-                        }
+                    //     If ( .ProjectKind in .Kind_Libraries )
+                    //     {
+                    //         .Prefix = .'OutputPrefix_$ProjectKind$'
+                    //         ^TargetOutputName = '$Prefix$$TargetOutputName$'
+                    //     }
 
-                        .ProjectConfig =
-                        [
-                            .Name = .ProjectName
-                            .BasePath = .ProjectBasePath
-                            .Config = .PipelineConfig
-                            .Platform = .PipelinePlatform
-                            .PipelineName = .PipelineName
-                            .Target = .ProjectTarget
+                    //     .ProjectConfig =
+                    //     [
+                    //         .Name = .ProjectName
+                    //         .BasePath = .ProjectBasePath
+                    //         .Config = .PipelineConfig
+                    //         .Platform = .PipelinePlatform
+                    //         .PipelineName = .PipelineName
+                    //         .Target = .ProjectTarget
 
-                            .OutputDir = .TargetOutputDirectory
-                            .DeployDir = .TargetDeployDirectory
-                            .AndroidOutputDir = .TargetAndroidOutputDirectory
-                            .AndroidDeployDir = .TargetAndroidDeployDirectory
-                            .TargetOutputName = .TargetOutputName
-                            .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
-                            .DebugWorkingDir = .ProjectDebugDir
-                        ]
+                    //         .OutputDir = .TargetOutputDirectory
+                    //         .DeployDir = .TargetDeployDirectory
+                    //         .AndroidOutputDir = .TargetAndroidOutputDirectory
+                    //         .AndroidDeployDir = .TargetAndroidDeployDirectory
+                    //         .TargetOutputName = .TargetOutputName
+                    //         .Executable = "$TargetOutputDirectory$/$TargetOutputName$"
+                    //         .DebugWorkingDir = .ProjectDebugDir
+                    //     ]
 
-                        .PipelineID = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-NDK$NDKVersion$'
-                        .ProjectLibsExt =
-                        [
-                            .'Libs_$PipelineID$' = { .ProjectConfig }
-                        ]
-                        ^ProjectLibs + .ProjectLibsExt
+                    //     .PipelineID = '$PipelineName$-$PipelinePlatform$-$PipelineConfig$-NDK$NDKVersion$'
+                    //     .ProjectLibsExt =
+                    //     [
+                    //         .'Libs_$PipelineID$' = { .ProjectConfig }
+                    //     ]
+                    //     ^ProjectLibs + .ProjectLibsExt
 
-                        // ^ProjectLibs + .ProjectLibs
-                        // ^ProjectConfigs + .ProjectConfig
-                    }
+                    //     // ^ProjectLibs + .ProjectLibs
+                    //     // ^ProjectConfigs + .ProjectConfig
+                    // }
 
                     If ( .GradleProjectRequirementsSatisfied )
                     {
@@ -276,6 +276,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                             .Platform = .PipelinePlatform
                             .PipelineName = .PipelineName
                             .Target = .ProjectTarget
+                            .ABIName = .PipelineOutputDirSuffix
 
                             .OutputDir = .TargetOutputDirectory
                             .DeployDir = .TargetDeployDirectory
@@ -299,49 +300,49 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
             ^PipelineEnabledProjects + .ProjectName
         }
 
-        {
-            .PipelineLines = { '[pipelines]' }
-            .PipelineLibs = { }
-            .LibsLines = { }
+        // {
+        //     .PipelineLines = { '[pipelines]' }
+        //     .PipelineLibs = { }
+        //     .LibsLines = { }
 
-            Using( .ProjectLibs )
-            ForEach( .Entry in .List )
-            {
-                ^PipelineLines
-                    + '$Entry$'
+        //     Using( .ProjectLibs )
+        //     ForEach( .Entry in .List )
+        //     {
+        //         ^PipelineLines
+        //             + '$Entry$'
 
-                ^PipelineLibs
-                    + ' '
-                    + '[$Entry$]'
+        //         ^PipelineLibs
+        //             + ' '
+        //             + '[$Entry$]'
 
-                .Libs = .'Libs_$Entry$'
-                ForEach( .Lib in .Libs )
-                {
-                    Using( .Lib )
-                    ^PipelineLibs
-                        + '$Target$'
+        //         .Libs = .'Libs_$Entry$'
+        //         ForEach( .Lib in .Libs )
+        //         {
+        //             Using( .Lib )
+        //             ^PipelineLibs
+        //                 + '$Target$'
 
-                    ^LibsLines
-                        + ' '
-                        + '[$Target$]'
-                        + 'name=$Name$'
-                        + 'libname=$TargetOutputName$'
-                        + 'path=$Executable$'
-                }
-            }
+        //             ^LibsLines
+        //                 + ' '
+        //                 + '[$Target$]'
+        //                 + 'name=$Name$'
+        //                 + 'libname=$TargetOutputName$'
+        //                 + 'path=$Executable$'
+        //         }
+        //     }
 
-            TextFile( 'android-libs' )
-            {
-                .TextFileOutput = '$WorkspaceBuildDir$/android_libs.txt'
-                .TextFileAlways = false
+        //     TextFile( 'android-libs' )
+        //     {
+        //         .TextFileOutput = '$WorkspaceBuildDir$/android_libs.txt'
+        //         .TextFileAlways = false
 
-                .TextFileInputStrings = { ':: IBT Generated File ::' }
-                    + ' '
-                    + .PipelineLines
-                    + .PipelineLibs
-                    + .LibsLines
-            }
-        }
+        //         .TextFileInputStrings = { ':: IBT Generated File ::' }
+        //             + ' '
+        //             + .PipelineLines
+        //             + .PipelineLibs
+        //             + .LibsLines
+        //     }
+        // }
 
         .GradleProjecTargets = { }
         ForEach( .ProjectName in .GradleProjects )
@@ -406,6 +407,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
                     + 'platform=$Platform$'
                     + 'config=$Config$'
                     + 'pipeline=$PipelineName$'
+                    + 'abi=$ABIName$'
 
                 ^DetailTargetLines
                     + ' '
@@ -456,7 +458,7 @@ If ( ._FASTBUILD_VERSION_ >= .BFFVersion_TextFile )
 
         Alias( 'android-targets' )
         {
-            .Targets = { 'android-gradle-projects', 'android-libs' } + .GradleProjecTargets
+            .Targets = { 'android-gradle-projects' } + .GradleProjecTargets
         }
     }
 }

@@ -7,6 +7,7 @@ import Validation from require "ice.core.validation"
 select = (v, true_val, false_val) -> v and true_val or false_val
 allowed_separators = os.osselect win:"\\/", unix:"/"
 
+class Dir
 class Path
     @separator = string.sub package.config, 1, 1
 
@@ -56,6 +57,20 @@ class Path
             return internal_join "#{abs}#{trimed}#{trim_separators r}", ...
 
         @\normalize internal_join left, right, ...
+
+    @link = (src, dest, opts={symlink:true}) =>
+        Dir\create src unless Path\exists src
+        if Path\exists dest
+            -- Validation\assert (Path\info dest, 'mode') == 'link', "Destination path '#{dest}' exists and is not a symbolic link!"
+            return true
+
+        parent = Path\parent dest
+        Dir\create parent if parent ~= nil and parent ~= ""
+
+        src = Path.Unix\normalize src
+        dest = Path.Unix\normalize dest
+
+        return (os.execute (opts.python or 'python3') .. " -c \"import os; os.symlink('#{src}', '#{dest}')\"") == 0
 
 Path.Unix = class extends Path
     @separator = '/'

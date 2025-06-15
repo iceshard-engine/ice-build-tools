@@ -289,6 +289,15 @@ class AndroidCommand extends Command
 
                 File\save 'build.gradle.kts', @_fill_template_file template_file, context
 
+                -- Create symbolic links to the JNI paths
+                for config, paths in pairs project.jnis
+                    for src in *paths
+                        dest = Path\join "src", config, "jni", src.abi
+
+                        Log\verbose "Creating symbolic link from '#{src.path}' to '#{Path\join project_build_location, dest}'..."
+                        Validation\assert (Path\link src.path, dest), "Failed to create symbolic link to from '#{src.path}' to '#{Path\join project_build_location, dest}'!"
+
+
         Dir\enter workspace_build_location, ->
             -- Create a wrapper in the build location
             @gradle\run 'wrapper'
@@ -366,7 +375,7 @@ class AndroidCommand extends Command
 
             -- Store all ABI related JNI locations that will be later set
             project.jnis[config_lower] = { } unless project.jnis[config_lower]
-            table.insert project.jnis[config_lower], target_info.android_deploy_dir
+            table.insert project.jnis[config_lower], abi:target_info.abi, path:Path\join target_info.android_deploy_dir, target_info.abi
 
             table.insert project.targets, {
                 target:target
@@ -380,13 +389,17 @@ class AndroidCommand extends Command
                 name:project.name
             }
 
-        -- Generate final macro lines for JNI sources
         macro_lines = project.context.ProjectJNISources
         for config_lower, paths in pairs project.jnis
-            table.insert macro_lines, "getByName(\"#{config_lower}\") {"
-            for path in *paths
-                table.insert macro_lines, "    jniLibs.srcDir(\"#{path}\")"
-            table.insert macro_lines, "}"
+            table.insert macro_lines, "getByName(\"#{config_lower}\").jniLibs.srcDir(\"src/#{config_lower}/jni\")"
+
+        -- Generate final macro lines for JNI sources
+        -- macro_lines = project.context.ProjectJNISources
+        -- for config_lower, paths in pairs project.jnis
+        --     table.insert macro_lines, "getByName(\"#{config_lower}\") {"
+        --     for path in *paths
+        --         table.insert macro_lines, "    jniLibs.srcDir(\"#{path}\")"
+        --     table.insert macro_lines, "}"
 
         project
 
