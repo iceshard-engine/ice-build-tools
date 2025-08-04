@@ -295,7 +295,8 @@ class AndroidCommand extends Command
                         dest = Path\join "src", config, "jni", src.abi
 
                         Log\verbose "Creating symbolic link from '#{src.path}' to '#{Path\join project_build_location, dest}'..."
-                        Validation\assert (Path\link src.path, dest), "Failed to create symbolic link to from '#{src.path}' to '#{Path\join project_build_location, dest}'!"
+                        unless (Dir\exists dest) or (Path\link src.path, dest)
+                            Log\warning "Failed to create symbolic link from '#{src.path}' to '#{Path\join project_build_location, dest}'!"
 
 
         Dir\enter workspace_build_location, ->
