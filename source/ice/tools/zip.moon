@@ -1,6 +1,6 @@
 import Exec, PowerShell, Where from require "ice.tools.exec"
 import Validation from require "ice.core.validation"
-import File, Dir from require "ice.core.fs"
+import Path, File, Dir from require "ice.core.fs"
 
 class Zip
     @extract: (file, dir, options = {}) =>
@@ -11,7 +11,16 @@ class Zip
             @exec = PowerShell "Expand-Archive"
             @exec\run "-LiteralPath \"#{file}\" -DestinationPath \"#{dir}\" " .. (options.force and '-Force' or '')
         else
-            @exec = Exec "unzip"
-            @exec\run "#{file} -d #{dir} " .. (options.force and '-o' or '')
+            if options.use_tar
+                ext = Path\extension file
+                mode = if (ext == '.gz') or (ext == '.tgz') then 'z' else ''
+
+                @exec = Exec "tar", nocheck:true
+                @exec\run "-#{mode}xf #{file} -C #{dir}"
+            else
+                @exec = Exec "unzip", nocheck:true
+                @exec\run "#{file} -d #{dir} " .. (options.force and '-o' or '')
+
+
 
 { :Zip }

@@ -9,6 +9,8 @@ import Validation from require "ice.core.validation"
 import Path, File, Dir from require "ice.core.fs"
 
 class LicenseCommand extends Command
+    @resolve_conan_modules!
+
     @settings {
         Setting 'license.spdx', required:true
         Setting 'license.authors', required:true
@@ -51,19 +53,22 @@ class LicenseCommand extends Command
             name: '-g --generate'
 
         group 'sources', description:'Source licensing options'
-        flag 'all_files',
+        option 'directory',
+            description: "Instead of just checking current diff files, checks all files under the specified directory."
             group: 'sources'
-            name: '-a --all-files'
-            description: 'Instead of just checking current diff files, checks all files under the source directory.'
-        -- option 'diff_base'
-        --     group: 'sources'
-        --     name: '--diff-base'
-        --     count: '?'
+            name: '-d --dir'
+            default: 'source'
+            count: '*'
+            args: '?'
 
-        flag 'verbose',
-            description: 'Increases verbosity of the output. Can be used up to two times.'
-            name: '-v --verbose'
-            count: '0-2'
+        option 'set_created',
+            description: "Updates all selected files to use the specified 'created year' value in the license header."
+            group: 'sources'
+            name: '-c --created-year'
+        option 'set_modified',
+            description: "Updates all selected files to use the specified 'modified year' value in the license header."
+            group: 'sources'
+            name: '-m --modified-year'
     }
 
     prepare: (args, project) =>
@@ -95,7 +100,7 @@ class LicenseCommand extends Command
         file = Path\normalize file
         contents = File\load file, limit: 500, mode:'rb'
         if not contents or contents == ""
-            @log\info "Skipping empty file #{file}" if args.verbose == 2
+            @log\debug "Skipping empty file #{file}"
             return
 
         results = { }
@@ -103,7 +108,7 @@ class LicenseCommand extends Command
         for pat_line in *lic_patterns
             file_line, cr, nl = contents\match "([^\n\r]+)(\r?)(\n)"
             if nl ~= '\n'
-                @log\verbose "Skipping empty file #{file}" if args.verbose == 2
+                @log\debug "Skipping empty file #{file}"
                 return
             elseif cr == '\r'
                 newline = "\r\n"
@@ -122,7 +127,7 @@ class LicenseCommand extends Command
 
         -- Send missing message (always shown)
         if line_count == 0
-            @log\verbose "Skipping empty file #{file}" if args.verbose == 2
+            @log\debug "Skipping empty file #{file}"
             return
 
         if #results ~= #lic_pattern_args
@@ -147,11 +152,11 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            @log\verbose "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified if args.verbose
+            @log\debug "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified
         elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
-            @log\info "Modification of authors or license values in #{file}", r.authors, r.license
-            @log\verbose "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors and args.verbose == 2
-            @log\verbose "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx and args.verbose == 2
+            @log\verbose "Modification of authors or license values in #{file}", r.authors, r.license
+            @log\debug "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors
+            @log\debug "- [license] old: '%s', new: '%s'", r.license, lic_spdx if r.license ~= lic_spdx
 
             -- Let's don't end up reversing years...
             r.file_modified = r.year_modified
@@ -159,6 +164,17 @@ class LicenseCommand extends Command
             r.year_created = r.file_created
         else
             requires_update = false
+
+        -- Force years to specific values
+        if args.created_year and args.created_year ~= "#{r.year_created}"
+            @log\debug "Forcing 'creation year' to value '#{args.created_year}' from current value '#{r.year_created}' in #{file}"
+            r.year_created = args.created_year
+            requires_update = true
+
+        if args.modified_year and args.modified_year ~= "#{r.year_modified}"
+            @log\debug "Forcing 'modified year' to value '#{args.modified_year}' from current value '#{r.year_modified}' in #{file}"
+            r.year_modified = args.modified_year
+            requires_update = true
 
         -- Apply changes
         if args.generate and requires_update
@@ -173,7 +189,7 @@ class LicenseCommand extends Command
             r.license = lic_spdx if r.license ~= lic_spdx
             final_header = string.format final_header, (r.year_created or r.file_created), (r.file_modified or r.year_modified), r.authors, r.license
 
-            @log\info "Generating copyright and SPDX header in file: #{file}"
+            @log\verbose "Generating copyright and SPDX header in file: #{file}"
             contents = File\load file, mode:'rb'
             contents = contents\sub header_size + 1
             contents = final_header .. contents
@@ -181,11 +197,12 @@ class LicenseCommand extends Command
             if f = File\open file, mode:"wb"
                 f\write contents
                 f\close!
+                return true
             else
                 @log\warning "Failed to update file #{file}"
         elseif args.generate
-            @log\verbose "No updated required for file #{file}"
-
+            @log\debug "No updated required for file #{file}"
+        return false
 
     search_dir: (args, project) =>
         sdpx_extensions = @settings.license.mode_sources.file_extensions
@@ -193,17 +210,26 @@ class LicenseCommand extends Command
 
         -- Find matching files
         files = { }
-        if args.all_files
-            files = Dir\find_files project.source_dir, recursive:true, filter: (filename) ->
-                sdpx_extensions[Path\extension filename]
+        if args.dir
+            for dir in *args.dir
+                dir = dir[1] or 'source'
+                sub_files = Dir\find_files dir, recursive:true, filter: (filename) ->
+                    sdpx_extensions[Path\extension filename]
+                @log\debug "Gathered #{#sub_files} files from the '#{dir}' directory..."
+
+                table.insert files, file for file in *sub_files
         else
             files = [change.filename for change in *(Git!\status path:project.source_dir) when sdpx_extensions[Path\extension change.filename]]
 
+        @log\verbose "Selected #{#files} files from #{#args.dir} directories" if #files > 0
+        updated = 0
         for file in *files
-            @check_license_header file, args
+            updated += 1 if @check_license_header file, args
+        @log\info "Updated license headers in #{updated} files."
 
 
     execute_mode_sources: (args, project) =>
+        @log\info "Checking source files for necessary license header changes..."
         @log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
         @log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
 

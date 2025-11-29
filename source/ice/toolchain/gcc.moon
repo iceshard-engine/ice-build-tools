@@ -29,6 +29,7 @@ toolchain_definitions = {
                     { 'ToolchainIncludeDirs', { } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
+                    { 'ConanCompilerVersion', ver_major }
                 }
     }
     '12': {
@@ -52,13 +53,14 @@ toolchain_definitions = {
                     { 'ToolchainCompilerFamily', 'gcc' }
                     { 'ToolchainSupportedArchitectures', { 'x64' } }
                     { 'ToolchainToolset', '12' }
-                    { 'ToolchainFrontend', 'gcc' }
+                    { 'ToolchainFrontend', 'GCC' }
                     { 'ToolchainCompiler', compiler_name }
                     { 'ToolchainLibrarian', ar_path }
                     { 'ToolchainLinker', gcc_path }
                     { 'ToolchainIncludeDirs', { } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
+                    { 'ConanCompilerVersion', ver_major }
                 }
     }
 }

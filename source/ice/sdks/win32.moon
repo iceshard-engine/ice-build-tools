@@ -2,6 +2,9 @@ import Locator from require "ice.locator"
 import Windows from require "ice.platform.windows"
 
 class SDK_Win32 extends Locator
+    id: 'win32'
+    name: 'Windows (x64)'
+
     new: => super Locator.Type.PlatformSDK, "Win32 Platform Locator"
     locate: =>
         if os.iswindows

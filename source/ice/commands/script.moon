@@ -6,6 +6,8 @@ import Log from require "ice.core.logger"
 moonscript = require "moonscript"
 
 class ScriptCommand extends Command
+    @resolve_conan_modules!
+
     @settings {
         Setting 'script.directory',
             default:'./tools/scripts'

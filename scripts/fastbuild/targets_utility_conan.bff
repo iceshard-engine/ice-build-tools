@@ -31,7 +31,7 @@
 
     TextFile( 'conan-profiles' )
     {
-        .TextFileOutput = '$WorkspaceBuildDir$/conan_profiles.txt'
+        .TextFileOutput = '$WorkspaceBuildDir$/conan/required_profiles.txt'
         .TextFileAlways = false
 
         .TextFileInputStrings = { ':: IBT Generated File ::' }

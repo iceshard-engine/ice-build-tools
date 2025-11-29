@@ -135,8 +135,11 @@ class Setting
 
     deserialize: (source, target) =>
         src_tab = (_get_or_create_path_table source, @path)
-        dst_tab = (_get_or_create_path_table target, @path)
-        dst_tab[@name] = @\set src_tab[@name]
+        if target
+            dst_tab = (_get_or_create_path_table target, @path)
+            dst_tab[@name] = @\set src_tab[@name]
+        else
+            @\set src_tab[@name]
 
 class Settings
     @get = (key) => Setting\get key
@@ -162,6 +165,10 @@ class Settings
         for _, setting in pairs global_settings_table
             setting\serialize serialized_settings
         serialized_settings
+
+    @deserialize = (settings_table) =>
+        for _, setting in pairs global_settings_table
+            setting\deserialize settings_table, nil -- We could store the values to a table if necessary
 
     @list = (args = { }) =>
         result = { }

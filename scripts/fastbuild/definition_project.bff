@@ -12,6 +12,7 @@ ForEach( .Project in .Projects )
 
     .Tags = { }
     .Requires = { }
+    .RequiresAny = { .RequiresAny_EmptyToken }
 
     // Miscelaneous
     .AllowUnityBuilds = true
@@ -70,6 +71,7 @@ ForEach( .Project in .Projects )
 
         // #TODO (#4): https://github.com/iceshard-engine/ice-build-tools/issues/4
         .ProjectRequires = .Requires
+        .ProjectRequiresAny = .RequiresAny
         .ProjectGroup = ^Group
         .ProjectDebugDir = .DebugDir
         .ProjectAllowUnityBuilds = .AllowUnityBuilds
@@ -109,6 +111,7 @@ ForEach( .Project in .Projects )
         [
             .RuleName = "$Name$_DefaultRule"
             .RuleRequires = { }
+            .RuleRequiresAny = { .RequiresAny_EmptyToken }
             .RuleDependsOn = ^DependsOn
             .RuleUnitTests = .UnitTests
 
@@ -139,6 +142,7 @@ ForEach( .Project in .Projects )
         {
             .Kind = .Kind_None
             .Requires = { }
+            .RequiresAny = { .RequiresAny_EmptyToken }
             .DependsOn = []
             .Public = []
             .Private = []
@@ -150,6 +154,7 @@ ForEach( .Project in .Projects )
                 .RuleName = .Name
                 .RuleKind = .Kind
                 .RuleRequires = .Requires
+                .RuleRequiresAny = .RequiresAny
                 .RuleDependsOn = .DependsOn
                 .RuleUnitTests = .UnitTests
                 .RuleDeploy = .Deploy

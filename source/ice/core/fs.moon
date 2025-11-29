@@ -7,6 +7,7 @@ import Validation from require "ice.core.validation"
 select = (v, true_val, false_val) -> v and true_val or false_val
 allowed_separators = os.osselect win:"\\/", unix:"/"
 
+class Dir
 class Path
     @separator = string.sub package.config, 1, 1
 
@@ -49,11 +50,27 @@ class Path
             return l unless r
 
             trimed, sep = trim_separators l
+            abs = if os.isunix and Path\is_absolute l then '/' else ''
+
             return internal_join l, ... if r == "./" or r == ".\\" or r == ""
-            return internal_join "#{trimed}/#{trim_separators r}", ... unless sep
-            return internal_join "#{trimed}#{trim_separators r}", ...
+            return internal_join "#{abs}#{trimed}/#{trim_separators r}", ... unless sep
+            return internal_join "#{abs}#{trimed}#{trim_separators r}", ...
 
         @\normalize internal_join left, right, ...
+
+    @link = (src, dest, opts={symlink:true}) =>
+        Dir\create src unless Path\exists src
+        if Path\exists dest
+            -- Validation\assert (Path\info dest, 'mode') == 'link', "Destination path '#{dest}' exists and is not a symbolic link!"
+            return true
+
+        parent = Path\parent dest
+        Dir\create parent if parent ~= nil and parent ~= ""
+
+        src = Path.Unix\normalize src
+        dest = Path.Unix\normalize dest
+
+        return (os.execute (opts.python or 'python3') .. " -c \"import os; os.symlink('#{src}', '#{dest}')\"") == 0
 
 Path.Unix = class extends Path
     @separator = '/'
@@ -73,7 +90,8 @@ class Dir
         if args.skip_parents
             result = lfs.mkdir path
         else
-            partial = ''
+            -- We need to manually start with an absolute parh '/' on unix
+            partial = os.osselect win:'', unix:((Path\is_absolute path) and '/') or ''
             for name in path\gmatch '[^/\\]+'
                 partial ..= "#{name}/"
                 unless os.isdir partial
@@ -118,6 +136,7 @@ class Dir
         result
 
     @list = (path, args = { keep_meta_paths:false, recursive:false }) =>
+        Validation\assert (type args) == 'table', "Second arguments needs to be of type 'table' or 'nil', got '#{type args}'"
         unless (Dir\exists path) then ->
 
         -- Paths we want to skip
@@ -151,11 +170,13 @@ class Dir
                                 -- while path_type != 'file'
 
                 while path_type != 'file'
-                    if (not child_path) and #next_dirs > 0
-                        path = next_dirs[1]
-                        it = Dir\list path, keep_meta_paths:false, recursive:false, metadata:'mode'
-                        table.remove next_dirs, 1
-                        return path, 'directory'
+                    if (not child_path)
+                        if #next_dirs > 0
+                            path = next_dirs[1]
+                            it = Dir\list path, keep_meta_paths:false, recursive:false, metadata:'mode'
+                            table.remove next_dirs, 1
+                            return path, 'directory'
+                        else break
 
                     if path_type == 'directory'
                         table.insert next_dirs, 1, "#{path}/#{child_path}"
@@ -177,13 +198,16 @@ class Dir
                         result = iter dir_obj
                     return result, Path\info (Path\join path, result), (args.metadata or 'mode')
 
-    @find_files = (path, args = { recursive:false }) =>
+    @find_files = (path, args = { recursive:false, full_path:false }) =>
         return { } unless Dir\exists path
 
         result = { }
         for child_path, child_type in Dir\list path, recursive:args.recursive
             if child_type == 'file'
-                table.insert result, child_path if not args.filter or args.filter child_path, path
+                if args.full_path
+                    table.insert result, (Path\join path, child_path) if not args.filter or args.filter child_path, path
+                else
+                    table.insert result, child_path if not args.filter or args.filter child_path, path
         result
 
 class File

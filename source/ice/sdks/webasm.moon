@@ -1,3 +1,4 @@
+import Validation from require "ice.core.validation"
 import Locator from require "ice.locator"
 import WebAsm from require "ice.platform.webasm"
 import Path, Dir, File from require "ice.core.fs"
@@ -10,7 +11,7 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
         struct_name: "Toolchain_EM#{emver}_Clang_#{ver_major}00"
         compiler_name: "compiler-em#{emver}-clang-#{ver_major}00"
 
-        generate_structure: (gen, clang_path, ar_path, em_path) ->
+        generate_structure: (gen, clang_path, ar_path, em_path, emsdk_python) ->
             struct_name = "Toolchain_EM#{emver}_Clang_#{ver_major}00"
             compiler_name = "compiler-em#{emver}-clang-#{ver_major}00"
 
@@ -36,14 +37,19 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
                     { 'ToolchainIncludeDirs', { } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
+                    { 'ToolchainEnvironment', { "EMSDK_PYTHON=#{emsdk_python}" } }
                     -- We force response files and pretend to be a 'clang-orbis' linker.
                     -- This writes paths in the response file with additional slashes fixing an error when linking from a response file.
                     { 'LinkerForceResponseFile', true }
                     { 'LinkerType', 'clang-orbis' }
+                    { 'ConanCompilerVersion', ver_major }
                 }
     }
 
 class SDK_WebAsm extends Locator
+    id: 'web'
+    name: 'WebAssembly (Emscripten)'
+
     new: =>
         super Locator.Type.PlatformSDK, "WebAssembly Platform Locator"
         @settings = WebAsm.settings
@@ -51,6 +57,11 @@ class SDK_WebAsm extends Locator
     locate: =>
         if sdk_path = WebAsm\detect_webasm_sdk!
             sdk_path = sdk_path.location
+
+            em3rd_config = Path\join sdk_path, '.emscripten'
+            return unless Validation\ensure (File\exists em3rd_config), "Missing '#{em3rd_config}' file required for python discovery."
+            emsdk_python = Path\join sdk_path, (File\load em3rd_config)\match "'(/python/.+/python.exe)'"
+            return unless Validation\ensure (File\exists emsdk_python), "Failed to find a valid Python installation in the Emscripten SDK. Checked: #{emsdk_python}"
 
             llvm_path = Path\join sdk_path, "upstream/bin"
             em_path = Path\join sdk_path, "upstream/emscripten"
@@ -60,6 +71,7 @@ class SDK_WebAsm extends Locator
                 ar: Path\join em_path, os.osselect win:"emar.bat", unix:"emar",
                 clang: Path\join llvm_path, os.osselect win:"clang.exe", unix:"clang",
                 file_packager: Path\join em_path, 'tools/file_packager.bat'
+                python: emsdk_python
                 -- clangpp: Path\join llvm_path, os.osselect win:"clang++.exe", unix:"clang++",
             }
 
@@ -73,7 +85,7 @@ class SDK_WebAsm extends Locator
                 name: toolchain_definition.name
                 struct_name: toolchain_definition.struct_name
                 compiler_name: toolchain_definition.compiler_name
-                generate: (gen) -> toolchain_definition.generate_structure gen, em_tools.cxx, em_tools.ar, sdk_path
+                generate: (gen) -> toolchain_definition.generate_structure gen, em_tools.cxx, em_tools.ar, sdk_path, emsdk_python
             }, Locator.Type.Toolchain
 
             @\add_result {

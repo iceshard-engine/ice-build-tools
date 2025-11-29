@@ -45,6 +45,7 @@
 //
 // Prepare global build rules
 //
+.Final_GlobalTags = { }
 .Final_GlobalRules = { }
 .Final_AliasList = { }
 .Final_CleanAliasList = { }
@@ -102,18 +103,27 @@ ForEach( .Pipeline in .AvailablePipelines )
 
         .AvailableTags = .PipelineAvailableSDKs
             + .PipelineTags
+            + .Final_GlobalTags
 
         // Check if we the project has all requirements covered
-        .ProjectRequirementsSatisfied = true
+        .ProjectRequirementsSatisfied = false
         {
             .AvailableTags + .PipelineEnabledProjects
 
-            ForEach( .Requirement in .ProjectRequires )
+            If ( ( .RequiresAny_EmptyToken in .ProjectRequiresAny ) || ( .ProjectRequiresAny in .AvailableTags ) )
             {
-                If ( .Requirement not in .AvailableTags )
+                ^ProjectRequirementsSatisfied = true
+
+                // Expand project requirements for this scope only
+                .ProjectRequires + .PipelineDynamicRequirements
+
+                ForEach( .Requirement in .ProjectRequires )
                 {
-                    // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
-                    ^ProjectRequirementsSatisfied = false
+                    If ( .Requirement not in .AvailableTags )
+                    {
+                        // Print( "INFO: $ProjectName$ is missing requirement `$Requirement$` for ($PipelinePlatform$-$PipelineConfig$-$PipelineToolchain$)" )
+                        ^ProjectRequirementsSatisfied = false
+                    }
                 }
             }
 
@@ -145,12 +155,18 @@ ForEach( .Pipeline in .AvailablePipelines )
                 .RuleKind = .Kind_None
                 Using( .ProjectRule )
 
-                .RuleRequirementsSatisfied = true
-                ForEach( .Requirement in .RuleRequires )
+                .RuleRequirementsSatisfied = false
+
+                If ( ( .RequiresAny_EmptyToken in .RuleRequiresAny ) || ( .RuleRequiresAny in .AvailableTags ) )
                 {
-                    If ( .Requirement not in .AvailableTags )
+                    ^RuleRequirementsSatisfied = true
+
+                    ForEach( .Requirement in .RuleRequires )
                     {
-                        ^RuleRequirementsSatisfied = false
+                        If ( .Requirement not in .AvailableTags )
+                        {
+                            ^RuleRequirementsSatisfied = false
+                        }
                     }
                 }
 
@@ -344,21 +360,27 @@ ForEach( .Pipeline in .AvailablePipelines )
                     // Check if we ment the rule requirements
                     .Name = "<null>"
                     .RuleRequires = { }
+                    .RuleRequiresAny = { .RequiresAny_EmptyToken }
 
                     Using( .EmptyProperties )
                     Using( .Rule )
 
-                    ForEach( .Dependency in .Uses )
+                    .RuleRequirementsSatisfied = false
+                    If ( ( .RequiresAny_EmptyToken in .RuleRequiresAny ) || ( .RuleRequiresAny in .AvailableTags ) )
                     {
-                        ^RuleRequires + '$Dependency$-$PipelineName$-$ConfigPlatform$-$ConfigName$'
-                    }
+                        ^RuleRequirementsSatisfied = true
 
-                    .RuleRequirementsSatisfied = true
-                    ForEach( .Requirement in .RuleRequires )
-                    {
-                        If ( .Requirement not in .AvailableTags )
+                        ForEach( .Dependency in .Uses )
                         {
-                            ^RuleRequirementsSatisfied = false
+                            ^RuleRequires + '$Dependency$-$PipelineName$-$ConfigPlatform$-$ConfigName$'
+                        }
+
+                        ForEach( .Requirement in .RuleRequires )
+                        {
+                            If ( .Requirement not in .AvailableTags )
+                            {
+                                ^RuleRequirementsSatisfied = false
+                            }
                         }
                     }
 
@@ -680,13 +702,14 @@ ForEach( .Pipeline in .AvailablePipelines )
                     + .PipelineProperties_SDKs
                     + .PipelineProperties_Toolchain
 
-                // Extenral dynamic libararies
+                // External dynamic libararies
                 //--------------------------------------------------------------------------
                 {
                     .Runtime = { }
                     .RuntimeExternal = { }
                     .RuntimeLibsPaths = [ ]
                     .KnownLibs = { }
+
                     Using( .FinalProperties )
                     Using( .ProjectStepDependencies )
                     Using( .RuntimeLibsPaths )
@@ -700,8 +723,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                             {
                                 If ( .Dependency == .KnownLib )
                                 {
-                                    .Extension = .'OutputExtension_SharedLib'
-                                    ^RuntimeExternal + '$KnownLibPath$$Extension$'
+                                    ^RuntimeExternal + '$KnownLibPath$'
                                 }
                             }
                         }
@@ -710,6 +732,40 @@ ForEach( .Pipeline in .AvailablePipelines )
                             ^RuntimeNew + .Dependency
                         }
                     }
+
+                    If ( .CopyModules )
+                    {
+                        .CopyExternal = false
+                        .CopyExternalFiles = { }
+                        ForEach( .External in .RuntimeExternal )
+                        {
+                            ^CopyExternal = true
+                            If ( .External not in .CopyExternalFiles )
+                            {
+                                ^CopyExternalFiles + .External
+                            }
+                        }
+
+                        If ( .CopyExternal )
+                        {
+                            .CopyExternalTargetName = '$ProjectTarget$-copyexternal'
+
+                            If ( .CopyExternalTargetName not in .Step_CopyDirsTargets )
+                            {
+                                // Only do this once
+                                ^Step_CopyDirsTargets + .CopyExternalTargetName
+                                If ( !.ProjectDeploy ) // Only copy for non-deploy projects
+                                {
+                                    Copy( '$CopyExternalTargetName$' )
+                                    {
+                                        .Source = .CopyExternalFiles
+                                        .Dest = '$TargetOutputDirectory$/'
+                                    }
+                                }
+                                ^StepDependencies + .CopyExternalTargetName
+                            }
+                        }
+                    } // If ( .CopyModules )
 
                     .ProjectStepDependenciesNew =
                     [
@@ -731,16 +787,19 @@ ForEach( .Pipeline in .AvailablePipelines )
                     {
                         If ( .ConanProfile == .PipelineConfigConanProfile )
                         {
-                            Using( .FinalProperties )
-                            // Using( .'ConanModules_$PipelineConfigConan$' )
                             Using( .ConanProfileModules )
-
-                            ForEach( .ConanModule in .Modules )
+                            If ( .ConanModulesDefined )
                             {
-                                If ( .ConanModule not in .ConanModulesNames )
+                                Using( .FinalProperties )
+                                // Using( .'ConanModules_$PipelineConfigConan$' )
+
+                                ForEach( .ConanModule in .Modules )
                                 {
-                                    ^ConanModulesNames + .ConanModule
-                                    ^ConanModules + .'ConanModule_$ConanModule$'
+                                    If ( .ConanModule not in .ConanModulesNames )
+                                    {
+                                        ^ConanModulesNames + .ConanModule
+                                        ^ConanModules + .'ConanModule_$ConanModule$'
+                                    }
                                 }
                             }
                         }
@@ -777,7 +836,7 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     CopyDir( '$CopyDirTargetName$' )
                                     {
                                         .SourcePaths = .CopyDirsList
-                                        .SourcePathsPattern = { '*.dll', '*.so' }
+                                        .SourcePathsPattern = { '*.dll', '*.so*' }
                                         .Dest = '$TargetDeployDirectory$/'
                                     }
                                 }
@@ -786,11 +845,11 @@ ForEach( .Pipeline in .AvailablePipelines )
                                     CopyDir( '$CopyDirTargetName$' )
                                     {
                                         .SourcePaths = .CopyDirsList
-                                        .SourcePathsPattern = { '*.dll', '*.so' }
+                                        .SourcePathsPattern = { '*.dll', '*.so*' }
                                         .Dest = '$TargetOutputDirectory$/'
                                     }
                                 }
-                                ^StepDependencies + '$ProjectTarget$-$ConanModuleName$-copydir'
+                                ^StepDependencies + .CopyDirTargetName
                             }
                         }
                     } // If ( .CopyModules )
@@ -1195,6 +1254,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                                             .ExtraFiles = .BinaryFiles
                                             .CompilerFamily = "Custom"
                                         }
+
+                                        ^Final_GlobalTags + '$Name$-compiler'
                                     }
                                     If ( .Type != 'compiler' )
                                     {
@@ -1202,6 +1263,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                                         {
                                             .Targets = '$ProjectTarget$-$TaskIdx$-$Step$'
                                         }
+
+                                        ^Final_GlobalTags + '$Name$-$Type$'
                                     }
                                 }
                                 If ( .LocalCompilerModule )
@@ -1216,6 +1279,8 @@ ForEach( .Pipeline in .AvailablePipelines )
                                         .'$Name$' = .LinkerOutput
                                     ]
                                     ^Pipeline_LocalCompilerTargets + .Pipeline_LocalCompilerTarget
+
+                                    ^Final_GlobalTags + '$Name$-compiler-module'
                                 }
                             }
                         }

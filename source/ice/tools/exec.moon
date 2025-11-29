@@ -8,9 +8,11 @@ class Exec
         Log\warning "#{@exec} does not exist!" unless opts.nocheck or File\exists @exec
 
     run: (arguments) =>
+        Log\debug "\"#{@exec}\" #{arguments or ''}"
         os.execute "\"#{@exec}\" #{arguments or ''}"
 
     capture: (arguments) =>
+        Log\debug "\"#{@exec}\" #{arguments or ''}"
         result = ""
         if proc = io.popen "\"#{@exec}\" #{arguments or ''}"
             result = proc\read '*a'
@@ -18,6 +20,7 @@ class Exec
         result
 
     lines: (arguments) =>
+        Log\debug "\"#{@exec}\" #{arguments or ''}"
         result = { }
         if proc = io.popen "\"#{@exec}\" #{arguments or ''}"
             for line in proc\lines!
@@ -70,7 +73,7 @@ class Where
             line = nil if line\match "is not recognized"
             return line
         else
-            ((Exec 'which')\lines args)[1]
+            ((Exec 'which', nocheck:true)\lines args)[1]
 
     @exec: (name, err_log) =>
         path = Where\path name, err_log

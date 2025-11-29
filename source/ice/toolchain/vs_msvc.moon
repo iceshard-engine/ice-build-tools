@@ -1,4 +1,5 @@
 import VSWhere from require "ice.tools.vswhere"
+import Exec from require "ice.tools.exec"
 import Locator from require "ice.locator"
 import Dir, Path from require "ice.core.fs"
 
@@ -73,6 +74,7 @@ toolchain_definitions = {
                         'odbccp32',
                         'delayimp',
                     } }
+                    { 'ConanCompilerVersion', '142' }
                 }
     }
     --[[ Toolchain: MSVC - v143 ]]
@@ -145,6 +147,7 @@ toolchain_definitions = {
                         'odbccp32',
                         'delayimp',
                     } }
+                    { 'ConanCompilerVersion', '143' }
                 }
     }
 }
@@ -162,6 +165,9 @@ default_toolchain_definition = (path, platform_toolset, override_libs) ->
         generate_structure: (gen, toolchain_bin_dir, toolchain_dir, tools_version) ->
             struct_name = "Toolchain_MSVC_#{platform_toolset}"
             compiler_name = "compiler-msvc-#{platform_toolset}"
+
+            version_lines = (Exec Path\join toolchain_bin_dir, "cl.exe")\lines '2>&1'
+            cv_full = (version_lines[1]\match "(%d%d%.%d)")\gsub "%.", ""
 
             gen\structure struct_name, (gen) ->
                 gen\variables { { 'ToolchainPath', toolchain_bin_dir } }
@@ -208,6 +214,7 @@ default_toolchain_definition = (path, platform_toolset, override_libs) ->
                         'odbccp32',
                         'delayimp',
                     } }
+                    { 'ConanCompilerVersion', cv_full }
                 }
     }
 
@@ -224,6 +231,9 @@ class Toolchain_MSVC extends Locator
     new: => super Locator.Type.Toolchain, "MSVC Compiler Locator"
 
     locate: =>
+        -- MSVC is a Windows-Only toolchain
+        return unless os.iswindows
+
         @\add_result toolchain for toolchain in *@@detect!
 
     -- Allow to override the libraries generated into the MSVC toolchain

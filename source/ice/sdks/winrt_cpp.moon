@@ -2,6 +2,9 @@ import Locator from require "ice.locator"
 import Windows from require "ice.platform.windows"
 
 class SDK_Cpp_WinRT extends Locator
+    id: 'winrt'
+    name: 'Windows (Store-App)'
+
     new: => super Locator.Type.PlatformSDK, "C++/WinRT Platform Locator"
     locate: =>
         if os.iswindows

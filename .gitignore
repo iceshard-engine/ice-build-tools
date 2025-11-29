@@ -6,4 +6,6 @@ source/ibt/*
 build/*
 
 # Remove conan generated batch file
+conan*
+deactivate*
 *.bat

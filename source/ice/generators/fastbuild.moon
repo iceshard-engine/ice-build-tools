@@ -1,3 +1,5 @@
+import Validation from require "ice.core.validation"
+import File from require "ice.core.fs"
 
 serialize_value = (value) ->
     value_type = type value
@@ -13,7 +15,9 @@ serialize_value = (value) ->
 class FastBuildGenerator
     new: (@output, @parent, @indent = "") =>
         unless @parent
-            @file = io.open @output, 'w+'
+            @file = File\open @output, mode:'w+'
+            Validation\assert @file, "FastBuildGenerator - Output file couldn't be opened (path: #{@output})"
+
             @file\write "// This file is generated!\n// Do not modify on your own!\n"
 
         else

@@ -12,7 +12,7 @@ create_toolchain = (ver_major, ndkver, arch_list) ->
         struct_name: "Toolchain_NDK#{ndkver}_Clang_#{ver_major}00"
         compiler_name: "compiler-ndk#{ndkver}-clang-#{ver_major}00"
 
-        generate_structure: (gen, clang_path, ar_path, ndk_path) ->
+        generate_structure: (gen, clang_path, ar_path, ndk_path, ndk_version) ->
             struct_name = "Toolchain_NDK#{ndkver}_Clang_#{ver_major}00"
             compiler_name = "compiler-ndk#{ndkver}-clang-#{ver_major}00"
 
@@ -25,6 +25,7 @@ create_toolchain = (ver_major, ndkver, arch_list) ->
 
                 gen\line!
                 gen\variables {
+                    { 'NDKVersion', ndk_version }
                     { 'NDKPath', ndk_path }
                     { 'ToolchainCompilerFamily', 'ndk-clang' }
                     { 'ToolchainSupportedArchitectures', arch_list or { } }
@@ -36,10 +37,14 @@ create_toolchain = (ver_major, ndkver, arch_list) ->
                     { 'ToolchainIncludeDirs', { } }
                     { 'ToolchainLibDirs', { } }
                     { 'ToolchainLibs', { } }
+                    { 'ConanCompilerVersion', ver_major }
                 }
     }
 
 class SDK_Android extends Locator
+    id: 'android'
+    name: 'Android'
+
     new: =>
         super Locator.Type.PlatformSDK, "Android Platform Locator"
         @settings = Android.settings
@@ -128,7 +133,8 @@ class SDK_Android extends Locator
 
     _add_ndk: (sdk, pkg, allowed) =>
         ndk_path = Path\join sdk.location, pkg.location
-        ndk_major = pkg.version\match '^(%d+)'
+        ndk_version = pkg.version
+        ndk_major = ndk_version\match '^(%d+)'
 
         abis = File\load (Path\join ndk_path, 'meta', 'abis.json'), parser:Json\decode
         platforms = File\load (Path\join ndk_path, 'meta', 'platforms.json'), parser:Json\decode
@@ -144,7 +150,7 @@ class SDK_Android extends Locator
             name: toolchain_definition.name
             struct_name: toolchain_definition.struct_name
             compiler_name: toolchain_definition.compiler_name
-            generate: (gen) -> toolchain_definition.generate_structure gen, clang_path, ar_path, ndk_path
+            generate: (gen) -> toolchain_definition.generate_structure gen, clang_path, ar_path, ndk_path, ndk_version
         }, Locator.Type.Toolchain
 
         return { toolchain:toolchain_definition.name, version:ndk_major, :abis, :platforms }

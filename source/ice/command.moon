@@ -10,7 +10,7 @@ class CommandResult
     @from_values: (command, result, message, value) =>
         final_result = nil
         if (type result) == "boolean"
-            final_result = return_code:(result and 0 or -1), :value
+            final_result = return_code:(result and 0 or 1), :value
         elseif (type result) == "number"
             final_result = return_code:result, :message, :value
         elseif (type result) == "table"
@@ -32,10 +32,14 @@ class CommandResult
 
     validate: =>
         unless Validation\ensure @success!, @message
-            os.exit @return_code
+            -- Becauase on most systems the max value for an exit code is 255 we limit it here after it was logged
+            os.exit math.min @return_code, 255
         @result
 
 class Command
+    @requires_conan = false
+    @resolve_conan_modules = (@requires_conan = true) =>
+
     @settings = (defined_settings) =>
         @settings = { }
         @settings_list = { }
@@ -67,6 +71,7 @@ class Command
 
     new: (@parser, settings) =>
         @settings = { }
+        @requires_conan = @@requires_conan
 
         -- Load settings before continuing
         @\load_settings settings
@@ -125,7 +130,7 @@ class Command
 
         @.result = (code, message, value) =>
             coroutine.yield CommandResult\from_values @name, code, message, value
-        @.fail = (message, error_code = -1) =>
+        @.fail = (message, error_code = 1) =>
             Validation\assert error_code ~= 0, "A explicit fail cannot set the 'error_code' value to '0'"
             @result error_code, message
         @.success = (value) =>
@@ -150,7 +155,7 @@ class Command
 
         @.result = (code, message, value) =>
             coroutine.yield CommandResult\from_values @name, code, message, value
-        @.fail = (message, error_code = -1) =>
+        @.fail = (message, error_code = 1) =>
             Validation\assert error_code ~= 0, "A explicit fail cannot set the 'error_code' value to '0'"
             @result error_code, message
         @.success = (value) =>

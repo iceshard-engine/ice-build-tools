@@ -7,7 +7,7 @@ class Locator
         @PlatformSDK: 'Platform SDK'
         @CommonSDK: 'Common SDK'
 
-    new: (@type, @name) =>
+    new: (@type, @name, @id) =>
 
     add_result: (object, type=@type) =>
         if type == Locator.Type.Toolchain
@@ -18,6 +18,9 @@ class Locator
             table.insert @context.additional_sdks, object
         else
             Log\error "Unknown result type '#{@type}' encountered while executing '#{type}' (#{@name}) locator"
+
+    install_internal: =>
+        @\install! if (type @.install) == 'function'
 
     locate_internal: (@context) =>
         @\locate @context

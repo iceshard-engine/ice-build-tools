@@ -1,5 +1,7 @@
 import Exec, Where from require "ice.tools.exec"
 import Validation from require "ice.core.validation"
+import Log from require "ice.core.logger"
+import Dir from require "ice.core.fs"
 
 class FastBuild extends Exec
     new: (path) => super path or (os.iswindows and Where\path "fbuild.exe") or Where\path "fbuild"
@@ -31,6 +33,19 @@ class FastBuild extends Exec
 
         @\capture cmd
 
+    compdb: (args) =>
+        -- Fixup the passed args
+        args.compilation_database = true
+        @build_from args.output, args
+
+    build_from: (output, args) =>
+        return unless Dir\create output
+        args.output = nil
+
+        Dir\enter output, ->
+            @build args
+        true
+
     build: (args) =>
         cmd = string.format " %s", (args and args.target) or "all"
         cmd ..= " -config #{args.config}" if args.config
@@ -43,6 +58,7 @@ class FastBuild extends Exec
         cmd ..= " -cache" if args.cache
         cmd ..= " -verbose" if args.verbose
         cmd ..= " -compdb" if args.compilation_database or args.compdb
+        Log\verbose "FBuild args: #{cmd}"
 
         @\run cmd
 

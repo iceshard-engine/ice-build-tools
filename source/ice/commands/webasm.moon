@@ -66,6 +66,7 @@ class WebAsmCommand extends Command
     }
 
     prepare: (args, project) =>
+        @requires_conan = args.mode != 'setup'
 
     execute: (args, project) =>
         return @execute_setup args, project if args.mode == 'setup'
@@ -106,7 +107,6 @@ class WebAsmCommand extends Command
 
         @fail "Target for project #{args.project} (#{args.config}) does not exist" if selected_target == nil
         serving_path = Path\parent selected_target.executable
-        print serving_path
         Dir\enter serving_path, ->
             -- Build the parameter list
             params = "#{http_server}"

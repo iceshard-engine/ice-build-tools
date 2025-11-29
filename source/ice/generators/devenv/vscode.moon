@@ -1,5 +1,6 @@
-
 import Json from require "ice.util.json"
+import File, Dir, Path from require "ice.core.fs"
+import Validation from require "ice.core.validation"
 
 class VSCodeProjectGen
     new: (@project, @fbuild) =>
@@ -11,25 +12,19 @@ class VSCodeProjectGen
         }
 
         build_configs = build_configs_base
-        if args.update
-            if f = io.open path, "rb"
-                build_configs = Json\decode (f\read "*a")
-                error "Couldn't read JSon data from file '#{path}'" unless build_configs
-                build_configs.version = build_configs_base.version unless build_configs.version
-                build_configs.tasks = build_configs_base.tasks unless build_configs.tasks
-                f\close!
-            else
-                error "Failed to open path '#{path}'"
+        if args.update and File\exists path
+            build_configs = File\load path, parser:Json\decode
+            return false unless Validation\ensure (type build_configs) == 'table', "VScode tasks.json file is invalid"
+
+            build_configs.version = build_configs_base.version unless build_configs.version
+            build_configs.tasks = build_configs_base.tasks unless build_configs.tasks
 
         -- Get the updated tasks object
         build_configs = @update_tasks_json build_configs, targets
 
-        -- Save
-        if f = io.open path, "wb+"
-            f\write Json\encode build_configs
-            f\close!
-            return true
-        return false
+        -- Ensure the directory exists and create the file
+        Dir\create Path\parent path
+        File\save path, Json\encode build_configs
 
     create_launch_file: (path, targets, args = {}) =>
         launch_configs_base = {
@@ -38,25 +33,19 @@ class VSCodeProjectGen
         }
 
         launch_configs = launch_configs_base
-        if args.update
-            if f = io.open path, "rb"
-                launch_configs = Json\decode (f\read "*a")
-                error "Couldn't read JSon data from file '#{path}'" unless launch_configs
-                launch_configs.version = launch_configs_base.version unless launch_configs.version
-                launch_configs.configurations = launch_configs_base.configurations unless launch_configs.configurations
-                f\close!
-            else
-                error "Failed to open path '#{path}'"
+        if args.update and File\exists path
+            launch_configs = File\load path, parser:Json\decode
+            return false unless Validation\ensure (type launch_configs) == 'table', "VScode launch.json file is invalid"
+
+            launch_configs.version = launch_configs_base.version unless launch_configs.version
+            launch_configs.configurations = launch_configs_base.configurations unless launch_configs.configurations
 
         -- Get the updated configurations object
         launch_configs = @update_launch_json launch_configs, targets
 
-        -- Save
-        if f = io.open path, "wb+"
-            f\write Json\encode launch_configs
-            f\close!
-            return true
-        return false
+        -- Ensure the directory exists and create the file
+        Dir\create Path\parent path
+        File\save path, Json\encode launch_configs
 
     -- [[ Implementation details ]]
 
@@ -176,13 +165,11 @@ class VSCodeProjectGen
                     referenced: true
                     name: "#{config_target.name} (#{config_target.pipeline}-#{config_target.platform}-#{config_target.config})"
                     request: "launch"
-                    type: os.osselect win:'cppvsdbg', unix:'gdb'
+                    type: os.osselect win:'cppvsdbg', unix:'lldb-dap'
                     program: config_target.executable
-                    args: { }
-                    stopAtEntry: false
                     cwd: config_target.working_dir
-                    environment: { }
-                    console: "newExternalTerminal"
+                    presentation: { group:config_target.name, order:(config_target.config == 'Develop' and 1 or 2), hidden:(config_target.config == 'Release') }
+                    args: { }
                 }
 
         -- Clear the previous configuration list
