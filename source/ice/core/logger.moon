@@ -180,6 +180,9 @@ class Logger
 
     @create = (category, args) => Logger category, args or global_instance.init_args
 
+    @register_sink = (id, sink) =>
+        global_instance.logger.outputs[id] = sink
+
 class Log
     @format = (msg, level, ...) => global_instance.get!\format msg, level, ...
     @debug = (msg, ...) => global_instance.get!\debug msg, ...

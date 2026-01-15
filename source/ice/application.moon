@@ -8,6 +8,7 @@ import Command, group, argument, option, flag from require "ice.command"
 import Validation from require "ice.core.validation"
 import Path, Dir, File from require "ice.core.fs"
 import Settings from require "ice.settings"
+import TeamCity from require "ice.tools.teamcity"
 
 class Application
     @arguments = (defined_args) =>
@@ -39,6 +40,12 @@ class Application
         opt\description "Initializing for a specific usage scenario. 'ci' will generate additional files to reduce platform-specific scripts on CI workflows."
 
         opt = init_cmd\option "-p --for-platform"
+        opt\description "Initializes the workspace for a single platform, resulting in less time spent on building and preparing conan dependencies. This should only be used in CI environments."
+        opt\choices [platform.id for platform in *(platforms or {})]
+
+        opt = init_cmd\option "-s --service"
+        opt\choices {"teamcity"} -- todo: github
+        opt\default "teamcity"
         opt\description "Initializes the workspace for a single platform, resulting in less time spent on building and preparing conan dependencies. This should only be used in CI environments."
         opt\choices [platform.id for platform in *(platforms or {})]
 
@@ -115,6 +122,10 @@ class Application
             if args.for_platform
                 File\save project.forced_platform_file, args.for_platform
                 Log\info "Force selected development platform #{args.for_platform}"
+
+            if args.service ~= nil
+                Log\info "Enabled #{args.service} integration."
+                TeamCity\enable!
 
             else
                 File\delete project.forced_platform_file
