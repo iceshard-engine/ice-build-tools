@@ -43,7 +43,7 @@ class UpdateCommand extends Command
                     newest_version = package.version
                     newest_package = package.full
 
-            if newest_version == current_version
+            if newest_version == current_version and not newest_version\match "-alpha"
                 @log\info "IBT is up-to-date."
 
             else

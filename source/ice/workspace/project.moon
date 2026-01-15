@@ -25,6 +25,8 @@ import INIConfig from require "ice.util.iniconfig"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 
+import TeamCity from require "ice.tools.teamcity"
+
 install_conan_dependencies = ->
 
 project_settings = {
@@ -149,6 +151,13 @@ class Project
                     @locators[Locator.Type.PlatformSDK] = { locator }
                     break
 
+        -- File containing ci service
+        ci_service_file = Path\join @output_directory, 'selected_ciservice.txt'
+        if File\exists ci_service_file
+            service_id = File\load ci_service_file
+            if service_id == "teamcity"
+                TeamCity\enable!
+
         @build_system = FastBuildBuildSystem {
             locators:@locators
             profiles:{} -- selected_profiles
@@ -190,6 +199,7 @@ class Project
             fastbuild_solution_name: @solution_name
             settings_file:@project_settings_file
             forced_platform_file:forced_platform_file
+            ci_service_file:ci_service_file
             action: {
                 init_conan: -> conan_soft_init!
                 generate_build_system_files: -> @build_system\generate force:true

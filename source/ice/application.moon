@@ -8,7 +8,6 @@ import Command, group, argument, option, flag from require "ice.command"
 import Validation from require "ice.core.validation"
 import Path, Dir, File from require "ice.core.fs"
 import Settings from require "ice.settings"
-import TeamCity from require "ice.tools.teamcity"
 
 class Application
     @arguments = (defined_args) =>
@@ -123,10 +122,11 @@ class Application
                 Log\info "Force selected development platform #{args.for_platform}"
 
             if args.service ~= nil
+                File\save project.ci_service_file, args.service
                 Log\info "Enabled #{args.service} integration."
-                TeamCity\enable!
 
             else
+                File\delete project.ci_service_file
                 File\delete project.forced_platform_file
 
         elseif args.command
