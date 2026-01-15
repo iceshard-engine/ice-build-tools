@@ -47,7 +47,6 @@ class Application
         opt\choices {"teamcity"} -- todo: github
         opt\default "teamcity"
         opt\description "Initializes the workspace for a single platform, resulting in less time spent on building and preparing conan dependencies. This should only be used in CI environments."
-        opt\choices [platform.id for platform in *(platforms or {})]
 
         -- init_cmd\option "--update-tools", "Updates the tool dependencies."
         -- init_cmd\option "-p --profile", "A profile that should be used to generate conan profile files. This profile will affect the picked dependencies."
