@@ -119,6 +119,10 @@ class TeamCity
         Validation\assert (opts.severity == nil or is_string_n opts.severity, 255), "Inspection type requires optional 'severity' to be of type 'string[0..255]', got '#{type opts.severity}'"
         Validation\assert (opts.line == nil or is_number opts.line), "Inspection type requires optional 'line' to be of type 'integer', got '#{type opts.line}'"
 
+        -- Final touches
+        opts.SEVERITY = opts.severity
+        opts.severity = nil
+
         -- Report the inspection
         service_message.inspection opts
 
