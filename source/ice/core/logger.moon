@@ -102,6 +102,8 @@ global_instance = { }
 
 class Log
 class Logger
+    @registered_sinks = { }
+
     new: (@category, args = {}, force_raw) =>
         assert @category and @category.tag != nil, "Logger objects require a LogCategory object on the first parameter!"
 
@@ -139,11 +141,10 @@ class Logger
             args.log.noheader = true
 
         -- Create the sinks
-        @outputs = {
-            stdout:(Sink io.stdout, LogLevel.Info, args.stdout)
-            stderr:(Sink io.stderr, LogLevel.Error, args.stderr)
-            log:(Sink args.logfile, LogLevel.Info, args.log)
-        }
+        @outputs = @@registered_sinks
+        @outputs.stdout = (Sink io.stdout, LogLevel.Info, args.stdout) unless @outputs.stdout
+        @outputs.stderr = (Sink io.stderr, LogLevel.Error, args.stderr) unless @outputs.stderr
+        @outputs.log = (Sink args.logfile, LogLevel.Info, args.log) unless @outputs.log
 
         @output_format = Sink MemoryFile!, LogLevel.Debug, args.format or { noheader:true, nocolors:true }
 
@@ -181,7 +182,10 @@ class Logger
     @create = (category, args) => Logger category, args or global_instance.init_args
 
     @register_sink = (id, sink) =>
-        global_instance.logger.outputs[id] = sink
+        if global_instance.logger ~= nil
+            global_instance.logger.outputs[id] = sink
+        else
+            Logger.registered_sinks[id] = sink
 
 class Log
     @format = (msg, level, ...) => global_instance.get!\format msg, level, ...
