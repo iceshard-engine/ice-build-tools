@@ -7,6 +7,7 @@ import Conan from require "ice.tools.conan"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 import Path, File, Dir from require "ice.core.fs"
+import TeamCity from require "ice.tools.teamcity"
 
 class LicenseCommand extends Command
     @resolve_conan_modules!
@@ -73,6 +74,10 @@ class LicenseCommand extends Command
             description: "Updates all selected files to use the specified 'modified year' value in the license header."
             group: 'sources'
             name: '-m --modified-year'
+        flag 'ci_validation',
+            description: "Reports missing and outdated license headers as inspection errors. Only works if IBT is running with a 'ci' service enabled. (ex. TeamCity)"
+            group: 'sources'
+            name: '--ci-validation'
     }
 
     prepare: (args, project) =>
@@ -84,6 +89,20 @@ class LicenseCommand extends Command
 
         if args.mode == '3rdparty'
             @details = File\load @settings.license.thirdparty.details_file, parser:Json\decode
+
+        if args.mode == 'sources'
+            @report_spdx_missing = TeamCity\inspection_type
+                id:'MissingSPDXheader'
+                name:'Missing SPDX License Header'
+                category:'Licensing requirements'
+                description:'Reports missing license information in text-based source files.'
+                severity:'ERROR'
+            @report_spdx_outdated = TeamCity\inspection_type
+                id:'OutdatedSPDXheader'
+                name:'Oudated SPDX License Header'
+                category:'Licensing requirements'
+                description:'Reports oudated license information in text-based source files.'
+                severity:'WARNING'
 
     execute: (args, project) =>
         return @execute_mode_sources args, project if args.mode == 'sources'
@@ -136,6 +155,8 @@ class LicenseCommand extends Command
 
         if #results ~= #lic_pattern_args
             @log\warning "Missing copyright and/or SPDX header in file: #{file}"
+            @report_spdx_missing :file
+
             header_size = 0
             contents = nil
 
@@ -156,7 +177,10 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            @log\info "Modification year is outdated (found: %d, current: %d) in #{file}", r.year_modified, r.file_modified
+            message = "Modification year is outdated! (found: #{r.year_modified}, current: #{r.file_modified})"
+            @log\info "#{message} in #{file}"
+            @report_spdx_outdated :file, :message
+
         elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
             @log\verbose "Modification of authors or license values in #{file}", r.authors, r.license
             @log\debug "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors

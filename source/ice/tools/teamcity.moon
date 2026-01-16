@@ -3,19 +3,28 @@ import Validation from require "ice.core.validation"
 import Exec, Where from require "ice.tools.exec"
 
 teamcity_is_enabled = false
+is_number = (v) -> (type v) == "number"
 is_string = (v) -> (type v) == "string"
+is_string_n = (v, l) -> (type v) == "string" and #v <= l
 is_function = (v) -> (type v) == "function"
 
 make_service_message = (type, params) ->
     message_params = table.concat ["#{key}='#{value}'" for key, value in pairs (params or {}) when is_string value], ' '
     "##teamcity[#{type} #{message_params or ''}]\n"
 
+defined_inspections = {}
 service_message = {
     message: (params) -> io.stdout\write make_service_message 'message', params
     blockOpened: (params) -> io.stdout\write make_service_message 'blockOpened', params
     blockClosed: (params) -> io.stdout\write make_service_message 'blockClosed', params
     compilationStarted: (params) -> io.stdout\write make_service_message 'compilationStarted', params
     compilationFinished: (params) -> io.stdout\write make_service_message 'compilationFinished', params
+    testSuiteStarted: (params) -> io.stdout\write make_service_message 'testSuiteStarted', params
+    testSuiteFinished: (params) -> io.stdout\write make_service_message 'testSuiteFinished', params
+    testStarted: (params) -> io.stdout\write make_service_message 'testStarted', params
+    testFinished: (params) -> io.stdout\write make_service_message 'testFinished', params
+    inspectionType: (params) -> io.stdout\write make_service_message 'inspectionType', params
+    inspection: (params) -> io.stdout\write make_service_message 'inspection', params
 }
 
 class TeamCity
@@ -53,13 +62,79 @@ class TeamCity
     @info = (message) => Log\info message if teamcity_is_enabled
     @warning = (message) => Log\warning message if teamcity_is_enabled
     @error = (message) => Log\error message if teamcity_is_enabled
-    @critical = (message) => Log\critical message if teamcity_is_enabled
 
     @enable = =>
         teamcity_is_enabled = true
         -- Register for both stderr and stdout
         Logger\register_sink 'stdout', MessageSink io.stdout, LogLevel.Info, LogLevel.Info
         Logger\register_sink 'stderr', MessageSink io.stderr, LogLevel.Warning, LogLevel.Critical
+
+    @inspection_type = (opts) =>
+        return -> unless teamcity_is_enabled
+
+        Validation\assert (is_string_n opts.id, 255), "Inspection type requires 'id' to be of type 'string[0..255]', got '#{type opts.id}'"
+        Validation\assert (is_string_n opts.name, 255), "Inspection type requires 'name' to be of type 'string[0..255]', got '#{type opts.name}'"
+        Validation\assert (is_string_n opts.category, 255), "Inspection type requires 'category' to be of type 'string[0..255]', got '#{type opts.category}'"
+        Validation\assert (opts.severity == nil or is_string_n opts.severity, 255), "Inspection type requires optional 'severity' to be of type 'string[0..255]', got '#{type opts.severity}'"
+
+        -- Improve the description.
+        opts.description = "<h2>#{opts.description.title}</h2><p>#{opts.description.content}</p>" if (is_string opts.description.title) and (is_string opts.description.content)
+        opts.description = "<html><body>#{opts.description}</body></html>" if is_string opts.description
+        Validation\assert (is_string_n opts.description, 4000), "Inspection type requires 'description' to be of type 'string[0..4000]', got '#{type opts.description}'"
+
+        -- Store the inspection type details
+        defined_inspections[opts.id] = opts
+        typeid = opts.id
+        severity = opts.severity
+
+        -- Remove parameters not used during type definition and report the inspection type
+        opts.severity = nil
+        service_message.inspectionType opts
+
+        (iopts) => TeamCity\inspection typeid:typeid, file:iopts.file, line:iopts.line, message:iopts.message, severity:severity
+
+    @inspection = (opts) =>
+        return unless teamcity_is_enabled
+
+        -- Fix typeId field name
+        opts.typeId = opts.typeid
+        opts.typeid = nil
+
+        Validation\assert (is_string_n opts.typeId, 255), "Inspection type requires 'typeid' to be of type 'string[0..255]', got '#{type opts.typeId}'"
+        Validation\assert (is_string_n opts.file, 4000), "Inspection type requires 'file' to be of type 'string[0..4000]', got '#{type opts.file}'"
+
+        insp_type = defined_inspections[opts.typeId]
+        Validation\assert (insp_type ~= nil), "Inspection type '#{opts.typeId}' is undefined! Define the inspection type with 'TeamCity\\inspection_type' first!"
+
+        -- Prepare optional parameters
+        opts.message = "<html><body>#{opts.message}</body></html>" if is_string opts.message
+        opts.severity = opts.severity or insp_type.severity
+
+        -- Additional checks
+        Validation\assert (opts.message == nil or is_string_n opts.message, 4000), "Inspection type requires optional 'message' to be of type 'string[0..4000]', got '#{type opts.message}'"
+        Validation\assert (opts.severity == nil or is_string_n opts.severity, 255), "Inspection type requires optional 'severity' to be of type 'string[0..255]', got '#{type opts.severity}'"
+        Validation\assert (opts.line == nil or is_number opts.line), "Inspection type requires optional 'line' to be of type 'integer', got '#{type opts.line}'"
+
+        -- Report the inspection
+        service_message.inspection opts
+
+    -- @test_suite = (opts, fn) =>
+    --     return unless Validation\ensure (is_function fn), "Expected 'function' as second argument to 'compile_block' got '#{type fn}'"
+    --     return fn! unless teamcity_is_enabled
+
+    --     service_message.testSuiteStarted compiler:opts.compiler
+    --     result = fn!
+    --     service_message.testSuiteFinished compiler:opts.compiler
+    --     result
+
+    -- @test = (opts, fn) =>
+    --     return unless Validation\ensure (is_function fn), "Expected 'function' as second argument to 'compile_block' got '#{type fn}'"
+    --     return fn! unless teamcity_is_enabled
+
+    --     service_message.testStarted compiler:opts.compiler
+    --     result = fn!
+    --     service_message.testFinished compiler:opts.compiler
+    --     result
 
     @compile_block = (opts, fn) =>
         return unless Validation\ensure (is_function fn), "Expected 'function' as second argument to 'compile_block' got '#{type fn}'"

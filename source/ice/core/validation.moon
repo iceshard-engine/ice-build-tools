@@ -13,7 +13,7 @@ class Validation
     @assert = (value, message, ...) =>
         if not value
             message = string.format(message, ...)
-            Log\critical message
+            Log\error message
             error (Log\format message), 2
 
 class Match
