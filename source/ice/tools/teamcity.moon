@@ -8,8 +8,12 @@ is_string = (v) -> (type v) == "string"
 is_string_n = (v, l) -> (type v) == "string" and #v <= l
 is_function = (v) -> (type v) == "function"
 
+make_value = (value) ->
+    replacements = { "'":"|'", '\n': '|n', '\r': '|r', '|': '||', '[': '|[', ']': '|]' }
+    value\gsub "[%'%|%[%]\n\r]", (v) -> replacements[v]
+
 make_service_message = (type, params) ->
-    message_params = table.concat ["#{key}='#{value}'" for key, value in pairs (params or {}) when is_string value], ' '
+    message_params = table.concat ["#{key}='#{make_value value}'" for key, value in pairs (params or {}) when is_string value], ' '
     "##teamcity[#{type} #{message_params or ''}]\n"
 
 defined_inspections = {}
@@ -47,8 +51,8 @@ class TeamCity
             -- Filter out messages based on level
             return unless (level.prio <= @level.prio) and (level.prio >= @max_level.prio)
 
-            replacements = { "'":"|'", '\n': '|n', '\r': '|r', '|': '||', '[': '|[', ']': '|]' }
-            message = message\gsub "[%'%|%[%]\n\r]", (v) -> replacements[v]
+            -- replacements = { "'":"|'", '\n': '|n', '\r': '|r', '|': '||', '[': '|[', ']': '|]' }
+            -- message = message\gsub "[%'%|%[%]\n\r]", (v) -> replacements[v]
 
             if level == LogLevel.Info
                 @.fn make_service_message 'message', text:message, status:'NORMAL'
