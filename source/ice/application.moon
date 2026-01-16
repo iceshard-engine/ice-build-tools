@@ -144,9 +144,9 @@ class Application
                 Log\error errmsg if errmsg ~= ""
             return if #errors > 0
 
-            fn_prepare = (args, project) -> TeamCity\process_block name:"Command: #{args.command}", description:"Preparing command context before execution...", ->
+            fn_prepare = (args, project) -> TeamCity\process_block name:"IBT Command", description:"Preparing '#{args.command}' command context...", ->
                 command\run_prepare args, project
-            fn_execute = (args, project) -> TeamCity\process_block name:"Command: #{args.command}", description:"Executing command", ->
+            fn_execute = (args, project) -> TeamCity\process_block name:"IBT Command", description:"Executing '#{args.command}' command...", ->
                 command\run_execute args, project
 
             if (fn_prepare args, project)\validate!
