@@ -2,9 +2,10 @@ import Exec, Where from require "ice.tools.exec"
 import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 import Json from require "ice.util.json"
+import TeamCity from require "ice.tools.teamcity"
 
-class Conan extends Exec
-    new: (path) => super path or (os.iswindows and Where\path "conan.exe") or Where\path "conan"
+class Conan extends TeamCity.Exec
+    new: (path) => super "Conan2", path or (os.iswindows and Where\path "conan.exe") or Where\path "conan"
 
     remotes: =>
         cmd = "remote list"

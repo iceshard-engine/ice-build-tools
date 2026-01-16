@@ -1,5 +1,6 @@
 import Logger, Sink, LogLevel, Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
+import Exec, Where from require "ice.tools.exec"
 
 teamcity_is_enabled = false
 is_string = (v) -> (type v) == "string"
@@ -17,8 +18,19 @@ service_message = {
     compilationFinished: (params) -> io.stdout\write make_service_message 'compilationFinished', params
 }
 
+class TeamCity
+class TeamCityExec extends Exec
+    new: (@scope_name, ...) => super ...
+    run: (arguments) => TeamCity\process_block name:@scope_name, description:"Executing: #{arguments}", ->
+        super arguments
+    capture: (arguments) => TeamCity\process_block name:@scope_name, description:"Capturing: #{arguments}", ->
+        super arguments
+    lines: (arguments) => TeamCity\process_block name:@scope_name, description:"Capturing (Lines): #{arguments}", ->
+        super arguments
 
 class TeamCity
+    @Exec = TeamCityExec
+
     class MessageSink extends Sink
         new: (file, level, max_level) => super file, level, nocolors:true, noheader:true, :max_level
 
@@ -37,6 +49,11 @@ class TeamCity
                 @.fn make_service_message 'message', text:message, status:'FAILURE'
             elseif level == LogLevel.Critical
                 @.fn make_service_message 'message', text:message, status:'ERROR'
+
+    @info = (message) => Log\info message if teamcity_is_enabled
+    @warning = (message) => Log\warning message if teamcity_is_enabled
+    @error = (message) => Log\error message if teamcity_is_enabled
+    @critical = (message) => Log\critical message if teamcity_is_enabled
 
     @enable = =>
         teamcity_is_enabled = true
