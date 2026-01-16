@@ -9,6 +9,8 @@ import Validation from require "ice.core.validation"
 import Path, Dir, File from require "ice.core.fs"
 import Settings from require "ice.settings"
 
+import TeamCity from require "ice.tools.teamcity"
+
 class Application
     @arguments = (defined_args) =>
         @.args = { }
@@ -44,7 +46,6 @@ class Application
 
         opt = init_cmd\option "-s --service"
         opt\choices {"teamcity"} -- todo: github
-        opt\default "teamcity"
         opt\description "Initializes the workspace for a single platform, resulting in less time spent on building and preparing conan dependencies. This should only be used in CI environments."
 
         -- init_cmd\option "--update-tools", "Updates the tool dependencies."
@@ -120,14 +121,14 @@ class Application
             if args.for_platform
                 File\save project.forced_platform_file, args.for_platform
                 Log\info "Force selected development platform #{args.for_platform}"
+            else
+                File\delete project.forced_platform_file
 
-            if args.service ~= nil
+            if args.service
                 File\save project.ci_service_file, args.service
                 Log\info "Enabled #{args.service} integration."
-
             else
                 File\delete project.ci_service_file
-                File\delete project.forced_platform_file
 
         elseif args.command
 
@@ -143,8 +144,10 @@ class Application
                 Log\error errmsg if errmsg ~= ""
             return if #errors > 0
 
-            fn_prepare = command\run_prepare
-            fn_execute = command\run_execute
+            fn_prepare = (args, project) -> TeamCity\process_block name:"Command: #{args.command}", description:"Preparing command context before execution...", ->
+                command\run_prepare args, project
+            fn_execute = (args, project) -> TeamCity\process_block name:"Command: #{args.command}", description:"Executing command", ->
+                command\run_execute args, project
 
             if (fn_prepare args, project)\validate!
                 project.action.init_conan! if command.requires_conan

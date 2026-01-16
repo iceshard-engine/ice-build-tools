@@ -154,7 +154,7 @@ class Logger
         msg = string.format msg, ...
 
         -- Send it to each sink
-        sink level, category, msg for _, sink in pairs @outputs
+        sink\write level, category, msg for _, sink in pairs @outputs
 
     format: (msg, level, ...) =>
         @.output_format (LogLevel\get level, LogLevel.Info), @category, string.format msg, ...

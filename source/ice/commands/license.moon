@@ -60,6 +60,10 @@ class LicenseCommand extends Command
             default: 'source'
             count: '*'
             args: '?'
+        option 'gitref',
+            description: "Git reference to use when checking for changed files!"
+            group: 'sources'
+            name: '-r --git-ref'
 
         option 'set_created',
             description: "Updates all selected files to use the specified 'created year' value in the license header."
@@ -152,7 +156,7 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            @log\debug "Modification year (found: %d, current: %d) is outdated in #{file}", r.year_modified, r.file_modified
+            @log\info "Modification year is outdated (found: %d, current: %d) in #{file}", r.year_modified, r.file_modified
         elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
             @log\verbose "Modification of authors or license values in #{file}", r.authors, r.license
             @log\debug "- [authors] old: '%s', new: '%s'", r.authors, lic_authors if r.authors ~= lic_authors
@@ -210,7 +214,7 @@ class LicenseCommand extends Command
 
         -- Find matching files
         files = { }
-        if args.dir
+        if args.dir and not args.git_ref
             for dir in *args.dir
                 dir = dir[1] or 'source'
                 sub_files = Dir\find_files dir, recursive:true, filter: (filename) ->
@@ -219,7 +223,7 @@ class LicenseCommand extends Command
 
                 table.insert files, file for file in *sub_files
         else
-            files = [change.filename for change in *(Git!\status path:project.source_dir) when sdpx_extensions[Path\extension change.filename]]
+            files = [filename for filename in *(Git!\diff_files ref:args.git_ref) when sdpx_extensions[Path\extension filename]]
 
         @log\verbose "Selected #{#files} files from #{#args.dir} directories" if #files > 0
         updated = 0

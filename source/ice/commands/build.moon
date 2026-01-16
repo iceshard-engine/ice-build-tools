@@ -5,6 +5,7 @@ import FastBuild from require "ice.tools.fastbuild"
 import Validation from require "ice.core.validation"
 import Log from require "ice.core.logger"
 import Dir, Path, File from require "ice.core.fs"
+import TeamCity from require "ice.tools.teamcity"
 
 class BuildCommand extends Command
     @resolve_conan_modules!
@@ -135,7 +136,7 @@ class BuildCommand extends Command
         table.sort targets, (a, b) -> a < b
         targets
 
-    @fbuild: (args = {}) =>
+    @fbuild: (args = {}) => TeamCity\compile_block compiler:"FASTBuild", ->
         if (type args.target) ~= 'table'
             args.target = { tostring(args.target) }
 
@@ -145,9 +146,10 @@ class BuildCommand extends Command
             config_file = Path\join output_dir, config_file
             Validation\assert (File\exists config_file), "Failed to find fbuild config file."
 
+        target_list = table.concat args.target, ' '
         FastBuild!\build
             config:config_file
-            target:table.concat args.target, ' '
+            target:target_list
             clean:args.clean
             monitor:args.monitor
             distributed:args.dist

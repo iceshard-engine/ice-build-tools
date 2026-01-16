@@ -35,19 +35,27 @@ class UpdateCommand extends Command
             current_version = IBT.conan.version
             newest_package = current_package
             newest_version = current_version
+            first_remote = nil
+            is_devel = (newest_version\match "-alpha") ~= nil
             conan = Conan!
 
             @log\info "Checking remotes for newer IBT version..."
             for package in *conan\search "ice-build-tools/*@#{IBT.conan.user}/#{IBT.conan.channel}"
+                -- Store the first remote that had a package for later
+                first_remote = package.remote unless first_remote
                 if newest_version < package.version
                     newest_version = package.version
                     newest_package = package.full
 
-            if newest_version == current_version and not newest_version\match "-alpha"
+            if newest_version == current_version and not is_devel
                 @log\info "IBT is up-to-date."
 
             else
-                @log\info "Found newer version '#{newest_version}', upgrading..."
+                if is_devel
+                    @log\info "Current version marked as 'development', checking new revisions from first available conan remote..."
+                    conan\download reference:current_package, remote:first_remote
+                else
+                    @log\info "Found newer version '#{newest_version}', upgrading..."
 
                 conanfile_update_success = false
                 if contents = File\load 'tools/conanfile.txt', mode:'r+'

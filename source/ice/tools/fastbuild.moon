@@ -60,6 +60,8 @@ class FastBuild extends Exec
         cmd ..= " -compdb" if args.compilation_database or args.compdb
         Log\verbose "FBuild args: #{cmd}"
 
-        @\run cmd
+        result = @\run cmd
+        Validation\ensure result == 0, "Failed FASTBuild build with targets: #{(args and args.target) or 'all'}"
+        result
 
 { :FastBuild }

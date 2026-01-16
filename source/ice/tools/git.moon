@@ -16,6 +16,12 @@ class Git extends Exec
         cmd ..= " #{args.refspec or args.ref}" if args.refspec or args.ref
         @\run cmd
 
+    diff_files: (args = {name_only:false}) =>
+        cmd = "diff"
+        cmd ..= " #{args.ref}" if args.ref
+        cmd ..= " --name-only"
+        @\lines cmd
+
     status: (args = { }) =>
         cmd = "status"
         cmd ..= " --short" -- make it optional
