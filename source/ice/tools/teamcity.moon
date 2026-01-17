@@ -111,7 +111,7 @@ class TeamCity
         Validation\assert (insp_type ~= nil), "Inspection type '#{opts.typeId}' is undefined! Define the inspection type with 'TeamCity\\inspection_type' first!"
 
         -- Prepare optional parameters
-        opts.message = "<html><body>#{opts.message}</body></html>" if is_string opts.message
+        -- opts.message = "<html><body>#{opts.message}</body></html>" if is_string opts.message
         opts.severity = opts.severity or insp_type.severity
 
         -- Additional checks

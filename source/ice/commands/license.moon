@@ -141,7 +141,7 @@ class LicenseCommand extends Command
 
         if #results ~= #lic_pattern_args
             @log\warning "Missing copyright and/or SPDX header in file: #{file}"
-            @report_spdx_missing :file
+            @report_spdx_missing :file, line:1, message:"The required SPDX license header was not found."
 
             header_size = 0
             contents = nil
@@ -163,9 +163,9 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            message = "Modification year is outdated! (found: #{r.year_modified}, current: #{r.file_modified})"
+            message = "Modification year is outdated! <i>(found: #{r.year_modified}, current: #{r.file_modified})</i>"
             @log\info "#{message} in #{file}"
-            @report_spdx_outdated :file, :message
+            @report_spdx_outdated :file, line:1, :message
 
         elseif header_size > 0 and (r.authors ~= lic_authors or r.license ~= lic_spdx)
             @log\verbose "Modification of authors or license values in #{file}", r.authors, r.license
