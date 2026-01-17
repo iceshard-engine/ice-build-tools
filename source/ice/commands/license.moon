@@ -90,22 +90,6 @@ class LicenseCommand extends Command
         if args.mode == '3rdparty'
             @details = File\load @settings.license.thirdparty.details_file, parser:Json\decode
 
-        @report_spdx_missing = ->
-        @report_spdx_outdated = ->
-        if args.mode == 'sources' and args.ci_validation
-            @report_spdx_missing = TeamCity\inspection_type
-                id:'MissingSPDXheader'
-                name:'Missing SPDX License Header'
-                category:'Licensing requirements'
-                description:'Reports missing license information in text-based source files.'
-                severity:'ERROR'
-            @report_spdx_outdated = TeamCity\inspection_type
-                id:'OutdatedSPDXheader'
-                name:'Oudated SPDX License Header'
-                category:'Licensing requirements'
-                description:'Reports oudated license information in text-based source files.'
-                severity:'WARNING'
-
     execute: (args, project) =>
         return @execute_mode_sources args, project if args.mode == 'sources'
         return @execute_mode_3rdparty args, project if args.mode == '3rdparty'
@@ -263,6 +247,7 @@ class LicenseCommand extends Command
         @log\warning "Flag '--clean' has no effect in 'source' mode." if args.clean
         @log\warning "Argument '--gen-3rdparty' has no effect in 'source' mode." if args.gen_3rdparty
 
+        @initialize_ci_validation args
         @search_dir args, project
         @log\info "Checks finished." if args.check
         return true
@@ -426,6 +411,23 @@ class LicenseCommand extends Command
 
         @log\info "Checks finished." if args.check
         true
+
+    initialize_ci_validation: (args) =>
+        @report_spdx_missing = ->
+        @report_spdx_outdated = ->
+        if args.mode == 'sources' and args.ci_validation
+            @report_spdx_missing = TeamCity\inspection_type
+                id:'MissingSPDXheader'
+                name:'Missing SPDX License Header'
+                category:'Licensing requirements'
+                description:'Reports missing license information in text-based source files.'
+                severity:'ERROR'
+            @report_spdx_outdated = TeamCity\inspection_type
+                id:'OutdatedSPDXheader'
+                name:'Oudated SPDX License Header'
+                category:'Licensing requirements'
+                description:'Reports oudated license information in text-based source files.'
+                severity:'WARNING'
 
 
 { :LicenseCommand, :argument, :option, :flag }
