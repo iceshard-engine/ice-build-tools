@@ -59,8 +59,8 @@ class FastBuild extends Exec
         cmd ..= " -cache" if args.cache
         cmd ..= " -verbose" if args.verbose
         cmd ..= " -compdb" if args.compilation_database or args.compdb
-        Log\verbose "FBuild args: #{cmd}"
         TeamCity\info "Executing: 'fbuild #{cmd}'"
+        Log\verbose "FBuild args: #{cmd}"
 
         result = @\run cmd
         Validation\ensure result == 0, "Failed FASTBuild build with targets: #{(args and args.target) or 'all'}"
