@@ -163,7 +163,7 @@ class LicenseCommand extends Command
 
         requires_update = true
         if r.year_modified < r.file_modified and r.year_modified > 0
-            message = "Modification year is outdated! <i>(found: #{r.year_modified}, current: #{r.file_modified})</i>"
+            message = "Modification year is outdated!\nThe value of '#{r.year_modified}' should be changed to '#{r.file_modified}'."
             @log\info "#{message} in #{file}"
             @report_spdx_outdated :file, line:1, :message
 
