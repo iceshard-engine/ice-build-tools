@@ -63,7 +63,8 @@ class FastBuild extends Exec
         Log\verbose "FBuild args: #{cmd}"
 
         result = @\run cmd
-        Validation\ensure result == 0, "Failed FASTBuild build with targets: #{(args and args.target) or 'all'}"
+        unless result == 0
+            TeamCity\build_problem description:"Failed FastBuild compilation with targets: #{(args and args.target or 'all')}"
         result
 
 { :FastBuild }

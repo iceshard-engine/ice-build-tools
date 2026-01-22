@@ -7,13 +7,14 @@ is_number = (v) -> (type v) == "number"
 is_string = (v) -> (type v) == "string"
 is_string_n = (v, l) -> (type v) == "string" and #v <= l
 is_function = (v) -> (type v) == "function"
+is_string_or_number = (v) -> (is_string v) or (is_number v)
 
 make_value = (value) ->
     replacements = { "'":"|'", '\n': '|n', '\r': '|r', '|': '||', '[': '|[', ']': '|]' }
     value\gsub "[%'%|%[%]\n\r]", (v) -> replacements[v]
 
 make_service_message = (type, params) ->
-    message_params = table.concat ["#{key}='#{make_value value}'" for key, value in pairs (params or {}) when is_string value], ' '
+    message_params = table.concat ["#{key}='#{make_value value}'" for key, value in pairs (params or {}) when is_string_or_number value], ' '
     "##teamcity[#{type} #{message_params or ''}]\n"
 
 defined_inspections = {}
@@ -23,6 +24,7 @@ service_message = {
     blockClosed: (params) -> io.stdout\write make_service_message 'blockClosed', params
     compilationStarted: (params) -> io.stdout\write make_service_message 'compilationStarted', params
     compilationFinished: (params) -> io.stdout\write make_service_message 'compilationFinished', params
+    buildProblem: (params) -> io.stdout\write make_service_message 'buildProblem', params
     testSuiteStarted: (params) -> io.stdout\write make_service_message 'testSuiteStarted', params
     testSuiteFinished: (params) -> io.stdout\write make_service_message 'testSuiteFinished', params
     testStarted: (params) -> io.stdout\write make_service_message 'testStarted', params
@@ -104,20 +106,20 @@ class TeamCity
         opts.typeId = opts.typeid
         opts.typeid = nil
 
-        Validation\assert (is_string_n opts.typeId, 255), "Inspection type requires 'typeid' to be of type 'string[0..255]', got '#{type opts.typeId}'"
-        Validation\assert (is_string_n opts.file, 4000), "Inspection type requires 'file' to be of type 'string[0..4000]', got '#{type opts.file}'"
+        Validation\assert (is_string_n opts.typeId, 255), "Inspection requires 'typeid' to be of type 'string[0..255]', got '#{type opts.typeId}'"
+        Validation\assert (is_string_n opts.file, 4000), "Inspection requires 'file' to be of type 'string[0..4000]', got '#{type opts.file}'"
 
         insp_type = defined_inspections[opts.typeId]
-        Validation\assert (insp_type ~= nil), "Inspection type '#{opts.typeId}' is undefined! Define the inspection type with 'TeamCity\\inspection_type' first!"
+        Validation\assert (insp_type ~= nil), "Inspection '#{opts.typeId}' is undefined! Define the inspection type with 'TeamCity\\inspection_type' first!"
 
         -- Prepare optional parameters
         -- opts.message = "<html><body>#{opts.message}</body></html>" if is_string opts.message
         opts.severity = opts.severity or insp_type.severity
 
         -- Additional checks
-        Validation\assert (opts.message == nil or is_string_n opts.message, 4000), "Inspection type requires optional 'message' to be of type 'string[0..4000]', got '#{type opts.message}'"
-        Validation\assert (opts.severity == nil or is_string_n opts.severity, 255), "Inspection type requires optional 'severity' to be of type 'string[0..255]', got '#{type opts.severity}'"
-        Validation\assert (opts.line == nil or is_number opts.line), "Inspection type requires optional 'line' to be of type 'integer', got '#{type opts.line}'"
+        Validation\assert (opts.message == nil or is_string_n opts.message, 4000), "Inspection requires optional 'message' to be of type 'string[0..4000]', got '#{type opts.message}'"
+        Validation\assert (opts.severity == nil or is_string_n opts.severity, 255), "Inspection requires optional 'severity' to be of type 'string[0..255]', got '#{type opts.severity}'"
+        Validation\assert (opts.line == nil or is_number opts.line), "Inspection requires optional 'line' to be of type 'integer', got '#{type opts.line}'"
 
         -- Final touches
         opts.SEVERITY = opts.severity
@@ -125,6 +127,12 @@ class TeamCity
 
         -- Report the inspection
         service_message.inspection opts
+
+    @build_problem = (opts) =>
+        Validation\assert (is_string_n (opts.description or opts.desc), 4000), "BuildProblem requires 'description' to be of type 'string[0..4000]', got: '#{type (opts.description or opts.desc)}'"
+        Validation\assert (opts.identity == nil or is_string_n opts.identity, 60), "BuildProblem requires optional 'identity' to be of type 'string[0..60]', got: '#{type (opts.identity)}'"
+
+        service_message.buildProblem opts
 
     -- @test_suite = (opts, fn) =>
     --     return unless Validation\ensure (is_function fn), "Expected 'function' as second argument to 'compile_block' got '#{type fn}'"
