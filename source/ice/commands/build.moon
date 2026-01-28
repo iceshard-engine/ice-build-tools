@@ -136,7 +136,7 @@ class BuildCommand extends Command
         table.sort targets, (a, b) -> a < b
         targets
 
-    @fbuild: (args = {}) => TeamCity\compile_block compiler:"FASTBuild", ->
+    @fbuild: (args = {}) =>
         if (type args.target) ~= 'table'
             args.target = { tostring(args.target) }
 
