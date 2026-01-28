@@ -2,7 +2,6 @@ import Exec, Where from require "ice.tools.exec"
 import Validation from require "ice.core.validation"
 import Log from require "ice.core.logger"
 import Dir from require "ice.core.fs"
-import TeamCity from require "ice.tools.teamcity"
 
 class FastBuild extends Exec
     new: (path) => super path or (os.iswindows and Where\path "fbuild.exe") or Where\path "fbuild"
@@ -59,12 +58,9 @@ class FastBuild extends Exec
         cmd ..= " -cache" if args.cache
         cmd ..= " -verbose" if args.verbose
         cmd ..= " -compdb" if args.compilation_database or args.compdb
-        TeamCity\info "Executing: 'fbuild #{cmd}'"
+        cmd ..= " -report=json"
         Log\verbose "FBuild args: #{cmd}"
 
-        result = @\run cmd
-        unless result == 0
-            TeamCity\build_problem description:"Failed FastBuild compilation with targets: #{(args and args.target or 'all')}"
-        result
+        @\run cmd
 
 { :FastBuild }
