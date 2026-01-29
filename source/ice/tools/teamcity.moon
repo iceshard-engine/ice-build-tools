@@ -10,6 +10,8 @@ is_function = (v) -> (type v) == "function"
 is_string_or_number = (v) -> (is_string v) or (is_number v)
 
 make_value = (value) ->
+    return value unless is_string value
+
     replacements = { "'":"|'", '\n': '|n', '\r': '|r', '|': '||', '[': '|[', ']': '|]' }
     value\gsub "[%'%|%[%]\n\r]", (v) -> replacements[v]
 
