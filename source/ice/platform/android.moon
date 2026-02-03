@@ -84,7 +84,7 @@ class Android
         Setting "android.sdk_root" -- deprecated
         Setting "android.sdk.root"
         Setting "android.sdk.cmdline_tools_version"
-        Setting 'android.gradle.version', default:'8.14'
+        Setting 'android.gradle.version', default:'9.3.1'
         Setting 'android.gradle.package_url', default:"https://downloads.gradle.org/distributions/gradle-{ver}-bin.zip"
         Setting 'android.gradle.local_install', default:'build/gradle'
     }

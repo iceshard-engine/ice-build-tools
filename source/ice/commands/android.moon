@@ -392,7 +392,7 @@ class AndroidCommand extends Command
 
         macro_lines = project.context.ProjectJNISources
         for config_lower, paths in pairs project.jnis
-            table.insert macro_lines, "getByName(\"#{config_lower}\").jniLibs.srcDir(\"src/#{config_lower}/jni\")"
+            table.insert macro_lines, "getByName(\"#{config_lower}\").jniLibs.directories.add(\"src/#{config_lower}/jni\")"
 
         -- Generate final macro lines for JNI sources
         -- macro_lines = project.context.ProjectJNISources
@@ -431,15 +431,15 @@ class AndroidCommand extends Command
             "    experimentalProperties[\"ninja.path\"] = \"E:/Projects/GitHub/engine/build/fbuild.windows.fdb\""
             "    experimentalProperties[\"ninja.configure\"] = \"#{configure_batch}\""
             "    experimentalProperties[\"ninja.arguments\"] = listOf("
-            "        \"--db=\\${ndk.moduleMakeFile}\","
+            "        $$\"--db=${ndk.moduleMakeFile}\","
             "        \"--name=#{project.name}\","
-            "        \"--abi=\\${ndk.abi}\","
-            "        \"--config=\\${ndk.variantName}\","
-            "        \"--out=\\${ndk.buildRoot}\","
+            "        $$\"--abi=${ndk.abi}\","
+            "        $$\"--config=${ndk.variantName}\","
+            "        $$\"--out=${ndk.buildRoot}\","
             "        \"--pipeline=Android#{project.android_compilesdk}\","
-            "        \"--ndk-version=\\${ndk.moduleNdkVersion}\","
-            "        \"-p:Configuration=\\${ndk.variantName}\"," -- This and the following line are necessary so gradle does not complain about missing values not passed to the config script.
-            "        \"-p:Platform=\\${ndk.abi}\","
+            "        $$\"--ndk-version=${ndk.moduleNdkVersion}\","
+            "        $$\"-p:Configuration=${ndk.variantName}\"," -- This and the following line are necessary so gradle does not complain about missing values not passed to the config script.
+            "        $$\"-p:Platform=${ndk.abi}\","
             "    )"
             "}"
             "// IBT Generated - END"
