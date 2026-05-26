@@ -68,9 +68,12 @@ The operation to be peformed.
 
                 value = setting.value or setting.default or (setting.required and '<MISSING_VALUE>' or '<NO_VALUE>')
 
+                Log.raw\debug "Logging entry '#{setting.key}' with value type '#{type value}'"
                 if (type value) == 'table'
                     Log.raw\info "#{setting.key}:"
-                    Log.raw\info "- %s", "[#{key}] = #{entry}" for key, entry in pairs value
+                    for key, entry in pairs value
+                        Log.raw\debug "Logging sub-entry with key-value type '#{type key} -> #{type entry}'"
+                        Log.raw\info "- %s", "[#{key}] = #{(tostring entry)\gsub '%%', '$'}"
                 else
                     Log.raw\info "#{setting.key}: #{value}"
 

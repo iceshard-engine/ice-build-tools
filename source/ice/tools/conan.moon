@@ -3,8 +3,16 @@ import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 import Json from require "ice.util.json"
 import TeamCity from require "ice.tools.teamcity"
+import Path from require "ice.core.fs"
+import IBT from require "ibt.ibt"
 
 class Conan extends TeamCity.Exec
+    @location = =>
+        cmd = "cache path"
+        cmd ..= " #{IBT.conan.ref}"
+        cache_path_ibt = Conan!\capture cmd
+        Path\parentex cache_path_ibt, 3 -- Remove three levels of folders
+
     new: (path) => super "Conan2", path or (os.iswindows and Where\path "conan.exe") or Where\path "conan"
 
     remotes: =>

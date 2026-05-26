@@ -18,7 +18,14 @@ class Path
     -- @name = (path, args = { noextension:false }) => path and path\match select args.noextension, "([^#{allowed_separators}%.]+)%.?[%w]*$", "([^#{allowed_separators}]+)$"
     @name = (path, args = { noextension:false }) => path and path\match select args.noextension, "([^#{allowed_separators}%.]+)%.?[%w]*[#{allowed_separators}]*$", "([^#{allowed_separators}]+)[#{allowed_separators}]*$"
     @extension = (path, args = { }) => path and path\match (select args.long, "(%.[%.%w]+)$", "(%.[%w]+)$")
+
     @parent = (path) => path and path\match "^(.+)[#{allowed_separators}]+[^#{allowed_separator}]+"
+    @parentex = (path, depth = 1) =>
+        Validation\assert (type depth) == 'number'
+        while path and depth > 0
+            depth = depth - 1
+            path = path\match "^(.+)[#{allowed_separators}]+[^#{allowed_separator}]*"
+        path
 
     @is_absolute = (path) => path and (path\match os.osselect win:"^[a-zA-Z]+:\\", unix:'^/') ~= nil
     @is_relative = (path) => not @is_absolute path

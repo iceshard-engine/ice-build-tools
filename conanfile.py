@@ -146,6 +146,8 @@ class IceBuildToolsConan(ConanFile):
             f.write("IBT =\n")
             f.write("  version: '{}'\n".format(self.version))
             f.write("  conan:\n")
+            f.write("    ref: '{}/{}@{}/{}'\n".format(self.name, self.version, self.user, self.channel))
+            f.write("    package: '{}'\n".format(self.name))
             f.write("    channel: '{}'\n".format(self.channel))
             f.write("    user: '{}'\n".format(self.user))
             f.write("    version: '{}'\n".format(self.version))

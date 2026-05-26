@@ -156,5 +156,6 @@ class BuildCommand extends Command
             summary:args.summary == 'always'
             nosummaryonerror:args.summary == 'success'
             verbose:args.verbose
+            compilation_database:args.compdb or args.compilation_database
 
 { :BuildCommand }
