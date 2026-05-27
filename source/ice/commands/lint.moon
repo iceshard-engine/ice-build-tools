@@ -83,7 +83,8 @@ class LintCommand extends Command
                 @log\info "Replacing old path '#{old_path}' with '#{new_path}'..."
                 compdb = compdb\gsub old_path, new_path
 
-            -- Store the file
+            -- Store the file and remove the original
             File\save @compdb_output_file, compdb
+            File\delete @compdb_file
 
 { :LintCommand }
