@@ -42,6 +42,7 @@ This involves locating and generating files consumed by FastBuild scripts.
 - Supported SDK's: **Windows 10**, **Vulkan**
 - Supported C++ package managers: **Conan**
 - Supported Build Tools: **FastBuild**
+- Supported CI Systems: **TeamCity**
 
 ## Extensibility
 
