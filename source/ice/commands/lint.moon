@@ -14,7 +14,7 @@ class LintCommand extends Command
 
     @settings {
         Setting 'linter.qodana.default_target', default:'all'
-        Setting 'linter.qodana.output_filename', default:'compile_commands_qodana.json'
+        Setting 'linter.qodana.output_filename', default:'compile_commands.json'
     }
 
     @arguments {
@@ -84,7 +84,7 @@ class LintCommand extends Command
                 compdb = compdb\gsub old_path, new_path
 
             -- Store the file and remove the original
-            File\save @compdb_output_file, compdb
             File\delete @compdb_file
+            File\save @compdb_output_file, compdb
 
 { :LintCommand }
