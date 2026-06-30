@@ -86,5 +86,6 @@ class LintCommand extends Command
             -- Store the file and remove the original
             File\delete @compdb_file
             File\save @compdb_output_file, compdb
+            @log\debug "File saved at #{@compdb_output_file}"
 
 { :LintCommand }
