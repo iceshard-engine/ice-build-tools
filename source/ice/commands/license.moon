@@ -432,7 +432,7 @@ class LicenseCommand extends Command
 
             @log\info "Generating license information from provided source-file license data..."
             if file_readme
-                file_readme\write "\n\n\n# Licenses in source code \n\n"
+                file_readme\write "\n\n\n# Licenses in source code\n\n"
                 file_readme\write "Found in code snippets availabe from various sources but don't have a dedicated Conan2 package.\n"
                 file_readme\write "Listed alphabetically with general information about each third party dependency.\n"
                 file_readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
