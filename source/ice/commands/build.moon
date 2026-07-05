@@ -28,6 +28,11 @@ class BuildCommand extends Command
             group: 'build'
             name: '-t --target'
             count: '*'
+        option 'report',
+            description: 'Creates a HTML or JSON report file from the build process.'
+            group: 'build'
+            name: '--report'
+            choices: { 'html', 'json' }
         flag 'match',
             description: 'Enables simple matching for target selection.'
             group: 'build'
@@ -151,6 +156,7 @@ class BuildCommand extends Command
             config:config_file
             target:target_list
             clean:args.clean
+            report:args.report
             monitor:args.monitor
             distributed:args.dist
             summary:args.summary == 'always'

@@ -51,14 +51,13 @@ class FastBuild extends Exec
         cmd ..= " -config #{args.config}" if args.config
         cmd ..= " -nosummaryonerror" if args.nosummaryonerror
         cmd ..= " -summary" if args.summary
-        cmd ..= " -report" if args.report
+        cmd ..= " -report=#{args.report}" if args.report == 'html' or args.report == 'json'
         cmd ..= " -monitor" if args.monitor
         cmd ..= " -clean" if args.clean
         cmd ..= " -dist" if args.distributed
         cmd ..= " -cache" if args.cache
         cmd ..= " -verbose" if args.verbose
         cmd ..= " -compdb" if args.compilation_database or args.compdb
-        cmd ..= " -report=json"
         Log\verbose "FBuild args: #{cmd}"
 
         @\run cmd

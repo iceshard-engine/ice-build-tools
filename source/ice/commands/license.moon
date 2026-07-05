@@ -18,6 +18,7 @@ class LicenseCommand extends Command
 
         -- 'Mode: Thirdparty settings'
         Setting 'license.thirdparty.details_file', default:'thirdparty/details.json'
+        Setting 'license.thirdparty.source_licenses_file', default:'thirdparty/source_licenses.json'
         Setting 'license.thirdparty.generate_location', default:'thirdparty'
 
         -- 'Mode: Sources settings'
@@ -89,6 +90,11 @@ class LicenseCommand extends Command
 
         if args.mode == '3rdparty'
             @details = File\load @settings.license.thirdparty.details_file, parser:Json\decode
+
+            if File\exists @settings.license.thirdparty.source_licenses_file
+                @source_licenses = File\load @settings.license.thirdparty.source_licenses_file, parser:Json\decode
+            else
+                @log\info "Skipping generation of source-code licenses. Information file '#{@settings.license.thirdparty.source_licenses_file}' does not exist."
 
     execute: (args, project) =>
         return @execute_mode_sources args, project if args.mode == 'sources'
@@ -324,7 +330,7 @@ class LicenseCommand extends Command
         dependencies = @gather_deps_from_conan 'build/conan'
 
         -- Check all dependencies for license files
-        license_files = {}
+        thirdparty_licenses = {}
         for dependency in *dependencies
             found_license_files = { }
             for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
@@ -349,7 +355,7 @@ class LicenseCommand extends Command
                             @log\warning "- #{license_file}"
                         continue
 
-                table.insert license_files, {
+                table.insert thirdparty_licenses, {
                     dependency,
                     "#{dependency.package_folder}/../../export/conanfile.py",
                     selected_license or found_license_files[1]
@@ -358,58 +364,108 @@ class LicenseCommand extends Command
             else
                 @log\warning "Packge '#{dependency.name}' is missing license file..."
 
-        if license_files and #license_files > 0
+        if args.check
+            @log\info "Checks finished."
+            return
 
-            if args.generate
-                gen_dir = "#{@current_dir}/#{@settings.license.thirdparty.generate_location}"
-                Dir\create gen_dir
+        elseif not args.generate
+            return
 
-                if licenses = File\open "#{gen_dir}/LICENSES.txt", mode:"wb+"
-                    for { dep, _, license_file } in *license_files
-                        licenses\write "\n-------------------- START '#{dep.name\lower!}' --------------------\n"
-                        if license_file_handle = File\open license_file, mode:"rb+"
-                            for line in license_file_handle\lines!
-                                licenses\write "    #{line}\n"
-                            license_file_handle\close!
-                        licenses\write "-------------------- END '#{dep.name\lower!}' --------------------\n\n"
-                    licenses\close!
+        -- Prepare generated files and directories
+        file_readme = nil
+        file_licenses = nil
+        gen_dir = "#{@current_dir}/#{@settings.license.thirdparty.generate_location}"
+        if (thirdparty_licenses and #thirdparty_licenses > 0) or (@source_licenses and #@source_licenses > 0)
+            Dir\create gen_dir
 
-                if readme = File\open "#{gen_dir}/README.md", mode:"wb+"
+            file_readme = File\open "#{gen_dir}/README.md", mode:"wb+"
+            file_licenses = File\open "#{gen_dir}/LICENSES.txt", mode:"wb+"
 
-                    readme\write "# Third Party Libraries\n\n"
-                    readme\write "A file generated from all in-used conan dependencies.\n"
-                    readme\write "Listed alphabetically with general information about each third party dependency.\n"
-                    readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
+        if thirdparty_licenses and #thirdparty_licenses > 0
+            @log\info "Generating license information from Conan2 packages..."
+            if file_licenses
+                for { dep, _, license_file } in *thirdparty_licenses
+                    file_licenses\write "\n-------------------- START '#{dep.name\lower!}' --------------------\n"
+                    if license_file_handle = File\open license_file, mode:"rb+"
+                        for line in license_file_handle\lines!
+                            file_licenses\write "    #{line}\n"
+                        license_file_handle\close!
+                    file_licenses\write "-------------------- END '#{dep.name\lower!}' --------------------\n\n"
 
-                    for { dep, conanfile, license_file } in *license_files
-                        -- Parse graph info and get the first entry
-                        conaninfo_json = Conan!\graph_info package:"#{dep.name}/*", format:'json', conanfile:dep.conanfile
-                        conaninfo = Json\decode conaninfo_json
+            if file_readme
+                file_readme\write "# Third Party Libraries\n\n"
+                file_readme\write "Generated from all used conan dependencies.\n"
+                file_readme\write "Listed alphabetically with general information about each third party dependency.\n"
+                file_readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
 
-                        Validation\assert conaninfo.nodes or (conaninfo.graph and conaninfo.graph.nodes), "Conan 'graph info --format json' result changed and is no longer supported!"
-                        conaninfo_nodes = conaninfo.nodes or conaninfo.graph.nodes
-                        -- Gather all nodes and pick the first one
-                        conaninfo_node = [node for _, node in pairs conaninfo_nodes]
-                        conaninfo = Validation\ensure conaninfo_node[1], "Package '#{dep.name}' info  not found!"
-                        conaninfo.version = conaninfo.label\match "[^/]+/([^@]+)"
+                for { dep, conanfile, license_file } in *thirdparty_licenses
+                    @log\verbose "Generating license information for '#{dep.name}' Conan2 dependency."
 
-                        readme\write "\n## #{dep.name}\n"
-                        license_info = conaninfo.license or 'not found'
-                        upsteam_info = conaninfo.url or conaninfo.homepage
-                        description_info = conaninfo.description or dep.description
-                        if @details[dep.name]
-                            description_info = @details[dep.name].description or description_info
-                            license_info = @details[dep.name].license or license_info
-                            upsteam_info = @details[dep.name].upstream or upsteam_info
+                    -- Parse graph info and get the first entry
+                    conaninfo_json = Conan!\graph_info package:"#{dep.name}/*", format:'json', conanfile:dep.conanfile
+                    conaninfo = Json\decode conaninfo_json
 
-                        readme\write "#{description_info}\n"
-                        readme\write "- **upstream:** #{upsteam_info}\n" if upsteam_info
-                        readme\write "- **version:** #{conaninfo.version or dep.version}\n"
-                        readme\write "- **license:** #{license_info}\n"
+                    Validation\assert conaninfo.nodes or (conaninfo.graph and conaninfo.graph.nodes), "Conan 'graph info --format json' result changed and is no longer supported!"
+                    conaninfo_nodes = conaninfo.nodes or conaninfo.graph.nodes
+                    -- Gather all nodes and pick the first one
+                    conaninfo_node = [node for _, node in pairs conaninfo_nodes]
+                    conaninfo = Validation\ensure conaninfo_node[1], "Package '#{dep.name}' info  not found!"
+                    conaninfo.version = conaninfo.label\match "[^/]+/([^@]+)"
 
-                    readme\close!
+                    file_readme\write "\n## #{dep.name}\n"
+                    license_info = conaninfo.license or 'not found'
+                    upsteam_info = conaninfo.url or conaninfo.homepage
+                    description_info = conaninfo.description or dep.description
+                    if @details[dep.name]
+                        description_info = @details[dep.name].description or description_info
+                        license_info = @details[dep.name].license or license_info
+                        upsteam_info = @details[dep.name].upstream or upsteam_info
 
-        @log\info "Checks finished." if args.check
+                    file_readme\write "#{description_info}\n"
+                    file_readme\write "- **upstream:** #{upsteam_info}\n" if upsteam_info
+                    file_readme\write "- **version:** #{conaninfo.version or dep.version}\n"
+                    file_readme\write "- **license:** #{license_info}\n"
+
+        if @source_licenses and #@source_licenses > 0
+            @log\debug "Sorting source licenses (#{#@source_licenses}) before generation to have consistend results"
+            table.sort @source_licenses, (a, b) -> (a.name or "") < (b.name or "")
+
+            @log\info "Generating license information from provided source-file license data..."
+            if file_readme
+                file_readme\write "\n\n\n# Licenses in source code \n\n"
+                file_readme\write "Found in code snippets availabe from various sources but don't have a dedicated Conan2 package.\n"
+                file_readme\write "Listed alphabetically with general information about each third party dependency.\n"
+                file_readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
+
+            nonempty_string = (v) -> (type v) == 'string' and v ~= ''
+
+            for {:name, :version, :summary, :url, :license_short, :license_content, :sourcefile } in *@source_licenses
+                continue unless Validation\ensure (nonempty_string name), "Found license entry without a proper name, skipping!"
+
+                -- Sanity check for source file location
+                sourcefile = "<unknown_file>" unless Validation\check (File\exists sourcefile or ""), "Failed to find source file '#{sourcefile}' for the provided license entry"
+
+                -- Sanity check for license content
+                if file_licenses and Validation\check (nonempty_string  license_content), "Missing license content for '#{name}' entry"
+                    file_licenses\write "\n-------------------- START '#{name}' (#{sourcefile\lower!}) --------------------\n"
+                    if license_content ~= nil
+                        for line in license_content\gmatch "[^\n]*"
+                            file_licenses\write "    #{line}\n" if line ~= ""
+                    file_licenses\write "-------------------- END '#{name}' --------------------\n\n"
+
+                if file_readme
+                    @log\verbose "Generating license information for '#{name}' source-code dependency."
+
+                    file_readme\write "\n## #{name}\n"
+                    file_readme\write "#{summary}\n" if Validation\check (nonempty_string summary), "Missing summary for '#{name}' entry"
+                    file_readme\write "- **upstream:** #{url}\n" if url
+                    file_readme\write "- **version:** #{version}\n" if Validation\check (nonempty_string version), "Missing version for '#{name}' entry"
+                    file_readme\write "- **license:** #{license_short}\n" if Validation\check (nonempty_string license_short), "Missing license short name for '#{name}' entry"
+                    file_readme\write "- **usage:** [#{sourcefile}](/#{sourcefile})\n" if sourcefile ~= "<unknown_file>"
+
+        -- Close files that where opened
+        file_readme\close! if file_readme
+        file_licenses\close! if file_licenses
         true
 
     initialize_ci_validation: (args) =>
