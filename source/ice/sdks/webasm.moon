@@ -65,12 +65,14 @@ class SDK_WebAsm extends Locator
 
             llvm_path = Path\join sdk_path, "upstream/bin"
             em_path = Path\join sdk_path, "upstream/emscripten"
+
+            -- We require Emscripten 6.0.0 or higher from now on
             em_tools = {
-                cc: Path\join em_path, os.osselect win:"emcc.bat", unix:"emcc",
-                cxx: Path\join em_path, os.osselect win:"em++.bat", unix:"em++",
-                ar: Path\join em_path, os.osselect win:"emar.bat", unix:"emar",
+                cc: Path\join em_path, os.osselect win:"emcc.exe", unix:"emcc",
+                cxx: Path\join em_path, os.osselect win:"em++.exe", unix:"em++",
+                ar: Path\join em_path, os.osselect win:"emar.exe", unix:"emar",
                 clang: Path\join llvm_path, os.osselect win:"clang.exe", unix:"clang",
-                file_packager: Path\join em_path, 'tools/file_packager.bat'
+                file_packager: Path\join em_path, 'tools/file_packager.exe'
                 python: emsdk_python
                 -- clangpp: Path\join llvm_path, os.osselect win:"clang++.exe", unix:"clang++",
             }
