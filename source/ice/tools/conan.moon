@@ -64,7 +64,7 @@ class Conan extends TeamCity.Exec
         cmd ..= " #{args.conanfile or args.reference}"
         cmd ..= " --output-folder #{args.install_folder}"
         cmd ..= " --build #{args.build_policy}" if args.build_policy
-        cmd ..= " --profile:build default" if args.profile
+        cmd ..= " --profile:build #{args.build_profile or Conan.build_profile}"
         cmd ..= " --profile:host #{args.profile}" if args.profile
         cmd ..= " --update" if args.update
         @\run cmd

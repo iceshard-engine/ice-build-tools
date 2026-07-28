@@ -36,12 +36,27 @@ toolchain_definitions = {
         }
 }
 
-detect_compilers = (ver_major , log_file) ->
+detect_compilers = (ver_major, log_file) ->
     results = { }
 
     ar_path = Where\path 'ar', log_file
     unless ar_path and os.isfile ar_path
         return { }
+
+    -- Check an unversioned clang binary
+    clang_path = Where\path "clang++", log_file
+    if clang_path
+        clang_major, clang_minor, clang_patch = (((Exec clang_path)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
+        results[clang_major] = {
+            ver: { major:clang_major, minor:clang_minor, patch:clang_patch }
+            :clang_path
+            :ar_path
+        }
+        results[clang_major .. '.' .. clang_minor] = {
+            ver: { major:clang_major, minor:clang_minor, patch:clang_patch }
+            :clang_path
+            :ar_path
+        }
 
     for clang_ver = 9,22 -- We assume Clang to go up to 22 (for now)
         clang_path = Where\path "clang++-#{clang_ver}", log_file
@@ -80,9 +95,10 @@ class Toolchain_Clang extends Locator
         -- if conan_profile.compiler.version
         --     ver_major = conan_profile.compiler.version
 
-        for ver_major in *{'18','19','20'}
+        for ver_major in *{'18','19','20','21','22'}
 
-            compiler = detect_compilers ver_major, log_file
+            -- TODO: Fix verbose loggin
+            compiler = detect_compilers ver_major, '/dev/null'
             if compiler.clang_path and compiler.ar_path
 
                 clang_exe = compiler.clang_path

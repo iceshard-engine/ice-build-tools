@@ -8,6 +8,7 @@ import Command, group, argument, option, flag from require "ice.command"
 import Validation from require "ice.core.validation"
 import Path, Dir, File from require "ice.core.fs"
 import Settings from require "ice.settings"
+import Conan from require "ice.tools.conan"
 
 import TeamCity from require "ice.tools.teamcity"
 
@@ -25,6 +26,10 @@ class Application
             choices: {'d', 'debug', 'v', 'verbose', 'i', 'info', 'w', 'warning', 'e', 'error'}
             default: 'info'
             defmode: 'log-level'
+        option 'build-profile',
+            name: '--build-profile'
+            description: 'Build profile to be passed to conan related commands'
+            default: 'default'
     }
 
     new: (settings, platforms) =>
@@ -98,6 +103,10 @@ class Application
         unless Validation\ensure success, "Failed argument parsing with error: #{result}"
             os.exit -1
 
+        -- Set the passed build profile
+        Log\verbose "Running IBT with Conan2 build-profile = #{result.build_profile}"
+        Conan.build_profile = result.build_profile
+
         @args = result
 
     run: (project, init_conan) =>
@@ -162,6 +171,7 @@ class Application
 
     execute: =>
         Log\info "#{@@name} CLI - (IBT/#{IBT.version}@#{IBT.conan.user}/#{IBT.conan.channel})"
+        Log\info "  conan-build-profile = #{Conan.build_profile}"
         Log.raw\info '\nFor more options see the -h,--help output.'
 
 

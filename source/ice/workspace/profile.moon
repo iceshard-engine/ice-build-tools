@@ -141,4 +141,4 @@ class ConanProfiles
         profile\install opts for profile in *@list
 
 
-{ :ConanProfiles }
+{ :ConanProfiles, :ConanProfile }
