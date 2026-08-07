@@ -164,6 +164,8 @@ class Logger
     warning: (msg, ...) => @\log msg, @category, LogLevel.Warning, ...
     error: (msg, ...) => @\log msg, @category, LogLevel.Error, ...
 
+    iinfo: (cond, msg, ...) => @\info msg, ... if cond or false
+
     @init = (args, raw_logger) =>
         return if global_instance.logger ~= nil
 

@@ -11,7 +11,7 @@ import json
 
 class IceBuildToolsConan(ConanFile):
     name = "ice-build-tools"
-    version = "1.12.0"
+    version = "1.13.0"
     user = "iceshard"
     channel = "stable"
 
@@ -157,8 +157,10 @@ class IceBuildToolsConan(ConanFile):
             f.write("{ :IBT }\n")
             f.close()
 
-        # Copy the rxi/json to the scripts folder
+        # Copy rxi/json, lua2xml and uuid to the scripts folder
         copy(self, "*.lua", src="source/rxi", dst="scripts/lua/rxi")
+        copy(self, "*.lua", src="source/xml2lua", dst="scripts/lua/xml2lua")
+        copy(self, "*.lua", src="source/uuid", dst="scripts/lua/uuid")
 
         renv = VirtualRunEnv(self)
         benv = VirtualBuildEnv(self)

@@ -155,6 +155,14 @@ class SDK_Vulkan extends Locator
             elseif os.isunix
                 lib_path = Path\join vulkan_sdk, "lib"
 
+                has_wayland = (os.execute 'pkg-config --exists wayland-client') == 0
+                has_x11 = (os.execute 'pkg-config --exists x11') == 0
+                Log\warning "Found Vulkan SDK but neither X11 or Wayland where found!" unless has_wayland or has_x11
+
+                defines = { }
+                table.insert defines, 'VK_USE_PLATFORM_WAYLAND_KHR' if has_wayland
+                table.insert defines, 'VK_USE_PLATFORM_XLIB_KHR' if has_x11
+
                 @\add_result {
                     name: 'SDK-Vulkan'
                     version: vk_version_string
@@ -162,10 +170,7 @@ class SDK_Vulkan extends Locator
                     supported_platforms: { 'Windows', 'Linux' }
                     location: vulkan_sdk
                     binaries: Path\join vulkan_sdk, "bin"
-                    defines: {
-                        'VK_USE_PLATFORM_WAYLAND_KHR'
-                        'VK_USE_PLATFORM_XLIB_KHR'
-                    }
+                    defines: defines
                     includedirs: {
                         Path\join vulkan_sdk, 'include'
                     }

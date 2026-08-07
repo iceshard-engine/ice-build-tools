@@ -66,9 +66,7 @@ class Application
                 logv = val
                 break
             else if val == '-l' or val == '--log'
-                logv = '.next'
-            else if val[1] ~= '-'
-                break
+                logv = '.next'            
 
         if logv
             lvlmap = {

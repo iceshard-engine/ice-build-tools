@@ -60,3 +60,11 @@ In addition you can change the layout, conan profiles, configurations, platform,
 This tool uses a slightly modified version of [rix/json.lua](https://github.com/rxi/json.lua/) for json encoding and decoding.
 License file: `LICENSES/RXI_JSON_LUA_LICENSE`
 Source code: `source/rxi/json.lua`
+
+This tool uses a slightly modified version of [tieske/uuid](https://github.com/Tieske/uuid/tree/master/src) for UUID generation.
+License file: `LICENSES/TIESKE_UUID_LICENSE`
+Source code: `source/uuid/`
+
+This tool uses a slightly modified version of [manoelcampos/xml2lua](https://github.com/manoelcampos/xml2lua/tree/master) for XML encoding and decoding.
+License file: `LICENSES/XML2LUA_LICENSE`
+Source code: `source/xml2lua/`

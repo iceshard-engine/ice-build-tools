@@ -6,6 +6,7 @@ import FastBuild from require "ice.tools.fastbuild"
 import VStudio, VSCode from require "ice.tools.vswhere"
 
 import VSCodeProjectGen from require "ice.generators.devenv.vscode"
+import CLionProjectGen from require "ice.generators.devenv.clion"
 import INIConfig from require "ice.util.iniconfig"
 
 import Log from require "ice.core.logger"
@@ -16,7 +17,7 @@ class DevenvCommand extends Command
     @resolve_conan_modules!
 
     @settings {
-        Setting 'devenv.default_environment', default:(os.osselect win:'vstudio', mac:'vscode', unix: 'vscode')
+        Setting 'devenv.default_environment', default:(os.osselect win:'vstudio', mac:'vscode', unix: 'clion')
     }
 
     @arguments {
@@ -25,7 +26,7 @@ class DevenvCommand extends Command
             description: 'Selects the environment for which to generate files.'
             group: 'generation'
             name: '--devenv --ide'
-            choices: { 'vstudio', 'vscode' }
+            choices: { 'vstudio', 'vscode', 'clion' }
             default: Setting\ref 'devenv.default_environment'
         option 'update',
             description: 'Updates or replaces previously generated environment files.'
@@ -46,6 +47,21 @@ class DevenvCommand extends Command
 
     execute: (args, project) =>
         @fail "The 'xcode' target is not yet implemented" if args.devenv == 'xcode'
+
+        if args.devenv == 'clion'
+            BuildCommand\fbuild target:'devenv-targets', clean:(args.update~=nil)
+
+            -- If we can open devenv_targets we continue generation
+            if config = INIConfig\open "devenv_targets.txt", debug: false
+                @log\verbose "Starting generation of CLion project files..."
+
+                fbuild_config_file = Setting\get 'build.fbuild_config_file'
+                fbuild_config_path = Path\join project.output_dir, fbuild_config_file
+                fbuild_path = FastBuild!.exec
+
+                -- Create the Clion generator
+                clion_gen = CLionProjectGen project, config, exe:fbuild_path, script:fbuild_config_path
+                clion_gen\generate!
 
         if args.devenv == 'vscode'
             BuildCommand\fbuild target:'devenv-targets', clean:(args.update~=nil)
