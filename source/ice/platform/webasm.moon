@@ -38,7 +38,7 @@ class WebAsm
         Dir\enter location, ->
             git\pull!
 
-            emsdk = Exec os.osselect win:'emsdk.bat', unix:'emsdk.sh'
+            emsdk = Exec os.osselect win:'emsdk.bat', unix:'./emsdk'
             emsdk\run "install #{opts.version or 'latest'}"
             emsdk\run "activate #{opts.version or 'latest'}"
             -- os.execute 'source ./emsdk_env.sh' if os.isunix

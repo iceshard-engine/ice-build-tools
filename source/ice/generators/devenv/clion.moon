@@ -80,7 +80,6 @@ class CLionRunManager extends CLionComponent
                 if name and not @existing[name] and target_name
                     @existing[name] = target_name
                 elseif name and not @nodes[name]
-                    print name
                     @nodes[name] = subdom
 
     selected: => @dom._attr.selected
@@ -146,6 +145,11 @@ class CLionRunManager extends CLionComponent
         listdom._children = items
 
 class CLionProject extends XMLNode
+    new: (dom) =>
+        unless dom
+            dom = XMLNode\element 'project', version:'4'
+        super dom
+
     run_manager: =>
         dom = @\get 'project.component', filter:CLionRunManager.filter
         dom._attr = name:'RunManager'
@@ -223,28 +227,34 @@ class CLionProjectGen
         @clion_customtargets = Path\join @clion_dir, "customTargets.xml"
         @clion_externaltools = Path\join @clion_dir, "tools", "IBT IceShard.xml"
 
-    generate: (clean) =>
+    generate: (opts) =>
         clean = true
         clean or= not File\exists @clion_wksfile
         @log\iinfo clean, "Generating all required files in directory: #{@clion_dir}"
 
         -- Generate all necessary files
-        targets = @\generate_workspace!
+        targets = @\generate_workspace opts
         @\generate_custom_targets targets
         @\generate_external_tools targets
 
         @config\close!
 
-    generate_workspace: =>
+    generate_workspace: (opts = {}) =>
         -- Load the existing workspace file
+        @log\verbose "Loading workspace file from path: #{@clion_wksfile} (clean: #{opts.clean and 'true' or 'false'})"
         project = CLionProject!
-        if wskxml = File\load @clion_wksfile
-            project = CLionProject XML\decode wskxml
+        unless opts.clean
+            if wskxml = File\load @clion_wksfile
+                @log\debug "Decoding file contents: #{type wskxml}"
+                wksxml_decoded = XML\decode wskxml
+                @log\debug "Decoded file contents: #{type wksxml_decoded}"
+                project = CLionProject wksxml_decoded
 
         -- Get the run-manager component
         @log\verbose "Accessing run-manager component..."
         @run_manager = project\run_manager!
 
+        @log\debug "Reading target information..."
         run_targets = @config\section 'run_targets', 'array'
         build_targets = @config\section 'build_targets', 'array'
         @log\verbose "Removing existing ibt targets..."

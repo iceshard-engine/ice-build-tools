@@ -58,10 +58,14 @@ class DevenvCommand extends Command
                 fbuild_config_file = Setting\get 'build.fbuild_config_file'
                 fbuild_config_path = Path\join project.output_dir, fbuild_config_file
                 fbuild_path = FastBuild!.exec
+                @log\debug "FBuild config file: #{fbuild_config_file}"
+                @log\debug "FBuild config path: #{fbuild_config_path}"
+                @log\debug "FBuild path: #{fbuild_path}"
 
                 -- Create the Clion generator
                 clion_gen = CLionProjectGen project, config, exe:fbuild_path, script:fbuild_config_path
-                clion_gen\generate!
+                @log\debug "Starting generation of CLion project files..."
+                clion_gen\generate clean:args.update == 'replace'
 
         if args.devenv == 'vscode'
             BuildCommand\fbuild target:'devenv-targets', clean:(args.update~=nil)

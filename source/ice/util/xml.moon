@@ -1,3 +1,5 @@
+import Log from require "ice.core.logger"
+
 xml2lua = require "xml2lua.xml2lua"
 domhandler = require "xml2lua.xmlhandler.dom"
 treehandler = require "xml2lua.xmlhandler.tree"
@@ -30,7 +32,7 @@ _find_existing_xml_node = (dom, path, filter) ->
 _get_or_create_xml_node = (dom, path, filter) ->
     return if dom == nil or (dom._type ~= 'ELEMENT' and dom._type ~= 'ROOT')
     return dom if dom._name == path
-    return if dom._children == nil or #dom._children == 0
+    return if dom._children == nil
 
     children = { dom }
     for subnode in path\gmatch "([^%.]+)"
@@ -89,10 +91,12 @@ class XML
     @decode = (xmldoc, opts = { simplified:false }) =>
         handler = domhandler\new!
         if simplified
-            handle = treehandler\new!
+            handler = treehandler\new!
 
         parser = xml2lua.parser handler
+        Log\debug "Parsing XML document '#{type xmldoc}' with parser '#{type parser}'"
         parser\parse xmldoc
+        Log\debug "Parsing: #{handler.root ~= nil and 'Ok' or 'Error'}"
         handler.root
 
 { :XML, :XMLNode }

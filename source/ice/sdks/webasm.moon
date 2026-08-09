@@ -3,7 +3,7 @@ import Locator from require "ice.locator"
 import WebAsm from require "ice.platform.webasm"
 import Path, Dir, File from require "ice.core.fs"
 import Json from require "ice.util.json"
-import Exec from require "ice.tools.exec"
+import Exec, Where from require "ice.tools.exec"
 
 create_toolchain = (ver_major, emver, emver_full, arch_list) ->
     return {
@@ -41,7 +41,7 @@ create_toolchain = (ver_major, emver, emver_full, arch_list) ->
                     -- We force response files and pretend to be a 'clang-orbis' linker.
                     -- This writes paths in the response file with additional slashes fixing an error when linking from a response file.
                     { 'LinkerForceResponseFile', true }
-                    { 'LinkerType', 'clang-orbis' }
+                    { 'LinkerType', os.osselect win:'clang-orbis', unix:'clang' }
                     { 'ConanCompilerVersion', ver_major }
                 }
     }
@@ -60,7 +60,14 @@ class SDK_WebAsm extends Locator
 
             em3rd_config = Path\join sdk_path, '.emscripten'
             return unless Validation\ensure (File\exists em3rd_config), "Missing '#{em3rd_config}' file required for python discovery."
-            emsdk_python = Path\join sdk_path, (File\load em3rd_config)\match "'(/python/.+/python.exe)'"
+
+            emsdk_python = nil
+            if os.windows
+                emsdk_python = Path\join sdk_path, (File\load em3rd_config)\match "'(/python/.+/python.exe)'"
+            else
+                emsdk_python = os.getenv 'EMSDK_PYTHON'
+                emsdk_python = Where\path 'python3' unless emsdk_python
+                emsdk_python = Where\path 'python2' unless emsdk_python
             return unless Validation\ensure (File\exists emsdk_python), "Failed to find a valid Python installation in the Emscripten SDK. Checked: #{emsdk_python}"
 
             llvm_path = Path\join sdk_path, "upstream/bin"

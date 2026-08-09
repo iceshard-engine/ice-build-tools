@@ -17,6 +17,7 @@ class WebAsmCommand extends Command
         Setting 'webasm.projects', default:{}
         Setting 'webasm.emscripten.location', default:'build/emscripten'
         Setting 'webasm.emscripten.version', default:'latest'
+        Setting 'webasm.server_konsole_command', default:'konsole -e'
     }
     @arguments {
         group 'general', description: "Basic options"
@@ -114,7 +115,16 @@ class WebAsmCommand extends Command
             params ..= " --port #{args.port}"
 
             -- Start the server in a new shell
-            os.execute('start cmd /k call "'..(Path\normalize python3.exec)..'" '..params..'')
+            cmd = nil
+            if os.iswindows
+                cmd = 'start cmd /k call "'..(Path\normalize python3.exec)..'" '..params..''
+            else
+                konsole_cmd = Setting\get 'webasm.server_konsole_command'
+                cmd = konsole_cmd .. ' bash -c "'..(Path\normalize python3.exec)..' '..params..'" &'
+
+            @log\verbose "Starting server with command: #{cmd}"
+            os.execute cmd
+
 
     execute_setup: (args, project) =>
         location = (Setting\get 'webasm.emscripten.location') or 'build/webasm'
