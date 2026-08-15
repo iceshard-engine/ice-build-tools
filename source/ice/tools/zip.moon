@@ -19,7 +19,7 @@ class Zip
                 @exec\run "-#{mode}xf #{file} -C #{dir}"
             else
                 @exec = Exec "unzip", nocheck:true
-                @exec\run "#{file} -d #{dir} " .. (options.force and '-o' or '')
+                @exec\run (options.force and '-o ' or '') .. "#{file} -d #{dir}"
 
 
 
