@@ -71,8 +71,9 @@ class SDK_Android extends Locator
             -- Flavours for the standard library version (shared / static)
             android_stdlib_flavours = (type, toolchain, ndkmajor, ndk_path, abi) ->
                 if type == "Shared"
-                    toolchain_path = Path\join ndk_path, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64'
+                    toolchain_path = Path\join ndk_path, 'toolchains', 'llvm', 'prebuilt', os.osselect win:'windows-x86_64', unix:'linux-x86_64'
                     lib_path = Path\join toolchain_path, 'sysroot', 'usr', 'lib', abi.triple, 'libc++_shared.so'
+                    Log\debug "Using stdlib from #{lib_path}"
 
                     return {
                         name: "Android-Std#{type}Lib-NDK#{ndkmajor}-#{abi.arch}"
@@ -96,7 +97,7 @@ class SDK_Android extends Locator
                 continue unless pkg.path\lower!\match "ndk"
                 Log\verbose "Checking NDK package at location: #{pkg.location}"
                 if ndk = @_add_ndk sdk, pkg, allowed
-                    ndk_path = Path\join sdk.location, pkg.location
+                    ndk_path = pkg.location
                     for _, abi in pairs ndk.abis
                         for apilevel=ndk.platforms.min, ndk.platforms.max
                             table.insert flavours, android_api_flavour ndk.toolchain, ndk.version, apilevel, abi
@@ -132,16 +133,17 @@ class SDK_Android extends Locator
             }, Locator.Type.CommonSDK
 
     _add_ndk: (sdk, pkg, allowed) =>
-        ndk_path = Path\join sdk.location, pkg.location
-        ndk_version = pkg.version
+        ndk_path = pkg.location
+        ndk_version = tostring pkg.version
         ndk_major = ndk_version\match '^(%d+)'
+        Log\debug "Checking NDK at '#{ndk_path}' for version #{ndk_version}"
 
         abis = File\load (Path\join ndk_path, 'meta', 'abis.json'), parser:Json\decode
         platforms = File\load (Path\join ndk_path, 'meta', 'platforms.json'), parser:Json\decode
 
-        toolchain_path = Path\join ndk_path, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64'
-        clang_path = Path\join toolchain_path, 'bin', 'clang++.exe'
-        ar_path = Path\join toolchain_path, 'bin', 'llvm-ar.exe'
+        toolchain_path = Path\join ndk_path, 'toolchains', 'llvm', 'prebuilt', (os.osselect win:'windows-x86_64', unix:'linux-x86_64')
+        clang_path = Path\join toolchain_path, 'bin', os.osselect win:'clang++.exe', unix:'clang++'
+        ar_path = Path\join toolchain_path, 'bin', os.osselect win:'llvm-ar.exe', unix:'llvm-ar'
 
         clang_major, clang_minor, clang_patch = (((Exec clang_path)\lines '--version')[1]\gmatch "version (%d+).(%d+).(%d+)")!
         toolchain_definition = create_toolchain clang_major, ndk_major, [abi.arch for _, abi in pairs abis]

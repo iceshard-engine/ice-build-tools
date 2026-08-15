@@ -9,72 +9,81 @@ import Log from require "ice.core.logger"
 import Validation from require "ice.core.validation"
 
 class SDKManager extends Exec
-    new: (path, @deprecated) => super path
+    new: (path, @sdkpath, @deprecated) => super path
 
     install: (opts = { }) =>
         return false unless opts.package
-        args = "--install #{opts.package}"
+        args = "--sdk=#{@sdkpath} sdk install #{opts.package}"
         @\run args
 
-    uninstall: (opts = { }) =>
+    remove: (opts = { }) =>
         return false unless opts.package
-        args = "--uninstall #{opts.package}"
+        args = " --sdk=#{@sdkpath} sdk remove #{opts.package}"
         @\run args
+
+    uninstall: (opts = { }) => @remove opts
 
     list: (opts = { }) =>
-        args = "--list"
-        args = "--list_installed" if (not @deprecated and opts.installed)
-        args ..= "--channel=#{opts.channel}" if opts.channel
+        args = "--sdk=#{@sdkpath} sdk list"
+        args ..= " --all" unless opts.installed
+        args ..= " --beta" if opts.channel == 'beta'
+        args ..= " --canary" if opts.channel == 'canary'
 
-        stage_builder = (origin_header, origin_pattern) ->
-            (it) ->
+        stage_builder = (origin_header, origin_pattern, store) ->
+            (it, installed) ->
                 header = origin_header\lower!
                 pattern = origin_pattern
                 results = { }
+                updates = { }
 
                 line = it!
-                while not (line\lower!\match header)
+                while line and not (line\lower!\match header)
+                    line = it!
+                return {} unless line 
+
+                Log\debug "Starting with line: '#{line}'"
+                line = it!
+
+                while line
+                    path, version_str, description = line\match pattern
+                    break unless description
+
+                    id = path\match "([^/]+/?[^%.]*)"
+                    version = Version\from_str version_str
+
+                    Log\debug "Matched: '#{path}' + '#{version_str}' + '#{description}'"
+                    entry = { :id, :path, :version, :description }
+
+                    table.insert results, entry
+                    if store
+                        entry.location = Path\join @sdkpath, path
+                        installed[id] = entry
+                    elseif installed[id] and installed[id].version < version
+                        table.insert updates, entry
                     line = it!
 
-                -- Gather stage specific labels
-                t0, t1, t2, t3 = it!\match pattern
-                return results unless t2
+                results, updates
 
-                t0 = t0\lower!
-                t1 = t1\lower!
-                t2 = t2\lower!
-                t3 = t3\lower! if t3
-
-                -- Next line is '-----' so we wan't to skip it
-                it!
-
-                v0, v1, v2, v3 = it!\match pattern
-                while v2 ~= nil
-                    table.insert results, { [t0]:v0, [t1]:v1, [t2]:v2, [t3]:v3 } if v3
-                    table.insert results, { [t0]:v0, [t1]:v1, [t2]:v2 } if not v3
-                    v0, v1, v2, v3 = it!\match pattern
-                results
-
-        stage_installed = stage_builder 'installed packages', '%s*([^|%[]-)%s*|%s*([^|]-)%s*|%s*([^|]-)%s*|%s*([^|]-)%s*$'
-        stage_available = stage_builder 'available packages', '%s*([^|%[]-)%s*|%s*([^|]-)%s*|%s*([^|]-)%s*$'
-        stage_updates = stage_builder 'available updates', '%s*([^|%[]-)%s*|%s*([^|]-)%s*|%s*([^|]-)%s*$'
+        stage_installed = stage_builder 'Installed packages', '^%s+([^%s:]+)%s*([^%s:]+)%s*(.-)%s*$', true
+        stage_available = stage_builder 'Available packages', '^%s+([^%s:]+)%s*([^%s:]+)%s*(.-)%s*$', false
 
         Log\debug "Invoking Android Manager with arguments: #{args}"
 
-        lines = do
-            tab = @\lines args
+        lines_tab = @\lines args
+        lines = ->
+            tab = lines_tab
             idx = 0
             ->
                 idx = idx + 1
                 return tab[idx]
 
         results = { }
+        installed = { }
+
         Log\debug "Checking installed Android packages..."
-        results.installed = stage_installed lines
+        results.installed = stage_installed lines!, installed
         Log\debug "Checking available Android packages..."
-        results.available = stage_available lines unless opts.installed
-        Log\debug "Checking available Android package updates..."
-        results.updates = stage_updates lines unless opts.installed
+        results.available, results.updates = stage_available lines!, installed unless opts.installed
 
         return results.installed if opts.installed
         return results
@@ -95,7 +104,7 @@ class Android
 
         gradle_paths = {
             Path\join gradle_local, "gradle-#{gradle_ver}", "bin", os.osselect win:'gradle.bat', unix:'gradle'
-            Where\path 'gradle'
+            Where\path 'gradle', os.osselect unix:'/dev/null'
         }
 
         -- Check for common paths
@@ -121,7 +130,7 @@ class Android
 
     @detect_android_sdk: =>
         possible_paths = {
-            { source:'implicit', location: "#{os.env.LOCALAPPDATA}/Android/Sdk" }
+            { source:'implicit', location: "#{os.env.LOCALAPPDATA or os.env.HOME}/Android/Sdk" }
             { source:'environment', location: os.env.ANDROID_SDK_ROOT }
             { source:'settings', location: Setting\get "android.sdk.root" }
             { source:'settings', location: Setting\get "android.sdk_root" }
@@ -129,16 +138,22 @@ class Android
 
         sdk_root = nil
         for entry in *possible_paths
-            entry.location = Path\normalize entry.location
 
             if entry.location == nil
                 Log\verbose "Skipping search for Android SDK from #{entry.source}"
-            elseif (Dir\exists entry.location) == false
-                Log\verbose "Skipping search for Android SDK in invalid path #{entry.location}"
+                continue
+
+            -- The new 'android' binary does not seem to handle '~' too well.
+            --   We are replacing it ourselves here
+            final_location = entry.location\gsub '~', os.env.HOME
+            final_location = Path\normalize final_location
+
+            if (Dir\exists final_location) == false
+                Log\verbose "Skipping search for Android SDK in invalid path #{final_location}"
             else
-                Log\verbose "Searching for Android SDK in #{entry.source} path #{entry.location}..."
-                Log\warning "Overriden Android SDK location from #{sdk_root} to #{entry.location}" if sdk_root and sdk_root != entry.location
-                sdk_root = entry.location
+                Log\verbose "Searching for Android SDK in #{entry.source} path #{final_location}..."
+                Log\warning "Overriden Android SDK location from #{sdk_root} to #{final_location}" if sdk_root and sdk_root != final_location
+                sdk_root = final_location
 
         -- Early exit if no sdk was found
         unless sdk_root
@@ -147,45 +162,51 @@ class Android
 
         Log\verbose "Selected Android SDK at location #{sdk_root}"
 
+        sdkmanager_bin = os.osselect win:"android.bat", unix:"android"
         cmdline_tools_basepath = Path\join sdk_root, "cmdline-tools"
         cmdline_tools_version = (Setting\get "android.sdk.cmdline_tools_version") or "latest"
         if cmdline_tools_version == "latest"
-            unless Dir\exists (Path\join cmdline_tools_basepath, cmdline_tools_version)
+            Log\verbose "Searching for latest command-line tools package at #{cmdline_tools_basepath}"
+            tools_path = Path\join cmdline_tools_basepath, cmdline_tools_version
+            unless Dir\exists tools_path
                 current_ver = Version\from_str "0.0"
 
                 -- Run over each path and compare versions
-                for path, m in Dir\list cmdline_tools_basepath, recursive:false
+                for path, m in Dir\list tools_path, recursive:false
                     path_ver = Version\from_str path
+                    Log\verbose "Checking path #{path} for an expected version of command-line tools package..."
                     if path_ver and path_ver\newer current_ver
                         cmdline_tools_version = path
                         Log\verbose "Selecting new version for android command-line tools: #{cmdline_tools_version}"
 
-            Log\info "Selected version for android command-line tools: #{cmdline_tools_version}"
+            if Dir\exists tools_path
+                Log\info "Selected version for android command-line tools: #{cmdline_tools_version}"
+            else
+                Log\error "Failed to find a valid version of command-line tools package"
 
         possible_paths = {
-            { deprecated:true, source:'tools', location:Path\join sdk_root, "tools", "bin", "sdkmanager.bat" }
-            { source:'cmdline-tools', location:Path\join cmdline_tools_basepath, cmdline_tools_version, "bin", "sdkmanager.bat" } -- This version is known to work better than latest
+            { source:'cmdline-tools', location:Path\join cmdline_tools_basepath, cmdline_tools_version, "bin", sdkmanager_bin }
         }
 
         sdk_manager = nil
         for entry in *possible_paths
-            entry.location = Path\normalize entry.location
+            final_location = Path\normalize entry.location
 
-            if (File\exists entry.location) == false
-                Log\verbose "SdkManager (#{entry.source}) not found in path: #{entry.location}" -- TODO: Verbose
+            if (File\exists final_location) == false
+                Log\verbose "SdkManager (#{entry.source}) not found in path: #{final_location}"
             else
-                Log\verbose "Selected SdkManager at path #{entry.location}"
+                Log\verbose "Selected SdkManager at path #{final_location}"
                 sdk_manager = entry
 
         return nil unless sdk_manager
-        Log\warning "Detected deprecated SDK manager tools, consider installing the 'cmdline-tools;latest' package to avoid issues!" if sdk_manager.deprecated
+        Log\verbose "Found SDK manager under location: #{sdk_manager.location}"
 
         Validation\assert os.env.JAVA_HOME ~= nil, "The 'JAVA_HOME' variable does not exist"
         Validation\assert (Dir\exists os.env.JAVA_HOME), "The 'JAVA_HOME' path does not exist: #{os.env.JAVA_HOME}"
 
         return {
             location:sdk_root
-            manager:SDKManager sdk_manager.location, sdk_manager.deprecated
+            manager:SDKManager sdk_manager.location, sdk_root, sdk_manager.deprecated
             manager_is_deprecated:sdk_manager.deprecated
         }
 
