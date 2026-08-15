@@ -35,7 +35,7 @@ class Conan extends TeamCity.Exec
         for remote, packages in pairs (result_json or {})
             for reference, _ in pairs packages
                 name, version, user, channel = reference\match "([^/]+)/([^@]+)@([^/]+)/(.+)"
-                table.insert result, { :name, :version, :user, :channel, full:line, :remote } if name and channel
+                table.insert result, { :name, :version, :user, :channel, full:reference, :remote } if name and channel
         result
 
     graph_info: (args) =>

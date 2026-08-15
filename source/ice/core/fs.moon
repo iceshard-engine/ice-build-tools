@@ -256,6 +256,8 @@ class File
     @lines = (path) => io.lines path
 
     @load = (path, args = { limit:0, mode:'r' }) =>
+        Validation\assert path ~= nil, "Path argument is a nil value!"
+
         result = ""
         if f = File\open path, mode:args.mode or 'r'
             if args.limit and args.limit > 0

@@ -1,6 +1,7 @@
 import Command, option, flag from require "ice.command"
 import Conan from require "ice.tools.conan"
 import IBT from require "ibt.ibt"
+import Validation from require "ice.core.validation"
 
 import Path, File, Dir from require "ice.core.fs"
 
@@ -47,6 +48,7 @@ class UpdateCommand extends Command
                     newest_version = package.version
                     newest_package = package.full
 
+            Validation\ensure newest_version and newest_package, "Failed to find newest package information!\n- newest_package: #{newest_package}\n- newest_version: #{newest_version}"
             if newest_version == current_version and not is_devel
                 @log\info "IBT is up-to-date."
 
@@ -57,12 +59,15 @@ class UpdateCommand extends Command
                 else
                     @log\info "Found newer version '#{newest_version}', upgrading..."
 
+                @log\verbose "Trying to update 'conanfile.txt' to target the newer version"
                 conanfile_update_success = false
                 if contents = File\load 'tools/conanfile.txt', mode:'r+'
-                    updated_conanfile = contents\gsub (current_package\gsub '([%-%.])', (v) -> '%'..v), newest_package
+                    package_pattern = current_package\gsub '([%-%.])', (v) -> '%'..v
+                    updated_conanfile = contents\gsub package_pattern, newest_package
                     conanfile_update_success = File\save 'tools/conanfile.txt', updated_conanfile
 
                 if conanfile_update_success
+                    @log\verbose "Installing updated version of IBT..."
                     conan\install conanfile:'tools/conanfile.txt', install_folder:'build/tools', build_policy:'missing'
                 else
                     @log\error "Failed to update IBT package ID in 'tools/conanfile.txt'"
