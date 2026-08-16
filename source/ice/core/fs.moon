@@ -258,7 +258,7 @@ class File
     @load = (path, args = { limit:0, mode:'r' }) =>
         Validation\assert path ~= nil, "Path argument is a nil value!"
 
-        result = ""
+        result = nil
         if f = File\open path, mode:args.mode or 'r'
             if args.limit and args.limit > 0
                 result = f\read args.limit
@@ -267,7 +267,8 @@ class File
             f\close!
 
         -- Run the contents through a parser return the result
-        return args.parser result if result and result ~= "" and args.parser
+        if result and result ~= "" and args.parser
+            return args.parser result 
         result -- else return the raw contents
 
     @save = (path, contents, args = { mode:'w+' }) =>

@@ -40,7 +40,7 @@ class CLionConfiguration extends XMLNode
             [@Attrib.Version]: '1'
             [@Attrib.Type]: 'CLionNativeAppRunConfigurationType'
             [@Attrib.Name]: args.long_name
-            [@Attrib.ProjectName]: project
+            [@Attrib.ProjectName]: Path\name Path\parent Dir\current!
             -- Build Related
             [@Attrib.TargetName]: args.build_target
             -- [@Attrib.ConfigName]: args.config -- TODO: can we make use of this in a different way?
@@ -181,6 +181,11 @@ class CLionExternalBuildManager extends XMLNode
         table.insert @dom._children, target
 
 class CLionCustomTargets extends XMLNode
+    new: (dom) =>
+        unless dom
+            dom = XMLNode\element 'project', version:'4'
+        super dom
+
     external_build_manager: =>
         dom = @\get 'project.component', filter:CLionExternalBuildManager.filter
         dom._attr = name:'CLionExternalBuildManager'
@@ -226,6 +231,9 @@ class CLionProjectGen
         @clion_wksfile = Path\join @clion_dir, "workspace.xml"
         @clion_customtargets = Path\join @clion_dir, "customTargets.xml"
         @clion_externaltools = Path\join @clion_dir, "tools", "IBT IceShard.xml"
+
+        -- Ensure we have the longest path available
+        Dir\create Path\parentex @clion_externaltools
 
     generate: (opts) =>
         clean = true
@@ -313,6 +321,7 @@ class CLionProjectGen
         config
 
     generate_custom_targets: (targets) =>
+        @log\verbose "Loading custom targets file from path: #{@clion_customtargets}"
         -- Load the existing custom targets file
         custom = CLionCustomTargets!
         if targetsxml = File\load @clion_customtargets
@@ -337,6 +346,7 @@ class CLionProjectGen
         File\save @clion_customtargets, XML\encode custom.dom, decl:XML\decl!
 
     generate_external_tools: (infos) =>
+        @log\verbose "Loading external tools file from path: #{@clion_externaltools}"
         -- Load the existing custom targets file
         tools = CLionExternalTools!
         if toolsxml = File\load @clion_externaltools
