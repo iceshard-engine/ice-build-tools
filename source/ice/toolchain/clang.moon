@@ -95,7 +95,7 @@ class Toolchain_Clang extends Locator
         -- if conan_profile.compiler.version
         --     ver_major = conan_profile.compiler.version
 
-        for ver_major in *{'18','19','20','21','22'}
+        for ver_major in *{'18','19','20','21','22','23','24','25'}
 
             -- TODO: Fix verbose loggin
             compiler = detect_compilers ver_major, '/dev/null'
